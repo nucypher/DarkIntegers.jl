@@ -78,19 +78,15 @@ end
 end
 
 
-@testcase tags=[:performance] "mulhilo, performance" for tp in builtin_uint_types
-
-    Random.seed!(123)
-
-    x = rand(tp)
-    y = rand(tp)
+@testcase tags=[:performance] "mulhilo, performance" for rng in fixed_rng, tp in builtin_uint_types
+    x = rand(rng, tp)
+    y = rand(rng, tp)
 
     trial = @benchmark mulhilo_same_type($x, $y)
     @test_result "same_type: " * benchmark_result(trial)
 
     trial = @benchmark mulhilo_widemul($x, $y)
     @test_result "widemul: " * benchmark_result(trial)
-
 end
 
 

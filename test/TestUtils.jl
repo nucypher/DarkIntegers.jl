@@ -18,3 +18,10 @@ end
 
 
 const builtin_uint_types = (UInt8, UInt16, UInt32, UInt64, UInt128)
+
+
+const fixed_rng = @local_fixture begin
+    seed = 123
+    rng = MersenneTwister(seed)
+    @produce rng "seed=$seed"
+end
