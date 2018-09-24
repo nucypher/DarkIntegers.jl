@@ -4,31 +4,46 @@ using DarkIntegers: UInt4, addmod, submod, mulmod, mulmod_bitshift, mulmod_modhi
 @testgroup "single limb modulo arithmetic" begin
 
 
-addmod_ref(x, y, modulus) = mod(BigInt(x) + BigInt(y), BigInt(modulus))
-addmod_args_filter(x, y, modulus) = modulus >= 2 && x < modulus && y < modulus
+modulo_args_filter(x, y, modulus) = modulus >= 2 && x < modulus && y < modulus
+
+
+function addmod_ref(x::T, y::T, modulus::T) where T <: Unsigned
+    T2 = widen(T)
+    T(mod(T2(x) + T2(y), modulus))
+end
 
 
 @testcase "addmod" begin
-    check_function_random(addmod, addmod_ref, 3, addmod_args_filter)
+    check_function_random(
+        UInt64, addmod, addmod_ref, 3;
+        args_filter_predicate=modulo_args_filter)
 end
 
 
 @testcase tags=[:exhaustive] "addmod, exhaustive" begin
-    check_function_exhaustive(addmod, addmod_ref, 3, addmod_args_filter)
+    check_function_exhaustive(
+        UInt4, addmod, addmod_ref, 3;
+        args_filter_predicate=modulo_args_filter)
 end
 
 
-submod_ref(x, y, modulus) = mod(BigInt(x) - BigInt(y), BigInt(modulus))
-submod_args_filter(x, y, modulus) = modulus >= 2 && x < modulus && y < modulus
+function submod_ref(x::T, y::T, modulus::T) where T <: Unsigned
+    T2 = widen(T)
+    T(mod(T2(x) + modulus - y, modulus))
+end
 
 
 @testcase "submod" begin
-    check_function_random(submod, submod_ref, 3, submod_args_filter)
+    check_function_random(
+        UInt64, submod, submod_ref, 3;
+        args_filter_predicate=modulo_args_filter)
 end
 
 
 @testcase tags=[:exhaustive] "submod, exhaustive" begin
-    check_function_exhaustive(submod, submod_ref, 3, submod_args_filter)
+    check_function_exhaustive(
+        UInt4, submod, submod_ref, 3;
+        args_filter_predicate=modulo_args_filter)
 end
 
 
@@ -36,17 +51,23 @@ mulmod_funcs = [mulmod_bitshift, mulmod_modhilo, mulmod_widen, mulmod]
 mulmod_names = ["bitshift", "modhilo", "widen", "mulmod"]
 
 
-mulmod_ref(x, y, modulus) = mod(BigInt(x) * BigInt(y), BigInt(modulus))
-mulmod_args_filter(x, y, modulus) = modulus >= 2 && x < modulus && y < modulus
+function mulmod_ref(x::T, y::T, modulus::T) where T <: Unsigned
+    T2 = widen(T)
+    T(mod(T2(x) * T2(y), modulus))
+end
 
 
 @testcase "mulmod" for func in (mulmod_funcs => mulmod_names)
-    check_function_random(func, mulmod_ref, 3, mulmod_args_filter)
+    check_function_random(
+        UInt64, func, mulmod_ref, 3;
+        args_filter_predicate=modulo_args_filter)
 end
 
 
 @testcase tags=[:exhaustive] "mulmod, exhaustive" for func in (mulmod_funcs => mulmod_names)
-    check_function_exhaustive(func, mulmod_ref, 3, mulmod_args_filter)
+    check_function_exhaustive(
+        UInt4, func, mulmod_ref, 3;
+        args_filter_predicate=modulo_args_filter)
 end
 
 

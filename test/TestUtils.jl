@@ -2,6 +2,8 @@ using Base.Iterators: product
 using Random
 using BenchmarkTools: prettytime, prettymemory, @benchmark
 
+using DarkIntegers: UInt4, bitsizeof
+
 
 function benchmark_result(trial)
     time_str = prettytime(minimum(trial.times))
@@ -28,28 +30,46 @@ const fixed_rng = @local_fixture begin
 end
 
 
-function check_function(test_func, ref_func, args)
-    ref = ref_func(args...)
-    test = test_func(args...)
-    if ref != test
-        @test_fail "Incorrect result for $(tuple(args...)): got $test, expected $ref"
+encompassing_type(tp::Type{<:Unsigned}) = tp
+
+encompassing_type(::Type{UInt4}) = UInt8
+
+
+function check_function(tp, test_func, ref_func, args, ref_needs_bitsize)
+    tp_args = convert.(tp, args)
+    if ref_needs_bitsize
+        ref = ref_func(bitsizeof(tp), args...)
+    else
+        ref = ref_func(args...)
+    end
+    tp_test = test_func(tp_args...)
+    tp_ref = convert.(tp, ref)
+    if tp_ref != tp_test
+        @test_fail "Incorrect result for $(tuple(tp_args...)): got $tp_test, expected $tp_ref"
         return false
     end
     true
 end
 
 
-function check_function_random(test_func, ref_func, arity::Int, args_filter_predicate=nothing)
-    if args_filter_predicate === nothing
-        args_filter_predicate = (args...) -> true
-    end
+default_args_filter_predicate(args...) = true
+
+
+function check_function_random(
+        tp, test_func, ref_func, arity::Int;
+        args_filter_predicate=default_args_filter_predicate,
+        ref_needs_bitsize::Bool=false)
+
     ctr = 0
+    itp = encompassing_type(tp)
+    tmin = convert(itp, typemin(tp))
+    tmax = convert(itp, typemax(tp))
     while ctr < 1000
-        args = rand(UInt64, arity)
+        args = rand(tmin:tmax, arity)
         if !args_filter_predicate(args...)
             continue
         end
-        if !check_function(test_func, ref_func, args)
+        if !check_function(tp, test_func, ref_func, args, ref_needs_bitsize)
             return
         end
         ctr += 1
@@ -57,16 +77,19 @@ function check_function_random(test_func, ref_func, arity::Int, args_filter_pred
 end
 
 
-function check_function_exhaustive(test_func, ref_func, arity::Int, args_filter_predicate=nothing)
-    if args_filter_predicate === nothing
-        args_filter_predicate = (args...) -> true
-    end
-    tp_range = zero(UInt4):typemax(UInt4)
-    for args in product([tp_range for i in 1:arity]...)
+function check_function_exhaustive(
+        tp, test_func, ref_func, arity::Int;
+        args_filter_predicate=default_args_filter_predicate,
+        ref_needs_bitsize::Bool=false)
+
+    itp = encompassing_type(tp)
+    tmin = convert(itp, typemin(tp))
+    tmax = convert(itp, typemax(tp))
+    for args in product([tmin:tmax for i in 1:arity]...)
         if !args_filter_predicate(args...)
             continue
         end
-        if !check_function(test_func, ref_func, args)
+        if !check_function(tp, test_func, ref_func, args, ref_needs_bitsize)
             return false
         end
     end
