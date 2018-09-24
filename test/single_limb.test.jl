@@ -1,6 +1,6 @@
 using DarkIntegers:
     UInt4, addhilo, mulhilo, mulhilo_widemul, mulhilo_same_type, bitsizeof,
-    divhilo, modhilo
+    divhilo, modhilo, divremhilo
 
 
 @testgroup "single limb arithmetic" begin
@@ -155,6 +155,43 @@ end
         for x_hi in zero(tp):y-one(tp), x_lo in typemin(tp):typemax(tp)
             ref = modhilo_ref(x_hi, x_lo, y)
             test = modhilo(x_hi, x_lo, y)
+            if ref != test
+                @test_fail "Incorrect result for mod(($x_hi, $x_lo), $y): got $test, expected $ref"
+                return
+            end
+        end
+    end
+end
+
+
+function divremhilo_ref(x_hi::T, x_lo::T, y::T) where T <: Unsigned
+    d, r = divrem((BigInt(x_lo) + BigInt(x_hi) * BigInt(1) << bitsizeof(T)), BigInt(y))
+    T(d), T(r)
+end
+
+
+@testcase "divremhilo" begin
+    tp = UInt64
+    for i in 1:1000
+        y = rand(one(tp):typemax(tp))
+        x_hi = rand(zero(tp):y-one(tp))
+        x_lo = rand(tp)
+        ref = divremhilo_ref(x_hi, x_lo, y)
+        test = divremhilo(x_hi, x_lo, y)
+        if ref != test
+            @test_fail "Incorrect result for mod(($x_hi, $x_lo), $y): got $test, expected $ref"
+            return
+        end
+    end
+end
+
+
+@testcase tags=[:exhaustive] "divremhilo, exhaustive" begin
+    tp = UInt4
+    for y in one(tp):typemax(tp)
+        for x_hi in zero(tp):y-one(tp), x_lo in typemin(tp):typemax(tp)
+            ref = divremhilo_ref(x_hi, x_lo, y)
+            test = divremhilo(x_hi, x_lo, y)
             if ref != test
                 @test_fail "Incorrect result for mod(($x_hi, $x_lo), $y): got $test, expected $ref"
                 return

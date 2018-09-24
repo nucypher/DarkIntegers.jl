@@ -64,14 +64,6 @@ end
 @inline mulhilo(x::UInt128, y::UInt128) = mulhilo_same_type(x, y)
 
 
-@inline function modhilo(x_hi::T, x_lo::T, y::T) where T <: Unsigned
-    # assuming x_hi < y
-    q = divhilo(x_hi, x_lo, y)
-    _, z = mulhilo(q, y)
-    x_lo - z
-end
-
-
 @inline function divhilo(x_hi::T, x_lo::T, y::T) where T <: Unsigned
     # Assuming x_hi < y, otherwise the overflow will be ignored
     res = zero(T)
@@ -91,4 +83,20 @@ end
     else
         res + divhilo(hi, lo, y)
     end
+end
+
+
+@inline function divremhilo(x_hi::T, x_lo::T, y::T) where T <: Unsigned
+    # assuming x_hi < y
+    # TODO: it may be possible to avoid `mulhilo()` and calculate the remainder in `divhilo()`
+    q = divhilo(x_hi, x_lo, y)
+    _, z = mulhilo(q, y)
+    q, x_lo - z
+end
+
+
+@inline function modhilo(x_hi::T, x_lo::T, y::T) where T <: Unsigned
+    # assuming x_hi < y
+    d, r = divremhilo(x_hi, x_lo, y)
+    r
 end
