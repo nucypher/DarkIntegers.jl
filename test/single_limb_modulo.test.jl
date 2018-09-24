@@ -4,65 +4,31 @@ using DarkIntegers: UInt4, addmod, submod, mulmod, mulmod_bitshift, mulmod_modhi
 @testgroup "single limb modulo arithmetic" begin
 
 
+addmod_ref(x, y, modulus) = mod(BigInt(x) + BigInt(y), BigInt(modulus))
+addmod_args_filter(x, y, modulus) = modulus >= 2 && x < modulus && y < modulus
+
+
 @testcase "addmod" begin
-    tp = UInt64
-    for i in 1:10000
-        modulus = rand(tp(2):typemax(tp))
-        x = rand(tp) % modulus
-        y = rand(tp) % modulus
-        ref = mod(BigInt(x) + BigInt(y), BigInt(modulus))
-        test = addmod(x, y, modulus)
-        if ref != test
-            @test_fail "Incorrect result for $x + $y: got $test, expected $ref"
-            return
-        end
-    end
+    check_function_random(addmod, addmod_ref, 3, addmod_args_filter)
 end
 
 
 @testcase tags=[:exhaustive] "addmod, exhaustive" begin
-    tp = UInt4
-    for modulus in UInt4(2):typemax(tp)
-        for x in zero(UInt4):modulus-one(UInt4), y in zero(UInt4):modulus-one(UInt4)
-            ref = mod(BigInt(x) + BigInt(y), BigInt(modulus))
-            test = addmod(x, y, modulus)
-            if ref != test
-                @test_fail "Incorrect result for $x + $y: got $test, expected $ref"
-                return
-            end
-        end
-    end
+    check_function_exhaustive(addmod, addmod_ref, 3, addmod_args_filter)
 end
 
 
+submod_ref(x, y, modulus) = mod(BigInt(x) - BigInt(y), BigInt(modulus))
+submod_args_filter(x, y, modulus) = modulus >= 2 && x < modulus && y < modulus
+
+
 @testcase "submod" begin
-    tp = UInt64
-    for i in 1:10000
-        modulus = rand(tp(2):typemax(tp))
-        x = rand(tp) % modulus
-        y = rand(tp) % modulus
-        ref = mod(BigInt(x) - BigInt(y), BigInt(modulus))
-        test = submod(x, y, modulus)
-        if ref != test
-            @test_fail "Incorrect result for $x - $y: got $test, expected $ref"
-            return
-        end
-    end
+    check_function_random(submod, submod_ref, 3, submod_args_filter)
 end
 
 
 @testcase tags=[:exhaustive] "submod, exhaustive" begin
-    tp = UInt4
-    for modulus in UInt4(2):typemax(tp)
-        for x in zero(UInt4):modulus-one(UInt4), y in zero(UInt4):modulus-one(UInt4)
-            ref = mod(BigInt(x) - BigInt(y), BigInt(modulus))
-            test = submod(x, y, modulus)
-            if ref != test
-                @test_fail "Incorrect result for $x - $y: got $test, expected $ref"
-                return
-            end
-        end
-    end
+    check_function_exhaustive(submod, submod_ref, 3, submod_args_filter)
 end
 
 
@@ -70,34 +36,17 @@ mulmod_funcs = [mulmod_bitshift, mulmod_modhilo, mulmod_widen, mulmod]
 mulmod_names = ["bitshift", "modhilo", "widen", "mulmod"]
 
 
+mulmod_ref(x, y, modulus) = mod(BigInt(x) * BigInt(y), BigInt(modulus))
+mulmod_args_filter(x, y, modulus) = modulus >= 2 && x < modulus && y < modulus
+
+
 @testcase "mulmod" for func in (mulmod_funcs => mulmod_names)
-    tp = UInt64
-    for i in 1:10000
-        modulus = rand(tp(2):typemax(tp))
-        x = rand(tp) % modulus
-        y = rand(tp) % modulus
-        ref = mod(BigInt(x) * BigInt(y), BigInt(modulus))
-        test = func(x, y, modulus)
-        if ref != test
-            @test_fail "Incorrect result for $x * $y: got $test, expected $ref"
-            return
-        end
-    end
+    check_function_random(func, mulmod_ref, 3, mulmod_args_filter)
 end
 
 
 @testcase tags=[:exhaustive] "mulmod, exhaustive" for func in (mulmod_funcs => mulmod_names)
-    tp = UInt4
-    for modulus in UInt4(2):typemax(tp)
-        for x in zero(UInt4):modulus-one(UInt4), y in zero(UInt4):modulus-one(UInt4)
-            ref = mod(BigInt(x) * BigInt(y), BigInt(modulus))
-            test = func(x, y, modulus)
-            if ref != test
-                @test_fail "Incorrect result for $x * $y: got $test, expected $ref"
-                return
-            end
-        end
-    end
+    check_function_exhaustive(func, mulmod_ref, 3, mulmod_args_filter)
 end
 
 

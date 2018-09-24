@@ -13,31 +13,12 @@ end
 
 
 @testcase "addhilo" begin
-    for i in 1:1000
-        x_hi = rand(UInt64)
-        x_lo = rand(UInt64)
-        y = rand(UInt64)
-        ref = addhilo_ref(x_hi, x_lo, y)
-        test = addhilo(x_hi, x_lo, y)
-        if ref != test
-            @test_fail "Incorrect result for ($x_hi, $x_lo) + $y: got $test, expected $ref"
-            return
-        end
-    end
+    check_function_random(addhilo, addhilo_ref, 3)
 end
 
 
 @testcase tags=[:exhaustive] "addhilo, exhaustive" begin
-    tp = UInt4
-    tp_range = typemin(tp):typemax(tp)
-    for x_hi in tp_range, x_lo in tp_range, y in tp_range
-        ref = addhilo_ref(x_hi, x_lo, y)
-        test = addhilo(x_hi, x_lo, y)
-        if ref != test
-            @test_fail "Incorrect result for ($x_hi, $x_lo) + $y: got $test, expected $ref"
-            return
-        end
-    end
+    check_function_exhaustive(addhilo, addhilo_ref, 3)
 end
 
 
@@ -52,29 +33,12 @@ mulhilo_names = ["same_type", "widemul", "mulhilo"]
 
 
 @testcase "mulhilo" for func in (mulhilo_funcs => mulhilo_names)
-    for i in 1:1000
-        x = rand(UInt64)
-        y = rand(UInt64)
-        ref = mulhilo_ref(x, y)
-        test = func(x, y)
-        if ref != test
-            @test_fail "Incorrect result for $x * $y: got $test, expected $ref"
-            return
-        end
-    end
+    check_function_random(func, mulhilo_ref, 2)
 end
 
 
 @testcase tags=[:exhaustive] "mulhilo, exhaustive" for func in (mulhilo_funcs => mulhilo_names)
-    tp = UInt4
-    for x in typemin(tp):typemax(tp), y in typemin(tp):typemax(tp)
-        ref = mulhilo_ref(x, y)
-        test = func(x, y)
-        if ref != test
-            @test_fail "Incorrect result for $x * $y: got $test, expected $ref"
-            return
-        end
-    end
+    check_function_exhaustive(func, mulhilo_ref, 2)
 end
 
 
@@ -90,114 +54,48 @@ end
 end
 
 
-function divhilo_ref(x_hi::T, x_lo::T, y::T) where T <: Unsigned
-    res = div((BigInt(x_lo) + BigInt(x_hi) * BigInt(1) << bitsizeof(T)), BigInt(y))
-    T(res)
-end
+division_args_filter(x_hi, x_lo, y) = y > 0 && x_hi < y
+
+
+divhilo_ref(x_hi::T, x_lo::T, y::T) where T <: Unsigned =
+    T(div((BigInt(x_lo) + BigInt(x_hi) * BigInt(1) << bitsizeof(T)), BigInt(y)))
 
 
 @testcase "divhilo" begin
-    tp = UInt64
-    for i in 1:1000
-        y = rand(one(tp):typemax(tp))
-        x_hi = rand(zero(tp):y-one(tp))
-        x_lo = rand(tp)
-        ref = divhilo_ref(x_hi, x_lo, y)
-        test = divhilo(x_hi, x_lo, y)
-        if ref != test
-            @test_fail "Incorrect result for div(($x_hi, $x_lo), $y): got $test, expected $ref"
-            return
-        end
-    end
+    check_function_random(divhilo, divhilo_ref, 3, division_args_filter)
 end
 
 
 @testcase tags=[:exhaustive] "divhilo, exhaustive" begin
-    tp = UInt4
-    for y in one(tp):typemax(tp)
-        for x_hi in zero(tp):y-one(tp), x_lo in typemin(tp):typemax(tp)
-            ref = divhilo_ref(x_hi, x_lo, y)
-            test = divhilo(x_hi, x_lo, y)
-            if ref != test
-                @test_fail "Incorrect result for div(($x_hi, $x_lo), $y): got $test, expected $ref"
-                return
-            end
-        end
-    end
+    check_function_exhaustive(divhilo, divhilo_ref, 3, division_args_filter)
 end
 
 
-function modhilo_ref(x_hi::T, x_lo::T, y::T) where T <: Unsigned
-    res = mod((BigInt(x_lo) + BigInt(x_hi) * BigInt(1) << bitsizeof(T)), BigInt(y))
-    T(res)
-end
+modhilo_ref(x_hi::T, x_lo::T, y::T) where T <: Unsigned =
+    T(mod((BigInt(x_lo) + BigInt(x_hi) * BigInt(1) << bitsizeof(T)), BigInt(y)))
 
 
 @testcase "modhilo" begin
-    tp = UInt64
-    for i in 1:1000
-        y = rand(one(tp):typemax(tp))
-        x_hi = rand(zero(tp):y-one(tp))
-        x_lo = rand(tp)
-        ref = modhilo_ref(x_hi, x_lo, y)
-        test = modhilo(x_hi, x_lo, y)
-        if ref != test
-            @test_fail "Incorrect result for mod(($x_hi, $x_lo), $y): got $test, expected $ref"
-            return
-        end
-    end
+    check_function_random(modhilo, modhilo_ref, 3, division_args_filter)
 end
 
 
 @testcase tags=[:exhaustive] "modhilo, exhaustive" begin
-    tp = UInt4
-    for y in one(tp):typemax(tp)
-        for x_hi in zero(tp):y-one(tp), x_lo in typemin(tp):typemax(tp)
-            ref = modhilo_ref(x_hi, x_lo, y)
-            test = modhilo(x_hi, x_lo, y)
-            if ref != test
-                @test_fail "Incorrect result for mod(($x_hi, $x_lo), $y): got $test, expected $ref"
-                return
-            end
-        end
-    end
+    check_function_exhaustive(modhilo, modhilo_ref, 3, division_args_filter)
 end
 
 
-function divremhilo_ref(x_hi::T, x_lo::T, y::T) where T <: Unsigned
-    d, r = divrem((BigInt(x_lo) + BigInt(x_hi) * BigInt(1) << bitsizeof(T)), BigInt(y))
-    T(d), T(r)
-end
+divremhilo_ref(x_hi::T, x_lo::T, y::T) where T <: Unsigned =
+    T.(divrem((BigInt(x_lo) + BigInt(x_hi) * BigInt(1) << bitsizeof(T)), BigInt(y)))
 
 
 @testcase "divremhilo" begin
-    tp = UInt64
-    for i in 1:1000
-        y = rand(one(tp):typemax(tp))
-        x_hi = rand(zero(tp):y-one(tp))
-        x_lo = rand(tp)
-        ref = divremhilo_ref(x_hi, x_lo, y)
-        test = divremhilo(x_hi, x_lo, y)
-        if ref != test
-            @test_fail "Incorrect result for mod(($x_hi, $x_lo), $y): got $test, expected $ref"
-            return
-        end
-    end
+    check_function_random(divremhilo, divremhilo_ref, 3, division_args_filter)
 end
 
 
 @testcase tags=[:exhaustive] "divremhilo, exhaustive" begin
-    tp = UInt4
-    for y in one(tp):typemax(tp)
-        for x_hi in zero(tp):y-one(tp), x_lo in typemin(tp):typemax(tp)
-            ref = divremhilo_ref(x_hi, x_lo, y)
-            test = divremhilo(x_hi, x_lo, y)
-            if ref != test
-                @test_fail "Incorrect result for mod(($x_hi, $x_lo), $y): got $test, expected $ref"
-                return
-            end
-        end
-    end
+    check_function_exhaustive(divremhilo, divremhilo_ref, 3, division_args_filter)
 end
 
 
