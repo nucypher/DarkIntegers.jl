@@ -125,7 +125,7 @@ end
     y_mp = mptp(y)
     m_mp = mptp(modulus)
 
-    trial = @benchmark mulmod_bitsfhit($x_mp, $y_mp, $m_mp)
+    trial = @benchmark mulmod_bitshift($x_mp, $y_mp, $m_mp)
     @test_result "2xUInt64, bitshift: " * benchmark_result(trial)
 
     trial = @benchmark mulmod_widemul($x_mp, $y_mp, $m_mp)
