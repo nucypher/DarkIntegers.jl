@@ -48,7 +48,7 @@ end
 
 
 mulmod_funcs = [mulmod_bitshift, mulmod_modhilo, mulmod_widemul, mulmod]
-mulmod_names = ["bitshift", "modhilo", "widen", "mulmod"]
+mulmod_names = ["bitshift", "modhilo", "widemul", "mulmod"]
 
 
 function mulmod_ref(x::T, y::T, modulus::T) where T <: Unsigned
@@ -84,7 +84,7 @@ end
     @test_result "modhilo: " * benchmark_result(trial)
 
     trial = @benchmark mulmod_widemul($x, $y, $modulus)
-    @test_result "widen: " * benchmark_result(trial)
+    @test_result "widemul: " * benchmark_result(trial)
 end
 
 
