@@ -45,17 +45,17 @@ end
 end
 
 
-Base.promote_type(::Type{MPNumber{N, T}}, ::Type{<:Integer}) where {N, T} = MPNumber{N, T}
-Base.promote_type(::Type{<:Integer}, ::Type{MPNumber{N, T}}) where {N, T} = MPNumber{N, T}
-Base.promote_type(::Type{MPNumber{N, T}}, ::Type{MPNumber{M, T}}) where {N, M, T} =
+@inline Base.promote_type(::Type{MPNumber{N, T}}, ::Type{<:Integer}) where {N, T} = MPNumber{N, T}
+@inline Base.promote_type(::Type{<:Integer}, ::Type{MPNumber{N, T}}) where {N, T} = MPNumber{N, T}
+@inline Base.promote_type(::Type{MPNumber{N, T}}, ::Type{MPNumber{M, T}}) where {N, M, T} =
     MPNumber{max(M, N), T}
 
 
 # We need this to correctly process arithmetic operations on MPNumber and Int
 # (which is signed and the default in Julia for number literals)
 # without defining specific methods for each operator.
-Base.signed(x::MPNumber{N, T}) where {N, T} = x
-Base.unsigned(x::MPNumber{N, T}) where {N, T} = x
+@inline Base.signed(x::MPNumber{N, T}) where {N, T} = x
+@inline Base.unsigned(x::MPNumber{N, T}) where {N, T} = x
 
 
 # Because MPNumber <: Unsigned, show() will be bypassed sometimes in favor of string()
