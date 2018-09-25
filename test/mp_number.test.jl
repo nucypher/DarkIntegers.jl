@@ -63,6 +63,34 @@ end
 end
 
 
+@testcase "creation/conversion/promotion" begin
+    xi = 12345
+    yi = 400
+
+    tp = MPNumber{2, UInt8}
+    modulus = 2^bitsizeof(tp)
+
+    x = MPNumber{2, UInt8}(xi)
+    y = MPNumber{2, UInt8}(yi)
+
+    @test x + y == mod(xi + yi, modulus)
+    @test x + 1 == mod(xi + 1, modulus)
+    @test 1 + x == mod(1 + xi, modulus)
+
+    @test x - y == mod(xi - yi, modulus)
+    @test x - 1 == mod(xi - 1, modulus)
+    @test 1 - x == mod(1 - xi, modulus)
+
+    @test x * y == mod(xi * yi, modulus)
+    @test x * 3 == mod(xi * 3, modulus)
+    @test 110 * x == mod(110 * xi, modulus)
+
+    @test x ÷ y == mod(xi ÷ yi, modulus)
+    @test x ÷ 3 == mod(xi ÷ 3, modulus)
+    @test 110 ÷ x == mod(110 ÷ xi, modulus)
+end
+
+
 @testcase tags=[:performance] "divrem performance, single limb divisor" for rng in fixed_rng
     mptp = MPNumber{2, UInt64}
 
