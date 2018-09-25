@@ -49,8 +49,8 @@ end
             result = addmod(result, x, modulus)
         end
 
-        x = double(x)
         t = x
+        x = double(x)
         if x < t || x >= modulus
             x = x - modulus
         end
