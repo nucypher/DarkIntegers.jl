@@ -34,7 +34,7 @@ end
 
 
 @inline Base.convert(::Type{MPNumber{N, T}}, x::MPNumber{N, T}) where {N, T} = x
-
+@inline Base.convert(::Type{MPNumber{N, T}}, x::MPNumber{M, T}) where {N, M, T} = MPNumber{N, T}(x)
 
 @inline function Base.convert(::Type{V}, x::MPNumber{N, T}) where {V <: Integer, N, T}
     res = zero(V)

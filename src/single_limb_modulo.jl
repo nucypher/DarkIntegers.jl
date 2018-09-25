@@ -69,7 +69,7 @@ end
 
 
 @inline function mulmod_widemul(x::T, y::T, modulus::T) where T <: Unsigned
-    T(mod(widemul(x, y), widen(T)(modulus)))
+    T(mod(widemul(x, y), convert(widen(T), modulus)))
 end
 
 
