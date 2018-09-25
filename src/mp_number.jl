@@ -284,8 +284,7 @@ function _sub_mul(x::MPNumber{N, T}, y::T, z::MPNumber{N, T}) where {N, T}
 end
 
 
-function divrem_single_limb(x::MPNumber{N, T}, n, y::T) where {N, T}
-    # assuming x[end] < y
+function divrem_single_limb(x::MPNumber{N, T}, y::T) where {N, T}
     r = zero(T)
     q = zero(MPNumber{N, T})
     for j in N-1:-1:0
@@ -313,7 +312,7 @@ function Base.divrem(x::MPNumber{N, T}, y::MPNumber{N, T}) where {N, T}
     end
 
     if t == 0
-        return divrem_single_limb(x, n, y[1])
+        return divrem_single_limb(x, y[1])
     end
 
     # TODO: can be replaced by `<` and `shift_limbs`
