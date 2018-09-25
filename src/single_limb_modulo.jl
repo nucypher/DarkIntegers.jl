@@ -26,6 +26,12 @@ end
 @inline isone(x::T) where T <: Real = one(T) === x
 
 
+@inline double(x::Unsigned) = x << 1
+
+
+@inline halve(x::Unsigned) = x >> 1
+
+
 @inline function mulmod_bitshift(x::T, y::T, modulus::T) where T <: Unsigned
 
     if iszero(x) || isone(y)
@@ -43,13 +49,13 @@ end
             result = addmod(result, x, modulus)
         end
 
-        # TODO: may be faster as addmod(x, x) for multiprecision numbers
+        x = double(x)
         t = x
-        x = x << 1
         if x < t || x >= modulus
             x = x - modulus
         end
-        y = y >> 1
+
+        y = halve(y)
     end
 
     return result
