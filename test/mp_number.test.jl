@@ -1,5 +1,5 @@
 using DarkIntegers
-using DarkIntegers: UInt4, _sub_mul
+using DarkIntegers: UInt4, _sub_mul, mulmod, mulmod_bitshift, mulmod_widemul
 
 
 @testgroup "multiprecision arithmetic" begin
@@ -88,6 +88,48 @@ end
     @test x ÷ y == mod(xi ÷ yi, modulus)
     @test x ÷ 3 == mod(xi ÷ 3, modulus)
     @test 110 ÷ x == mod(110 ÷ xi, modulus)
+end
+
+
+mulmod_funcs = [mulmod_bitshift, mulmod_widemul]
+mulmod_names = ["bitshift", "widemul"]
+
+
+function mulmod_ref(x::T, y::T, modulus::T) where T <: Unsigned
+    T2 = widen(T)
+    T(mod(T2(x) * T2(y), modulus))
+end
+
+
+modulo_args_filter(x, y, modulus) = modulus >= 2 && x < modulus && y < modulus
+
+
+@testcase "mulmod" for func in (mulmod_funcs => mulmod_names)
+    check_function_random(
+        MPNumber{4, UInt8}, func, mulmod_ref, 3;
+        args_filter_predicate=modulo_args_filter)
+end
+
+
+@testcase tags=[:performance] "mulmod performance" for rng in fixed_rng
+    mptp = MPNumber{2, UInt64}
+
+    modulus = UInt128(2)^80 + 1
+    x = rand(rng, UInt128(1):modulus-1)
+    y = rand(rng, UInt128(1):modulus-1)
+
+    trial = @benchmark mulmod($x, $y, $modulus)
+    @test_result "UInt128: " * benchmark_result(trial)
+
+    x_mp = mptp(x)
+    y_mp = mptp(y)
+    m_mp = mptp(modulus)
+
+    trial = @benchmark mulmod_bitsfhit($x_mp, $y_mp, $m_mp)
+    @test_result "2xUInt64, bitshift: " * benchmark_result(trial)
+
+    trial = @benchmark mulmod_widemul($x_mp, $y_mp, $m_mp)
+    @test_result "2xUInt64, widemul: " * benchmark_result(trial)
 end
 
 

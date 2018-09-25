@@ -18,6 +18,18 @@ struct MPNumber{N, T <: Unsigned} <: Unsigned
         end
         res
     end
+
+    @inline function MPNumber{N, T}(x::MPNumber{N, T}) where {N, T}
+        x
+    end
+
+    @inline function MPNumber{N, T}(x::MPNumber{M, T}) where {N, M, T}
+        res = zero(MPNumber{N, T})
+        for i in 1:min(N, M)
+            res = setindex(res, x[i], i)
+        end
+        res
+    end
 end
 
 
@@ -35,6 +47,8 @@ end
 
 Base.promote_type(::Type{MPNumber{N, T}}, ::Type{<:Integer}) where {N, T} = MPNumber{N, T}
 Base.promote_type(::Type{<:Integer}, ::Type{MPNumber{N, T}}) where {N, T} = MPNumber{N, T}
+Base.promote_type(::Type{MPNumber{N, T}}, ::Type{MPNumber{M, T}}) where {N, M, T} =
+    MPNumber{max(M, N), T}
 
 
 # We need this to correctly process arithmetic operations on MPNumber and Int
@@ -329,6 +343,7 @@ function Base.divrem(x::MPNumber{N, T}, y::MPNumber{N, T}) where {N, T}
         return divrem_single_limb(x, y[1])
     end
 
+    # TODO: use normalization to avoid long loops here
     while _ge_shift(x, y, n - t)
         q = setindex(q, q[n - t + 1] + one(T), n - t + 1)
         x = x - _shift_limbs(y, n - t)
@@ -364,6 +379,13 @@ end
 end
 
 
+@inline function Base.mod(x::MPNumber{N, T}, y::MPNumber{N, T}) where {N, T}
+    # TODO: is there a faster way?
+    d, r = divrem(x, y)
+    r
+end
+
+
 bitsizeof(::Type{MPNumber{N, T}}) where {N, T} = bitsizeof(T) * N
 
 
@@ -375,3 +397,61 @@ Base.length(x::MPNumber{N, T}) where {N, T} = 1
 
 Base.iterate(x::MPNumber{N, T}) where {N, T} = (x, nothing)
 Base.iterate(x::MPNumber{N, T}, state) where {N, T} = nothing
+
+
+# The following methods are needed for MPNumber to support mulmod_bitshift()
+
+
+@inline function double(x::MPNumber{N, T}) where {N, T}
+    msb = false
+    for i in 1:N
+        new_msb = leading_zeros(x[i]) == 0
+        x = setindex(x, (x[i] << 1) | ifelse(msb, one(T), zero(T)), i)
+        msb = new_msb
+    end
+    x
+end
+
+
+_msb(::Type{UInt4}) = UInt4(0x8)
+_msb(::Type{UInt8}) = UInt8(0x80)
+_msb(::Type{UInt16}) = UInt16(0x8000)
+_msb(::Type{UInt32}) = UInt32(0x80000000)
+_msb(::Type{UInt64}) = UInt64(0x8000000000000000)
+
+
+@inline function halve(x::MPNumber{N, T}) where {N, T}
+    lsb = false
+    for i in N:-1:1
+        new_lsb = trailing_zeros(x[i]) == 0
+        x = setindex(x, (x[i] >> 1) | ifelse(lsb, _msb(T), zero(T)), i)
+        lsb = new_lsb
+    end
+    x
+end
+
+
+# The following methods are needed for MPNumber to support mulmod_widemul()
+
+
+Base.widen(::Type{MPNumber{N, T}}) where {N, T} = MPNumber{N*2, T}
+
+
+function Base.widemul(x::MPNumber{N, T}, y::MPNumber{N, T}) where {N, T}
+    n = _most_significant_limb(x) - 1
+    t = _most_significant_limb(y) - 1
+    w = zero(MPNumber{N*2, T})
+    for i in 1:t+1
+        c = zero(T)
+        hi = zero(T)
+        for j in 1:n+1
+            hi, lo = mulhilo(x.value[j], y.value[i])
+            hi, lo = addhilo(hi, lo, c)
+            hi, lo = addhilo(hi, lo, w.value[i + j - 1])
+            w = setindex(w, lo, i + j - 1)
+            c = hi
+        end
+        w = setindex(w, c, i + n + 1)
+    end
+    w
+end
