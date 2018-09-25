@@ -47,7 +47,7 @@ end
 
 
 """
-Multiplication of unsigned integers returning a pair of (low bits, high bits).
+Multiplication of unsigned integers returning a pair of (high bits, low bits).
 """
 @inline function mulhilo_widemul(x::T, y::T) where T <: Unsigned
     # Works for the types for which `widemul()` is defined in the base library
