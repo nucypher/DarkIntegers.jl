@@ -11,13 +11,12 @@ function benchmark_result(trial)
 
     if trial.allocs > 0
         mem_str = prettymemory(trial.memory)
-        alloc_str = "$mem_str ($(trial.allocs) allocs)"
+        alloc_str = ", $mem_str ($(trial.allocs) allocs)"
     else
-        alloc_str = "no allocs"
+        alloc_str = ""
     end
 
-
-    "$time_str, $alloc_str"
+    time_str * alloc_str
 end
 
 
