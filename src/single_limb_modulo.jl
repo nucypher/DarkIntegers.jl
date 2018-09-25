@@ -68,14 +68,12 @@ end
 end
 
 
-@inline function mulmod_widen(x::T, y::T, modulus::T) where T <: Unsigned
-    hi, lo = mulhilo(x, y)
-    TT = widen(T)
-    T(mod(convert(TT, lo) + convert(TT, hi) << bitsizeof(T), modulus))
+@inline function mulmod_widemul(x::T, y::T, modulus::T) where T <: Unsigned
+    T(mod(widemul(x, y), widen(T)(modulus)))
 end
 
 
 @inline mulmod(x::T, y::T, modulus::T) where T <: Unsigned =
-    mulmod_widen(x, y, modulus)
+    mulmod_widemul(x, y, modulus)
 @inline mulmod(x::T, y::T, modulus::T) where T <: Union{UInt64, UInt128} =
     mulmod_bitshift(x, y, modulus)

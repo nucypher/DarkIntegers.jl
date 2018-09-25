@@ -1,4 +1,4 @@
-using DarkIntegers: UInt4, addmod, submod, mulmod, mulmod_bitshift, mulmod_modhilo, mulmod_widen
+using DarkIntegers: UInt4, addmod, submod, mulmod, mulmod_bitshift, mulmod_modhilo, mulmod_widemul
 
 
 @testgroup "single limb modulo arithmetic" begin
@@ -47,7 +47,7 @@ end
 end
 
 
-mulmod_funcs = [mulmod_bitshift, mulmod_modhilo, mulmod_widen, mulmod]
+mulmod_funcs = [mulmod_bitshift, mulmod_modhilo, mulmod_widemul, mulmod]
 mulmod_names = ["bitshift", "modhilo", "widen", "mulmod"]
 
 
@@ -83,7 +83,7 @@ end
     trial = @benchmark mulmod_modhilo($x, $y, $modulus)
     @test_result "modhilo: " * benchmark_result(trial)
 
-    trial = @benchmark mulmod_widen($x, $y, $modulus)
+    trial = @benchmark mulmod_widemul($x, $y, $modulus)
     @test_result "widen: " * benchmark_result(trial)
 end
 
