@@ -329,7 +329,6 @@ function Base.divrem(x::MPNumber{N, T}, y::MPNumber{N, T}) where {N, T}
         return divrem_single_limb(x, y[1])
     end
 
-    # TODO: can be replaced by `<` and `shift_limbs`
     while _ge_shift(x, y, n - t)
         q = setindex(q, q[n - t + 1] + one(T), n - t + 1)
         x = x - _shift_limbs(y, n - t)
