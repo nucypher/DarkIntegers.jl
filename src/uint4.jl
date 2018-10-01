@@ -41,6 +41,7 @@ Base.:+(x::UInt4, y::UInt4) = UInt4(x.value + y.value)
 
 
 Base.:-(x::UInt4, y::UInt4) = UInt4(x.value - y.value)
+Base.:-(x::UInt4) = zero(UInt4) - x
 
 
 Base.:*(x::UInt4, y::UInt4) = UInt4(x.value * y.value)
