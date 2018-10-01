@@ -64,15 +64,22 @@ end
 @inline mulhilo(x::UInt128, y::UInt128) = mulhilo_same_type(x, y)
 
 
+# Divide typemax(T)+1 over `x`
+@inline function _div_max_by(x::T) where T
+    d, r = divrem(typemax(T), x)
+    r += one(T)
+    if r == 0
+        d += one(T)
+    end
+    d, r
+end
+
+
 @inline function divhilo(x_hi::T, x_lo::T, y::T) where T <: Unsigned
     # Assuming x_hi < y, otherwise the overflow will be ignored
     res = zero(T)
 
-    a, alpha = divrem(typemax(T), y)
-    alpha += one(T)
-    if alpha == 0
-        a += one(T)
-    end
+    a, alpha = _div_max_by(y)
     c, gamma = divrem(x_lo, y)
     res += x_hi * a + c
 
