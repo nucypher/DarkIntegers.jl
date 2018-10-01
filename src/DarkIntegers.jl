@@ -10,4 +10,6 @@ export MPNumber
 include("residue_ring.jl")
 export RRElem
 
+include("montgomery_reduction.jl")
+
 end
