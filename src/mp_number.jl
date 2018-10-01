@@ -455,3 +455,7 @@ function Base.widemul(x::MPNumber{N, T}, y::MPNumber{N, T}) where {N, T}
     end
     w
 end
+
+
+@inline mulmod(x::MPNumber{N, T}, y::MPNumber{N, T}, modulus::MPNumber{N, T}) where {N, T} =
+    mulmod_widemul(x, y, modulus)
