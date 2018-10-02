@@ -12,4 +12,7 @@ export RRElem
 
 include("montgomery_reduction.jl")
 
+include("residue_ring_montgomery.jl")
+export RRElemMontgomery
+
 end
