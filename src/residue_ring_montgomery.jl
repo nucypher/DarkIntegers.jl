@@ -8,19 +8,19 @@ struct RRElemMontgomery{T, M} <: AbstractRRElem
 
     value :: T
 
-    @inline function RRElemMontgomery(x::T, m::T, ::_NoConversion) where T
+    @inline function RRElemMontgomery(x::T, m::T, ::_NoConversion) where T <: Unsigned
         new{T, m}(x)
     end
 
-    @inline function RRElemMontgomery(x::T, m::T) where T
+    @inline function RRElemMontgomery(x::T, m::T) where T <: Unsigned
         RRElemMontgomery(to_montgomery(RRElemMontgomery{T, m}, x), m, _no_conversion)
     end
 
-    @inline function RRElemMontgomery(x::RRElem{T, M}) where {T, M}
+    @inline function RRElemMontgomery(x::RRElem{T, M}) where {T <: Unsigned, M}
         RRElemMontgomery(x.value, M)
     end
 
-    @inline function RRElemMontgomery{T, M}(x::Integer) where {T, M}
+    @inline function RRElemMontgomery{T, M}(x::Unsigned) where {T <: Unsigned, M}
         RRElemMontgomery(mod(convert(T, x), M), M)
     end
 
