@@ -26,6 +26,9 @@ using DarkIntegers
     @test x ÷ 3 == 33
     @test 110 ÷ x == 1
 
+    # check that negative integers are processed correctly:
+    # first the modulus is taken, and only then they are converted to the target unsigned type.
+    @test RRElemMontgomery{T, modulus}(-10) == 167
 end
 
 
