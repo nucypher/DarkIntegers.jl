@@ -27,7 +27,7 @@ end
 # Is there a better way? Technically, this shouldn't be used at all - it's the constructor's job.
 @inline Base.convert(::Type{RRElem{T, M}}, x::MPNumber) where {T, M} = RRElem(x, M)
 @inline Base.convert(::Type{RRElem{T, M}}, x::RRElem{T, M}) where {T, M} = x
-@inline Base.convert(::Type{<:Integer}, x::RRElem{T, M}) where {T, M} = convert(V, x.value)
+@inline Base.convert(::Type{V}, x::RRElem{T, M}) where {V <: Integer, T, M} = convert(V, x.value)
 
 
 @inline Base.promote_type(::Type{RRElem{T, M}}, ::Type{<:Integer}) where {T, M} = RRElem{T, M}
