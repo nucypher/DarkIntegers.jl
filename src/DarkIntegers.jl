@@ -15,4 +15,7 @@ include("montgomery_reduction.jl")
 include("residue_ring_montgomery.jl")
 export RRElemMontgomery
 
+include("polynomial.jl")
+export Polynomial
+
 end
