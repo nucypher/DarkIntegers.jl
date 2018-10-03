@@ -18,4 +18,6 @@ export RRElemMontgomery
 include("polynomial.jl")
 export Polynomial
 
+include("misc.jl")
+
 end
