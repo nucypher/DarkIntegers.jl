@@ -20,4 +20,6 @@ export Polynomial
 
 include("misc.jl")
 
+include("ntt.jl")
+
 end
