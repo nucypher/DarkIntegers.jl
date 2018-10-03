@@ -130,15 +130,29 @@ end
 end
 
 
-@inline function Base.:^(x::T, y::Unsigned) where T <: AbstractRRElem
-    # TODO: optimize
-    res = one(T)
+@inline function _power(x::T, y::Integer) where T
     @assert y >= 0
-    for i in 1:y
-        res *= x
+    if y == 0
+        one(T)
+    elseif y == 1
+        x
+    else
+        acc = one(T)
+        while y > 1
+            if isodd(y)
+                acc *= x
+            end
+            x *= x
+            y >>= 1
+        end
+        x * acc
     end
-    res
 end
+
+
+# Prevents ^(Integer, BigInt) from the standard library to get called
+@inline Base.:^(x::AbstractRRElem, y::Integer) = _power(x, y)
+@inline Base.:^(x::AbstractRRElem, y::BigInt) = _power(x, y)
 
 
 @inline Base.:<(x::RRElem{T, M}, y::RRElem{T, M}) where {T, M} = x.value < y.value
