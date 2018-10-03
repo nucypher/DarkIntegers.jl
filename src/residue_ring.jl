@@ -41,7 +41,10 @@ end
 @inline Base.unsigned(x::RRElem{T, M}) where {T, M} = x
 
 
+# Unlike `one(x)`, `zero(x)` does not have a fallback `= zero(typeof(x))` in the standard library
+# and uses conversion instead. So we are defining our own.
 @inline Base.zero(::Type{RRElem{T, M}}) where {T, M} = RRElem(zero(T), M)
+@inline Base.zero(::RRElem{T, M}) where {T, M} = zero(RRElem{T, M})
 
 
 @inline Base.one(::Type{RRElem{T, M}}) where {T, M} = RRElem(one(T), M)

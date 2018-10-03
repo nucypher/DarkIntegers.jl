@@ -83,9 +83,12 @@ end
 @inline Base.unsigned(x::RRElemMontgomery{T, M}) where {T, M} = x
 
 
-
+# Unlike `one(x)`, `zero(x)` does not have a fallback `= zero(typeof(x))` in the standard library
+# and uses conversion instead. So we are defining our own.
 @inline Base.zero(::Type{RRElemMontgomery{T, M}}) where {T, M} =
     RRElemMontgomery(zero(T), M, _no_conversion)
+@inline Base.zero(::RRElemMontgomery{T, M}) where {T, M} =
+    zero(RRElemMontgomery{T, M})
 
 
 @inline Base.one(::Type{RRElemMontgomery{T, M}}) where {T, M} =
