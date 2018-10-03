@@ -89,7 +89,7 @@ end
 
 
 @inline Base.one(::Type{RRElemMontgomery{T, M}}) where {T, M} =
-    RRElemMontgomery(one(T), M, _no_conversion)
+    RRElemMontgomery(one(T), M)
 
 
 @inline function Base.:+(x::RRElemMontgomery{T, M}, y::RRElemMontgomery{T, M}) where {T, M}
