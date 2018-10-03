@@ -50,7 +50,9 @@ end
 
 # TODO: it's completely generic, so the main `shift` implementation
 # can be just made to accept anything array-like
-function reference_poly_shift(p::Array{BigInt, 1}, modulus::BigInt, negacyclic::Bool, shift::Integer)
+function reference_poly_shift(
+        p::Array{BigInt, 1}, modulus::BigInt, negacyclic::Bool, shift::Integer)
+
     if shift == 0
         p
     else
@@ -73,7 +75,9 @@ function reference_poly_shift(p::Array{BigInt, 1}, modulus::BigInt, negacyclic::
 end
 
 
-function reference_poly_mul(p1::Array{BigInt, 1}, p2::Array{BigInt, 1}, modulus::BigInt, negacyclic::Bool)
+function reference_poly_mul(
+        p1::Array{BigInt, 1}, p2::Array{BigInt, 1}, modulus::BigInt, negacyclic::Bool)
+
     res = zeros(eltype(p1), length(p1))
     for (j, c) in enumerate(p1)
         res = res + reference_poly_shift(p2, modulus, negacyclic, j - 1) * c
