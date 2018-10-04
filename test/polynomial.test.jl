@@ -1,6 +1,6 @@
 using DarkIntegers:
     shift_polynomial,
-    reference_mul, fast_reference_mul, karatsuba_mul
+    reference_mul, fast_reference_mul, karatsuba_mul, ntt_mul
 
 
 @testgroup "polynomials" begin
@@ -89,7 +89,8 @@ end
 @testcase "multiplication" begin
 
     negacyclic = true
-    modulus = BigInt(1) << 80 + 1
+    # A prime slightly greater than 2^80, and (modulus - 1) is a multiple of 64 (required for NTT)
+    modulus = BigInt(1440321777275241790996481)
     p1_ref = BigInt.(rand(UInt128, 64)) .% modulus
     p2_ref = BigInt.(rand(UInt128, 64)) .% modulus
 
@@ -104,17 +105,20 @@ end
     test1 = reference_mul(p1, p2)
     test2 = fast_reference_mul(p1, p2)
     test3 = karatsuba_mul(p1, p2)
+    test4 = ntt_mul(p1, p2)
 
     @test ref == convert.(BigInt, test1.coeffs)
     @test ref == convert.(BigInt, test2.coeffs)
     @test ref == convert.(BigInt, test3.coeffs)
+    @test ref == convert.(BigInt, test4.coeffs)
 end
 
 
 @testcase tags=[:performance] "multiplication, performance" begin
 
     negacyclic = true
-    modulus = BigInt(1) << 80 + 1
+    # A prime slightly greater than 2^80, and (modulus - 1) is a multiple of 64 (required for NTT)
+    modulus = BigInt(1440321777275241790996481)
     p1_ref = BigInt.(rand(UInt128, 64)) .% modulus
     p2_ref = BigInt.(rand(UInt128, 64)) .% modulus
 
@@ -130,6 +134,9 @@ end
 
     trial = @benchmark karatsuba_mul($p1, $p2)
     @test_result "Karatsuba: " * benchmark_result(trial)
+
+    trial = @benchmark ntt_mul($p1, $p2)
+    @test_result "NTT: " * benchmark_result(trial)
 
 end
 

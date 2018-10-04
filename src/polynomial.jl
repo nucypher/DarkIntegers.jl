@@ -245,3 +245,17 @@ end
     Polynomial(r0, p1.negacyclic)
 end
 
+
+# Multiplication of negacyclic polynomials based on tangent NTT
+# TODO: add support for posicyclic polynomials, using regular NTT
+function ntt_mul(p1::Polynomial{T}, p2::Polynomial{T}) where T
+    @assert p1.negacyclic && p2.negacyclic
+    plan = get_ntt_plan(T, length(p1), true)
+    c1 = copy(p1.coeffs)
+    ntt!(plan, c1, false)
+    c2 = copy(p2.coeffs)
+    ntt!(plan, c2, false)
+    c1 .*= c2
+    ntt!(plan, c1, true)
+    Polynomial(c1, true)
+end
