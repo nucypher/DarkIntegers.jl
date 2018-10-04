@@ -6,7 +6,8 @@ struct Polynomial{T}
     coeffs :: Array{T, 1}
     negacyclic :: Bool
 
-    function Polynomial(::Type{T}, coeffs::AbstractArray{V, 1}, negacyclic) where T where V <: Integer
+    function Polynomial(
+            ::Type{T}, coeffs::AbstractArray{V, 1}, negacyclic) where T where V <: Integer
         coeffs_rm = T.(coeffs)
         new{T}(coeffs_rm, negacyclic)
     end
@@ -137,7 +138,9 @@ function reference_mul(p1::Polynomial{T}, p2::Polynomial{T}) where T
 end
 
 
-@Base.propagate_inbounds @inline function fast_reference_mul(p1::Polynomial{T}, p2::Polynomial{T}) where T
+@Base.propagate_inbounds @inline function fast_reference_mul(
+        p1::Polynomial{T}, p2::Polynomial{T}) where T
+
     res = zeros(T, length(p1))
 
     for j in 1:length(p1)
@@ -204,7 +207,8 @@ end
 end
 
 
-@Base.propagate_inbounds @inline function karatsuba_mul(p1::Polynomial{T}, p2::Polynomial{T}) where T
+@Base.propagate_inbounds @inline function karatsuba_mul(
+        p1::Polynomial{T}, p2::Polynomial{T}) where T
 
     full_len = length(p1)
     half_len = div(length(p1), 2)
