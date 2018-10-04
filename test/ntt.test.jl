@@ -28,10 +28,11 @@ end
 
 
 @testcase "correctness" for tp in (UInt64, MPNumber{2, UInt32}), rr_tp in (RRElem, RRElemMontgomery)
+
     len = 8
 
     m = UInt64(1) - UInt64(2)^32 # 2^64 - 2^32 + 1 - a prime number
-    a = UInt64.(0:7) # rand(UInt64, len) .% m
+    a = UInt64.(0:len-1) # rand(UInt64, len) .% m
 
     m_tp = tp(m)
 
