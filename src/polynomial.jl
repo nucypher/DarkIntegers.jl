@@ -152,27 +152,6 @@ end
 end
 
 
-@Base.propagate_inbounds @inline function fast_reference_mul(
-        p1::Polynomial{T}, p2::Polynomial{T}) where T
-
-    res = zeros(T, length(p1))
-
-    for j in 1:length(p1)
-        c = p1.coeffs[j]
-
-        cc = p1.negacyclic ? -c : c
-        for k in 1:j-1
-            res[k] += p2.coeffs[end-j+1+k] * cc
-        end
-        for k in j:length(p1)
-            res[k] += p2.coeffs[k-j+1] * c
-        end
-
-    end
-    Polynomial(res, p1.negacyclic, p1.mul_function)
-end
-
-
 @inline function mul_with_overflow(l, res, res_s, p1, p1_s, p2, p2_s)
     @simd for j in 1:l
         for k in 1:l

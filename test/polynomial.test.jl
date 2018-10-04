@@ -1,4 +1,4 @@
-using DarkIntegers: shift_polynomial, fast_reference_mul, karatsuba_mul, ntt_mul
+using DarkIntegers: shift_polynomial, karatsuba_mul, ntt_mul
 
 
 @testgroup "polynomials" begin
@@ -46,44 +46,6 @@ end
 end
 
 
-# TODO: it's completely generic, so the main `shift` implementation
-# can be just made to accept anything array-like
-function reference_poly_shift(
-        p::Array{BigInt, 1}, modulus::BigInt, negacyclic::Bool, shift::Integer)
-
-    if shift == 0
-        p
-    else
-        cycle = mod(fld(shift, length(p)), 2)
-        shift = mod(shift, length(p))
-
-        if cycle == 1 && negacyclic
-            coeffs = modulus .- p
-        else
-            coeffs = p
-        end
-
-        new_coeffs = circshift(coeffs, shift)
-
-        if negacyclic
-            new_coeffs[1:shift] .= modulus .- new_coeffs[1:shift]
-        end
-        new_coeffs
-    end
-end
-
-
-function reference_poly_mul(
-        p1::Array{BigInt, 1}, p2::Array{BigInt, 1}, modulus::BigInt, negacyclic::Bool)
-
-    res = zeros(eltype(p1), length(p1))
-    for (j, c) in enumerate(p1)
-        res = res + reference_poly_shift(p2, modulus, negacyclic, j - 1) * c
-    end
-    res .% modulus
-end
-
-
 function reference_mul(p1::Polynomial{T}, p2::Polynomial{T}) where T
     res = Polynomial(zeros(T, length(p1)), p1.negacyclic, p1.mul_function)
     for (j, c) in enumerate(p1.coeffs)
@@ -108,16 +70,12 @@ end
     p1 = Polynomial(mtp, p1_ref, negacyclic)
     p2 = Polynomial(mtp, p2_ref, negacyclic)
 
-    ref = reference_poly_mul(p1_ref, p2_ref, modulus, negacyclic)
-    test1 = reference_mul(p1, p2)
-    test2 = fast_reference_mul(p1, p2)
-    test3 = karatsuba_mul(p1, p2)
-    test4 = ntt_mul(p1, p2)
+    ref = reference_mul(p1, p2)
+    test1 = karatsuba_mul(p1, p2)
+    test2 = ntt_mul(p1, p2)
 
-    @test ref == convert.(BigInt, test1.coeffs)
-    @test ref == convert.(BigInt, test2.coeffs)
-    @test ref == convert.(BigInt, test3.coeffs)
-    @test ref == convert.(BigInt, test4.coeffs)
+    @test ref == test1
+    @test ref == test2
 end
 
 
@@ -167,9 +125,6 @@ end
 
     p1 = Polynomial(mtp, p1_ref, negacyclic)
     p2 = Polynomial(mtp, p2_ref, negacyclic)
-
-    trial = @benchmark fast_reference_mul($p1, $p2)
-    @test_result "naive: " * benchmark_result(trial)
 
     trial = @benchmark karatsuba_mul($p1, $p2)
     @test_result "Karatsuba: " * benchmark_result(trial)
