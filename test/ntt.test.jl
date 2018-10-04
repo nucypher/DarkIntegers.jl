@@ -1,6 +1,6 @@
 using DarkIntegers:
-    fft_generic, AbstractRRElem, rr_modulus, ff_inverse, get_root, get_twiddle_base,
-    get_inverse_coeff
+    AbstractRRElem, rr_modulus, ff_inverse, get_root, get_twiddle_base,
+    get_inverse_coeff, ntt
 
 
 @testgroup "NTT" begin
@@ -39,8 +39,8 @@ end
     af_ref = reference_dft(a_rr, false)
     a_back_ref = reference_dft(af_ref, true)
 
-    af = fft_generic(a_rr, false)
-    a_back = fft_generic(af, true)
+    af = ntt(a_rr, false)
+    a_back = ntt(af, true)
 
     @test af == af_ref
     @test a_back == a_back_ref
