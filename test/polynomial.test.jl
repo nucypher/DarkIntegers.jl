@@ -1,6 +1,4 @@
-using DarkIntegers:
-    shift_polynomial,
-    reference_mul, fast_reference_mul, karatsuba_mul, ntt_mul
+using DarkIntegers: shift_polynomial, fast_reference_mul, karatsuba_mul, ntt_mul
 
 
 @testgroup "polynomials" begin
@@ -86,6 +84,15 @@ function reference_poly_mul(
 end
 
 
+function reference_mul(p1::Polynomial{T}, p2::Polynomial{T}) where T
+    res = Polynomial(zeros(T, length(p1)), p1.negacyclic, p1.mul_function)
+    for (j, c) in enumerate(p1.coeffs)
+        res = res + shift_polynomial(p2, j - 1) * c
+    end
+    res
+end
+
+
 @testcase "multiplication" begin
 
     negacyclic = true
@@ -114,6 +121,38 @@ end
 end
 
 
+choice_types = [
+    # regular multiplication
+    UInt16,
+    # modulus is not prime - Karatsuba multiplication
+    RRElemMontgomery{UInt8, UInt8(95)},
+    # modulus is prime, but modulus-1 is not a multiple of 2*32 - use Karatsuba
+    RRElemMontgomery{UInt8, UInt8(97)},
+    # modulus is prime, modulus-1 is a multiple of 2*32 - can use NTT for polynomials of size 64
+    RRElem{UInt8, UInt8(193)}
+]
+
+
+@testcase "multiplication choice" for tp in choice_types
+
+    if tp <: AbstractRRElem
+        max_val = Int(DarkIntegers.rr_modulus(tp))
+    else
+        max_val = 256
+    end
+
+    len = 32
+    negacyclic = true
+    p1 = Polynomial(tp, mod.(rand(Int, len), max_val), negacyclic)
+    p2 = Polynomial(tp, mod.(rand(Int, len), max_val), negacyclic)
+
+    p = p1 * p2
+    ref = reference_mul(p1, p2)
+
+    @test ref == p
+end
+
+
 @testcase tags=[:performance] "multiplication, performance" begin
 
     negacyclic = true
@@ -137,6 +176,9 @@ end
 
     trial = @benchmark ntt_mul($p1, $p2)
     @test_result "NTT: " * benchmark_result(trial)
+
+    trial = @benchmark $p1 * $p2
+    @test_result "default: " * benchmark_result(trial)
 
 end
 

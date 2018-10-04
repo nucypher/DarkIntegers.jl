@@ -1,3 +1,23 @@
+using Primes: isprime
+
+
+@inline @generated function _get_polynomial_mul_function(::Type{T}, ::Val{N}) where {T, N}
+    if T <: AbstractRRElem
+        m = rr_modulus_simple(T)
+        # Regular NTT needs (m - 1) to be a multiple of N,
+        # tangent NTT (for negacyclic polynomials) needs it to be a multiple of 2N.
+        # TODO: when ntt_mul() supports posicyclic polynomials too, reflect it in the condition.
+        if rem(m - 1, 2 * N) == 0 && isprime(m)
+            :( ntt_mul )
+        else
+            :( karatsuba_mul )
+        end
+    else
+        :( karatsuba_mul )
+    end
+end
+
+
 """
 Polynomials modulo `x^n+1`.
 The element type can be a modulo number (as long as it has arithmetic operators defined for it).
@@ -5,15 +25,18 @@ The element type can be a modulo number (as long as it has arithmetic operators 
 struct Polynomial{T}
     coeffs :: Array{T, 1}
     negacyclic :: Bool
+    mul_function :: Function
 
     function Polynomial(
             ::Type{T}, coeffs::AbstractArray{V, 1}, negacyclic) where T where V <: Integer
         coeffs_rm = T.(coeffs)
-        new{T}(coeffs_rm, negacyclic)
+        len = length(coeffs)
+        mul_function = _get_polynomial_mul_function(T, Val(len))
+        new{T}(coeffs_rm, negacyclic, mul_function)
     end
 
     function Polynomial(coeffs::Array{T, 1}, negacyclic) where T
-        new{T}(coeffs, negacyclic)
+        new{T}(coeffs, negacyclic, mul_function)
     end
 end
 
@@ -35,8 +58,8 @@ end
 
 
 function Base.:*(p1::Polynomial{T}, p2::Polynomial{T}) where T
-    karatsuba_mul(p1, p2)
-    #fast_reference_mul(p1.coeffs, p2.coeffs)
+    # TODO: check that length(p1) == length(p2)?
+    p1.mul_function(p1, p2)
 end
 
 Base.:*(p1::Polynomial, p2::ZeroPolynomial) = ZeroPolynomial()
@@ -44,11 +67,11 @@ Base.:*(p1::ZeroPolynomial, p2::Polynomial) = ZeroPolynomial()
 
 
 function Base.:*(p1::Polynomial{T}, p2::Integer) where T
-    Polynomial(p1.coeffs .* convert(T, p2), p1.negacyclic)
+    Polynomial(p1.coeffs .* convert(T, p2), p1.negacyclic, p1.mul_function)
 end
 
 function Base.:*(p1::Polynomial{T}, p2::V) where T where V
-    Polynomial(p1.coeffs .* convert(T, p2), p1.negacyclic)
+    Polynomial(p1.coeffs .* convert(T, p2), p1.negacyclic, p1.mul_function)
 end
 
 
@@ -57,28 +80,28 @@ function Base.:*(p1::Integer, p2::Polynomial)
 end
 
 function Base.:*(p1::Polynomial{T}, p2::T) where T
-    Polynomial(p1.coeffs .* p2, p1.negacyclic)
+    Polynomial(p1.coeffs .* p2, p1.negacyclic, p1.mul_function)
 end
 
 
 function Base.:+(p1::Polynomial{T}, p2::Polynomial{T}) where T
-    Polynomial(p1.coeffs .+ p2.coeffs, p1.negacyclic)
+    Polynomial(p1.coeffs .+ p2.coeffs, p1.negacyclic, p1.mul_function)
 end
 
 function Base.:+(p1::Polynomial{T}, p2::T) where T
     coeffs = copy(p1.coeffs)
     coeffs[1] += p2
-    Polynomial(coeffs, p1.negacyclic)
+    Polynomial(coeffs, p1.negacyclic, p1.mul_function)
 end
 
 
 function Base.:-(p1::Polynomial{T}, p2::Polynomial{T}) where T
-    Polynomial(p1.coeffs .- p2.coeffs, p1.negacyclic)
+    Polynomial(p1.coeffs .- p2.coeffs, p1.negacyclic, p1.mul_function)
 end
 
 
 function Base.:-(p1::Polynomial{T}, p2::Unsigned) where T
-    Polynomial(p1.coeffs .- T(p2), p1.negacyclic)
+    Polynomial(p1.coeffs .- T(p2), p1.negacyclic, p1.mul_function)
 end
 
 
@@ -87,19 +110,20 @@ Base.:-(p1::Polynomial, p2::ZeroPolynomial) = p1
 
 with_modulus(p::Polynomial{T}, new_modulus::V) where T where V =
     # TODO: technically, we need to only convert the modulus from Integer once
-    Polynomial(with_modulus.(p.coeffs, new_modulus), p.negacyclic)
+    Polynomial(with_modulus.(p.coeffs, new_modulus), p.negacyclic, p1.mul_function)
 
 
 function with_length(p::Polynomial{T}, new_length::Integer) where T
     @assert new_length >= length(p)
-    Polynomial([p.coeffs; zeros(eltype(p.coeffs), new_length - length(p))], p.negacyclic)
+    Polynomial(
+        [p.coeffs; zeros(eltype(p.coeffs), new_length - length(p))], p.negacyclic, p1.mul_function)
 end
 
 
 
 function modulus_reduction(p::Polynomial{T}, new_modulus::Unsigned) where T
     # TODO: technically, we need to only convert the modulus from Integer once
-    Polynomial(modulus_reduction.(p.coeffs, new_modulus), p.negacyclic)
+    Polynomial(modulus_reduction.(p.coeffs, new_modulus), p.negacyclic, p1.mul_function)
 end
 
 
@@ -123,18 +147,8 @@ end
             new_coeffs[j] = global_neg ? -coeffs[j-shift] : coeffs[j-shift]
         end
 
-        Polynomial(new_coeffs, p.negacyclic)
+        Polynomial(new_coeffs, p.negacyclic, p.mul_function)
     end
-end
-
-
-
-function reference_mul(p1::Polynomial{T}, p2::Polynomial{T}) where T
-    res = Polynomial(zeros(T, length(p1)), p1.negacyclic)
-    for (j, c) in enumerate(p1.coeffs)
-        res = res + shift_polynomial(p2, j - 1) * c
-    end
-    res
 end
 
 
@@ -155,7 +169,7 @@ end
         end
 
     end
-    Polynomial(res, p1.negacyclic)
+    Polynomial(res, p1.negacyclic, p1.mul_function)
 end
 
 
@@ -246,7 +260,7 @@ end
         r0[i] -= r2[i]
     end
 
-    Polynomial(r0, p1.negacyclic)
+    Polynomial(r0, p1.negacyclic, p1.mul_function)
 end
 
 
@@ -261,5 +275,5 @@ function ntt_mul(p1::Polynomial{T}, p2::Polynomial{T}) where T
     ntt!(plan, c2, false)
     c1 .*= c2
     ntt!(plan, c1, true)
-    Polynomial(c1, true)
+    Polynomial(c1, true, p1.mul_function)
 end
