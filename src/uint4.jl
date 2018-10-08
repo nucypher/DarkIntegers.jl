@@ -50,6 +50,9 @@ Base.:*(x::UInt4, y::UInt4) = UInt4(x.value * y.value)
 Base.:&(x::UInt4, y::UInt4) = UInt4(x.value & y.value)
 
 
+Base.:|(x::UInt4, y::UInt4) = UInt4(x.value | y.value)
+
+
 Base.:<<(x::UInt4, shift::Int) = UInt4(x.value << shift)
 
 

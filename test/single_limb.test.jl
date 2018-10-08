@@ -1,6 +1,6 @@
 using DarkIntegers:
     UInt4, addhilo, mulhilo, mulhilo_widemul, mulhilo_same_type, bitsizeof,
-    divhilo, modhilo, divremhilo
+    divhilo, modhilo, divremhilo, divremhilo_widen, divremhilo_same_type
 
 
 @testgroup "single limb arithmetic" begin
@@ -56,14 +56,31 @@ end
 end
 
 
-division_args_filter(x_hi, x_lo, y) = y > 0 && x_hi < y
+division_args_filter(x_hi, x_lo, y) = y > 0
+
+
+function divremhilo_ref(bitsize, x_hi::T, x_lo::T, y::T) where T <: Unsigned
+    T2 = widen(T)
+    x = T2(x_lo) + T2(x_hi) << bitsize
+    q, r = divrem(x, y)
+    T(q & typemax(T)), T(r), q >= (one(T2) << bitsize)
+end
 
 
 function divhilo_ref(bitsize, x_hi::T, x_lo::T, y::T) where T <: Unsigned
-    T2 = widen(T)
-    x = T2(x_lo) + T2(x_hi) << bitsize
-    T(div(x, y))
+    q, r, o = divremhilo_ref(bitsize, x_hi, x_lo, y)
+    q, o
 end
+
+
+function modhilo_ref(bitsize, x_hi::T, x_lo::T, y::T) where T <: Unsigned
+    q, r, o = divremhilo_ref(bitsize, x_hi, x_lo, y)
+    r
+end
+
+
+divremhilo_funcs = [divremhilo_same_type, divremhilo_widen, divremhilo]
+divremhilo_names = ["same_type", "widen", "divremhilo"]
 
 
 @testcase "divhilo" begin
@@ -77,13 +94,6 @@ end
     check_function_exhaustive(
         UInt4, divhilo, divhilo_ref, 3;
         args_filter_predicate=division_args_filter, ref_needs_bitsize=true)
-end
-
-
-function modhilo_ref(bitsize, x_hi::T, x_lo::T, y::T) where T <: Unsigned
-    T2 = widen(T)
-    x = T2(x_lo) + T2(x_hi) << bitsize
-    T(mod(x, y))
 end
 
 
@@ -101,24 +111,31 @@ end
 end
 
 
-function divremhilo_ref(bitsize, x_hi::T, x_lo::T, y::T) where T <: Unsigned
-    T2 = widen(T)
-    x = T2(x_lo) + T2(x_hi) << bitsize
-    T.(divrem(x, y))
-end
-
-
-@testcase "divremhilo" begin
+@testcase "divremhilo" for func in (divremhilo_funcs => divremhilo_names)
     check_function_random(
-        UInt64, divremhilo, divremhilo_ref, 3;
+        UInt64, func, divremhilo_ref, 3;
         args_filter_predicate=division_args_filter, ref_needs_bitsize=true)
 end
 
 
-@testcase tags=[:exhaustive] "divremhilo, exhaustive" begin
+@testcase tags=[:exhaustive] "divremhilo, exhaustive" for func in (divremhilo_funcs => divremhilo_names)
     check_function_exhaustive(
-        UInt4, divremhilo, divremhilo_ref, 3;
+        UInt4, func, divremhilo_ref, 3;
         args_filter_predicate=division_args_filter, ref_needs_bitsize=true)
+end
+
+
+@testcase tags=[:performance] "divremhilo, performance" for rng in fixed_rng, tp in builtin_uint_types
+    x_hi = rand(rng, zero(tp):typemax(tp))
+    x_lo = rand(rng, zero(tp):typemax(tp))
+    y = rand(rng, one(tp):typemax(tp))
+
+    trial = @benchmark divremhilo_same_type($x_hi, $x_lo, $y)
+    @test_result "same_type: " * benchmark_result(trial)
+
+    trial = @benchmark divremhilo_widen($x_hi, $x_lo, $y)
+    @test_result "widen: " * benchmark_result(trial)
+
 end
 
 

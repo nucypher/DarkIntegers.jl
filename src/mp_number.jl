@@ -100,19 +100,6 @@ end
 @inline Base.getindex(x::MPNumber{N, T}, i::Integer) where {N, T} = x.value[i]
 
 
-# Addition of unsigned numbers with carry
-@inline function _addc(x::T, y::T) where T <: Unsigned
-    r = x + y
-    r, r < x
-end
-
-
-# Subtraction of unsigned numbers with carry
-@inline function _subc(x::T, y::T) where T <: Unsigned
-    r = x - y
-    r, x < y
-end
-
 
 @inline function Base.:+(x::MPNumber{N, T}, y::MPNumber{N, T}) where {N, T}
     c = false
@@ -353,7 +340,7 @@ function Base.divrem(x::MPNumber{N, T}, y::MPNumber{N, T}) where {N, T}
         if x[i+1] == y[t+1]
             q = setindex(q, typemax(T), i - t - 1 + 1)
         else
-            q = setindex(q, divhilo(x[i+1], x[i-1+1], y[t+1]), i - t - 1 + 1)
+            q = setindex(q, divhilo(x[i+1], x[i-1+1], y[t+1])[1], i - t - 1 + 1)
         end
 
         while (MPNumber(_mul_1d_2d(y[t-1+1], y[t+1], q[i-t-1+1]))
