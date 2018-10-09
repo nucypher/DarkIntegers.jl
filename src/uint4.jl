@@ -37,6 +37,9 @@ Base.typemax(::Type{UInt4}) = UInt4(0xf)
 Base.widen(::Type{UInt4}) = UInt8
 
 
+Base.leading_zeros(x::UInt4) = leading_zeros(x.value) - 4
+
+
 Base.:+(x::UInt4, y::UInt4) = UInt4(x.value + y.value)
 
 

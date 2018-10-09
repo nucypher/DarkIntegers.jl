@@ -231,75 +231,7 @@ end
 end
 
 
-function _ge_shift(x::MPNumber{N, T}, y::MPNumber{N, T}, y_shift::Integer) where {N, T}
-    # true if x >= y * b^y_shift
-    for i in N:-1:1+y_shift
-        if x.value[i] == y.value[i - y_shift]
-            continue
-        end
-        return x.value[i] > y.value[i - y_shift]
-    end
-    true
-end
-
-
-function _shift_limbs(x::MPNumber{N, T}, shift::Integer) where {N, T}
-    # x -> x * b^shift
-    res = zero(MPNumber{N, T})
-    for i in 1:shift
-        res = setindex(res, zero(T), i)
-    end
-    for i in shift+1:N
-        res = setindex(res, x[i - shift], i)
-    end
-    res
-end
-
-
-# Calculates y * (x0 + x1 * b) -> r0, r1, r2
-function _mul_1d_2d(x0::T, x1::T, y::T) where T <: Unsigned
-    # Adapted from the generic multiplication for radix integers
-    hi, lo = mulhilo(x0, y)
-    w0 = lo
-    c = hi
-
-    hi, lo = mulhilo(x1, y)
-    hi, lo = addhilo(hi, lo, c)
-    w1 = lo
-    w2 = hi
-
-    (w0, w1, w2)
-end
-
-
-# Calculates x - y * z
-function _sub_mul(x::MPNumber{N, T}, y::T, z::MPNumber{N, T}) where {N, T}
-    hi_carry1 = false
-    hi_carry2 = false
-    hi_carry3 = false
-    hi = zero(T)
-    out = zero(MPNumber{N, T})
-    for j in 1:N
-        new_hi, lo = mulhilo(y, z.value[j])
-
-        r, new_hi_carry1 = _subc(x.value[j], lo)
-        r, new_hi_carry2 = _subc(r, hi)
-        r, new_hi_carry3 = _subc(r, T(hi_carry1 + hi_carry2 + hi_carry3))
-
-        out = setindex(out, r, j)
-        hi = new_hi
-        hi_carry1 = new_hi_carry1
-        hi_carry2 = new_hi_carry2
-        hi_carry3 = new_hi_carry3
-    end
-
-    out_hi, c1 = _subc(zero(T), hi)
-    out_hi, c2 = _subc(out_hi, T(hi_carry1 + hi_carry2 + hi_carry3))
-    out, c1 || c2 # TODO: it seems that we can have at most 1 carried over to the n+2-th limb
-end
-
-
-function divrem_single_limb(x::MPNumber{N, T}, y::T) where {N, T}
+@inline function divrem_single_limb(x::MPNumber{N, T}, y::T) where {N, T}
     r = zero(T)
     q = zero(MPNumber{N, T})
     for j in N-1:-1:0
@@ -310,65 +242,185 @@ function divrem_single_limb(x::MPNumber{N, T}, y::T) where {N, T}
 end
 
 
-function Base.divrem(x::MPNumber{N, T}, y::MPNumber{N, T}) where {N, T}
-    n = _most_significant_limb(x) - 1
-    t = _most_significant_limb(y) - 1
+# Shift a two-limb number `(hi, lo)` by `shift` bits to the left,
+# returning the most significant half.
+@inline function _lshift_through(hi::T, lo::T, shift::Integer) where T
+    (hi << shift) | (lo >> (bitsizeof(T) - shift))
+end
 
-    if n < t
+
+# Returns a pair of `x[x_start:x_start+z_end] - y * z[1:z_end]`
+# and the overflow flag for the subtraction.
+# Assumes that `x_start+z_end <= N+1` and `z_end <= N`.
+@inline function _mul_sub_from_part(
+        x::MPNumber{N, T}, x_start, y::T, z::MPNumber{N, T}, z_end) where {N, T}
+
+    hi_carry1 = false
+    hi_carry2 = false
+    hi_carry3 = false
+    hi = zero(T)
+    for j in 1:z_end
+        new_hi, lo = mulhilo(y, z[j])
+
+        r, new_hi_carry1 = _subc(x[j + x_start - 1], lo)
+        r, new_hi_carry2 = _subc(r, hi)
+        r, new_hi_carry3 = _subc(r, T(hi_carry1 + hi_carry2 + hi_carry3))
+
+        x = setindex(x, r, j + x_start - 1)
+
+        hi = new_hi
+        hi_carry1 = new_hi_carry1
+        hi_carry2 = new_hi_carry2
+        hi_carry3 = new_hi_carry3
+    end
+
+    last_idx = z_end + x_start
+    x_hi = last_idx <= N ? x[last_idx] : zero(T)
+
+    out_hi, c1 = _subc(x_hi, hi)
+    out_hi, c2 = _subc(out_hi, T(hi_carry1 + hi_carry2 + hi_carry3))
+
+    if last_idx <= N
+        x = setindex(x, out_hi, last_idx)
+    end
+
+    x, c1 || c2 # TODO: it seems that we can have at most 1 carried over to the n+2-th limb
+end
+
+
+# Returns `x[x_start:x_start+y_end] + y[1:y_end]`.
+# Assumes `x_start+y_end <= N+1` and `y_end <= N`.
+@inline function _add_to_part(x::MPNumber{N, T}, x_start, y::MPNumber{N, T}, y_end) where {N, T}
+
+    c = false
+    for i in 1:y_end
+        r, new_c = _addc(x[i+x_start-1], y[i])
+        r, new_c2 = _addc(r, T(c))
+        x = setindex(x, r, i+x_start-1)
+
+        # `v[i] + c` is at most the limb size,
+        # So we will have to carry at most 1.
+        c = new_c || new_c2
+    end
+
+    last_idx = y_end + x_start
+    if last_idx <= N
+        x = setindex(x, x[last_idx] + T(c), last_idx)
+    end
+
+    x
+end
+
+
+@inline function Base.divrem(x::MPNumber{N, T}, y::MPNumber{N, T}) where {N, T}
+
+    # Division algorithm from D. Knuth's "The Art of Computer Programming", vol. 2.
+
+    t = _most_significant_limb(x)
+    n = _most_significant_limb(y)
+
+    if n > t || y > x
         return zero(MPNumber{N, T}), x
     end
 
-    q = zero(MPNumber{N, T})
-    r = zero(MPNumber{N, T})
-
-    if t == 0 && n == 0
-        q1, r1 = divrem(x[1], y[1])
-        return setindex(q, q1, 1), setindex(r, r1, 1)
-    end
-
-    if t == 0
+    if n == 1
         return divrem_single_limb(x, y[1])
     end
 
-    # TODO: use normalization to avoid long loops here
-    while _ge_shift(x, y, n - t)
-        q = setindex(q, q[n - t + 1] + one(T), n - t + 1)
-        x = x - _shift_limbs(y, n - t)
-    end
+    m = t - n
+    q = zero(MPNumber{N, T})
 
-    for i in n:-1:t+1
-        if x[i+1] == y[t+1]
-            q = setindex(q, typemax(T), i - t - 1 + 1)
+    # For efficiency, we are normalizing the divisor so that the most significant bit
+    # of its most significant limb is set.
+
+    # For the normalization, we need the bitshift `l` such that `(y[n] << l) in [b/2, b)`,
+    # where `b` is the radix (`typemax(T) + 1`).
+    # Naturally, it is exactly `leading_zeros(v[n])`.
+    l = leading_zeros(y[n])
+
+    # The normalization is "virtual": we're not actually changing `x` and `y`,
+    # but instead just calculate "shifted" versions of some of their limbs.
+
+    # `y` has at least two limbs; if n = 2 we are taking the lowest limb to be `0`.
+    y1 = y[n]
+    y2 = y[n-1]
+    y3 = n >= 3 ? y[n-2] : zero(T)
+
+    y_p = _lshift_through(y1, y2, l)
+    y_pp = _lshift_through(y2, y3, l)
+
+    for j = m:-1:0
+
+        # We need to find the quotient `q = x[1+j:1+j+n] / y`
+        # It can be proved that `q_hat = (x[1+j+n] * b + x[j+n]) / y[n]`
+        # is between `q` and `q + 2` (providing that the highest big of `y[n]` is set).
+        # So we are calculating it, and then do some tests to adjust it.
+
+        # `x` has at least two limbs; take the values out of bounds to be `0`.
+        x0 = j < m ? x[n+j+1] : zero(T)
+        x1 = x[n+j]
+        x2 = x[n+j-1]
+        x3 = n+j >= 3 ? x[n+j-2] : zero(T)
+
+        x_p = _lshift_through(x0, x1, l)
+        x_pp = _lshift_through(x1, x2, l)
+        x_ppp = _lshift_through(x2, x3, l)
+
+        # Calculate the initial approximation
+        q_hat, r_hat, overflow = divremhilo(x_p, x_pp, y_p)
+        if overflow
+            q_hat = typemax(T)
+            r_hat = x_pp
+        end
+
+        if overflow
+            r_hat, overflow2 = _addc(r_hat, y_p)
         else
-            q = setindex(q, divhilo(x[i+1], x[i-1+1], y[t+1])[1], i - t - 1 + 1)
+            overflow2 = false
         end
 
-        while (MPNumber(_mul_1d_2d(y[t-1+1], y[t+1], q[i-t-1+1]))
-                > MPNumber((x[i-2+1], x[i-1+1], x[i+1])))
-            q = setindex(q, q[i - t - 1+1] - one(T), i - t - 1+1)
+        if !overflow2
+            # TODO: `q_hat` differs from the target value by at most 2,
+            # so this loop can theoretically be unrolled.
+            while true
+                thi, tlo = mulhilo(q_hat, y_pp)
+                if MPNumber((tlo, thi)) <= MPNumber((x_ppp, r_hat))
+                    break
+                end
+
+                q_hat -= one(T)
+
+                r_hat, c2 = _addc(r_hat, y_p)
+                if c2
+                    break
+                end
+            end
         end
 
-        x, c = _sub_mul(x, q[i-t-1+1], _shift_limbs(y, i - t - 1))
-        if c
-            x = x + _shift_limbs(y, i - t - 1)
-            q = setindex(q, q[i - t - 1+1] - one(T), i - t - 1+1)
+        x, overflow3 = _mul_sub_from_part(x, j+1, q_hat, y, n)
+
+        if overflow3
+            q_hat -= one(T)
+            x = _add_to_part(x, j+1, y, n)
         end
+
+        q = setindex(q, q_hat, 1+j)
     end
 
-    (q, x)
+    q, x
 end
 
 
 @inline function Base.div(x::MPNumber{N, T}, y::MPNumber{N, T}) where {N, T}
     # TODO: is there a faster way?
-    d, r = divrem(x, y)
-    d
+    q, r = divrem(x, y)
+    q
 end
 
 
 @inline function Base.mod(x::MPNumber{N, T}, y::MPNumber{N, T}) where {N, T}
     # TODO: is there a faster way?
-    d, r = divrem(x, y)
+    q, r = divrem(x, y)
     r
 end
 

@@ -1,3 +1,4 @@
+using Statistics
 using Base.Iterators: product
 using Random
 using BenchmarkTools: prettytime, prettymemory, @benchmark
@@ -17,6 +18,56 @@ function benchmark_result(trial)
     end
 
     time_str * alloc_str
+end
+
+
+struct DistributionTrial
+    times :: Array{Float64, 1} # in nanoseconds
+end
+
+
+@generated function _benchmark_distribution(
+        rng, test_func, make_args, ::Val{nargs}, samples, iterations) where nargs
+
+    # When measuring fast functions, splicing of arguments produced by `make_args()`
+    # into `test_func()` introduces a noticeable delay (tens of nanoseconds).
+    # This function is parametrized on the number of arguments,
+    # generating the splicing in compile time.
+
+    argnames = [gensym("arg") for i in 1:nargs]
+
+    quote
+        ts = Array{Float64, 1}(undef, samples)
+        for i in 1:samples
+            ($(argnames...),) = make_args(rng)
+            tmin = typemax(Float64)
+            for j in 1:10
+                t = @elapsed test_func($(argnames...))
+                if t < tmin
+                    tmin = t
+                end
+            end
+            ts[i] = tmin
+        end
+        DistributionTrial(ts * 1e9)
+    end
+
+end
+
+
+# A trampoline for `_benchmark_distribution()` to avoid exposing the `Val(nargs)` argument.
+function benchmark_distribution(
+        rng, test_func, make_args, nargs::Int; samples=10000, iterations=10)
+    _benchmark_distribution(
+        rng, test_func, make_args, Val(nargs), samples, iterations)
+end
+
+
+
+function benchmark_distribution_result(trial::DistributionTrial)
+    mean_str = prettytime(mean(trial.times))
+    std_str = prettytime(std(trial.times))
+    "$mean_str (±$std_str)"
 end
 
 

@@ -1,5 +1,5 @@
 using DarkIntegers
-using DarkIntegers: UInt4, _sub_mul, mulmod, mulmod_bitshift, mulmod_widemul
+using DarkIntegers: UInt4, mulmod, mulmod_bitshift, mulmod_widemul
 
 
 @testgroup "multiprecision arithmetic" begin
@@ -153,51 +153,14 @@ end
 @testcase tags=[:performance] "divrem performance, multiple limb divisor" for rng in fixed_rng
     mptp = MPNumber{8, UInt16}
 
-    x = rand(rng, UInt128(1):typemax(UInt128))
-    y = rand(rng, UInt128(1):typemax(UInt128))
-
-    x_mp = convert(mptp, x)
-    y_mp = convert(mptp, y)
-
-    trial = @benchmark divrem($x_mp, $y_mp)
-    @test_result "8xUInt16: " * benchmark_result(trial)
-end
-
-
-@testcase "_sub_mul" begin
-
-    tp = UInt8
-    len = 4
-    rmod = 2^(bitsizeof(tp) * len)
-
-    for i in 1:1000
-
-        xr = MPNumber(tuple(rand(tp, len)...))
-        yr = rand(tp)
-        zr = MPNumber(tuple(rand(tp, len)...))
-
-        x = convert(Int, xr)
-        y = Int(yr)
-        z = convert(Int, zr)
-
-        resr, carry = _sub_mul(xr, yr, zr)
-        test = convert(Int, resr)
-        ref = x - y * z
-
-        if ref < 0
-            ref_carry = true
-            ref = mod(ref, rmod)
-        else
-            ref_carry = false
-        end
-
-        if (test, carry) != (ref, ref_carry)
-            @test_fail (
-                "Incorrect result for $((x, y, z)): " *
-                "got $((test, carry)), expected $((ref, ref_carry))")
-            return
-        end
+    function make_args(rng)
+        x = rand(rng, UInt128(1):typemax(UInt128))
+        y = rand(rng, UInt128(1):typemax(UInt128))
+        convert(mptp, x), convert(mptp, y)
     end
+
+    trial = benchmark_distribution(rng, divrem, make_args, 2)
+    @test_result "8xUInt16: " * benchmark_distribution_result(trial)
 end
 
 
