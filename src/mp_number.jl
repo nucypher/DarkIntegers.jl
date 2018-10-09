@@ -220,7 +220,7 @@ end
 end
 
 
-function Base.:^(x::MPNumber{N, T}, y::Integer) where {N, T}
+@inline function Base.:^(x::MPNumber{N, T}, y::Integer) where {N, T}
     # TODO: optimize
     res = one(MPNumber{N, T})
     @assert y >= 0
