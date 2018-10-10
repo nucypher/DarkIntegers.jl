@@ -110,19 +110,19 @@ end
 
 @inline with_modulus(p::Polynomial{T}, new_modulus::V) where T where V =
     # TODO: technically, we need to only convert the modulus from Integer once
-    Polynomial(with_modulus.(p.coeffs, new_modulus), p.negacyclic, p1.mul_function)
+    Polynomial(with_modulus.(p.coeffs, new_modulus), p.negacyclic, p.mul_function)
 
 
 @inline function with_length(p::Polynomial{T}, new_length::Integer) where T
     @assert new_length >= length(p)
     Polynomial(
-        [p.coeffs; zeros(eltype(p.coeffs), new_length - length(p))], p.negacyclic, p1.mul_function)
+        [p.coeffs; zeros(eltype(p.coeffs), new_length - length(p))], p.negacyclic, p.mul_function)
 end
 
 
 @inline function modulus_reduction(p::Polynomial{T}, new_modulus::Unsigned) where T
     # TODO: technically, we need to only convert the modulus from Integer once
-    Polynomial(modulus_reduction.(p.coeffs, new_modulus), p.negacyclic, p1.mul_function)
+    Polynomial(modulus_reduction.(p.coeffs, new_modulus), p.negacyclic, p.mul_function)
 end
 
 
