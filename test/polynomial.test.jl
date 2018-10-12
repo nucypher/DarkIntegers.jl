@@ -12,19 +12,19 @@ using DarkIntegers: shift_polynomial, karatsuba_mul, ntt_mul
     mr = rtp(modulus)
     mtp = RRElemMontgomery{rtp, mr}
 
-    p = Polynomial(mtp, coeffs, true)
+    p = Polynomial(mtp.(coeffs), true)
 
-    @test shift_polynomial(p, 4) == Polynomial(mtp, [-(6:9); 0:5], true)
-    @test shift_polynomial(p, 10) == Polynomial(mtp, [-(0:9);], true)
-    @test shift_polynomial(p, 14) == Polynomial(mtp, [6:9; -(0:5)], true)
-    @test shift_polynomial(p, 20) == Polynomial(mtp, [0:9;], true)
-    @test shift_polynomial(p, 24) == Polynomial(mtp, [-(6:9); 0:5], true)
+    @test shift_polynomial(p, 4) == Polynomial(mtp.([-(6:9); 0:5]), true)
+    @test shift_polynomial(p, 10) == Polynomial(mtp.([-(0:9);]), true)
+    @test shift_polynomial(p, 14) == Polynomial(mtp.([6:9; -(0:5)]), true)
+    @test shift_polynomial(p, 20) == Polynomial(mtp.([0:9;]), true)
+    @test shift_polynomial(p, 24) == Polynomial(mtp.([-(6:9); 0:5]), true)
 
-    @test shift_polynomial(p, -4) == Polynomial(mtp, [4:9; -(0:3)], true)
-    @test shift_polynomial(p, -10) == Polynomial(mtp, [-(0:9);], true)
-    @test shift_polynomial(p, -14) == Polynomial(mtp, [-(4:9); 0:3], true)
-    @test shift_polynomial(p, -20) == Polynomial(mtp, [0:9;], true)
-    @test shift_polynomial(p, -24) == Polynomial(mtp, [4:9; -(0:3)], true)
+    @test shift_polynomial(p, -4) == Polynomial(mtp.([4:9; -(0:3)]), true)
+    @test shift_polynomial(p, -10) == Polynomial(mtp.([-(0:9);]), true)
+    @test shift_polynomial(p, -14) == Polynomial(mtp.([-(4:9); 0:3]), true)
+    @test shift_polynomial(p, -20) == Polynomial(mtp.([0:9;]), true)
+    @test shift_polynomial(p, -24) == Polynomial(mtp.([4:9; -(0:3)]), true)
 
 end
 
@@ -38,7 +38,7 @@ end
     mr = rtp(modulus)
     mtp = RRElemMontgomery{rtp, mr}
 
-    p1 = Polynomial(mtp, p1_ref, true)
+    p1 = Polynomial(mtp.(p1_ref), true)
 
     trial = @benchmark shift_polynomial($p1, 123)
     @test_result benchmark_result(trial)
@@ -67,8 +67,8 @@ end
     mr = convert(rtp, modulus)
     mtp = RRElemMontgomery{rtp, mr}
 
-    p1 = Polynomial(mtp, p1_ref, negacyclic)
-    p2 = Polynomial(mtp, p2_ref, negacyclic)
+    p1 = Polynomial(mtp.(p1_ref), negacyclic)
+    p2 = Polynomial(mtp.(p2_ref), negacyclic)
 
     ref = reference_mul(p1, p2)
     test1 = karatsuba_mul(p1, p2)
@@ -101,8 +101,8 @@ choice_types = [
 
     len = 32
     negacyclic = true
-    p1 = Polynomial(tp, mod.(rand(Int, len), max_val), negacyclic)
-    p2 = Polynomial(tp, mod.(rand(Int, len), max_val), negacyclic)
+    p1 = Polynomial(tp.(mod.(rand(Int, len), max_val)), negacyclic)
+    p2 = Polynomial(tp.(mod.(rand(Int, len), max_val)), negacyclic)
 
     p = p1 * p2
     ref = reference_mul(p1, p2)
@@ -123,8 +123,8 @@ end
     mr = convert(rtp, modulus)
     mtp = RRElemMontgomery{rtp, mr}
 
-    p1 = Polynomial(mtp, p1_ref, negacyclic)
-    p2 = Polynomial(mtp, p2_ref, negacyclic)
+    p1 = Polynomial(mtp.(p1_ref), negacyclic)
+    p2 = Polynomial(mtp.(p2_ref), negacyclic)
 
     trial = @benchmark karatsuba_mul($p1, $p2)
     @test_result "Karatsuba: " * benchmark_result(trial)
