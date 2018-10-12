@@ -17,6 +17,7 @@ export RRElemMontgomery
 
 include("polynomial.jl")
 export Polynomial
+export shift_polynomial
 
 include("misc.jl")
 
