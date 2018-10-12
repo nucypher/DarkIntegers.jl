@@ -425,6 +425,11 @@ end
 end
 
 
+@inline function Base.rem(x::MPNumber{N, T}, y::MPNumber{N, T}) where {N, T}
+    mod(x, y)
+end
+
+
 bitsizeof(::Type{MPNumber{N, T}}) where {N, T} = bitsizeof(T) * N
 
 
