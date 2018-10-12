@@ -25,9 +25,7 @@ struct RRElemMontgomery{T, M} <: AbstractRRElem
     end
 
     @inline function RRElemMontgomery{T, M}(x::V) where {V <: Integer, T <: Unsigned, M}
-        # TODO: can we do without the BigInt? encompassing_type(), maybe?
-        m = convert(V, M)
-        RRElemMontgomery(T(mod(x, m)), M)
+        RRElemMontgomery(T(mod(x, M)), M)
     end
 end
 
