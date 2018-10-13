@@ -49,6 +49,8 @@ end
 @inline Base.promote_type(::Type{<:Integer}, ::Type{MPNumber{N, T}}) where {N, T} = MPNumber{N, T}
 @inline Base.promote_type(::Type{MPNumber{N, T}}, ::Type{MPNumber{M, T}}) where {N, M, T} =
     MPNumber{max(M, N), T}
+@inline Base.promote_type(::Type{MPNumber{N, T}}, ::Type{MPNumber{N, T}}) where {N, T} =
+    MPNumber{N, T}
 
 
 # We need this to correctly process arithmetic operations on MPNumber and Int
