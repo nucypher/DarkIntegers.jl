@@ -20,17 +20,31 @@ struct RRElemMontgomery{T, M} <: AbstractRRElem
         RRElemMontgomery(x.value, M)
     end
 
-    @inline function RRElemMontgomery{T, M}(x::Unsigned) where {T <: Unsigned, M}
-        RRElemMontgomery(mod(convert(T, x), M), M)
+    @inline function RRElemMontgomery{T, M}(x::Integer) where {T <: Unsigned, M}
+        if x < 0
+            -_make_rr_elem_montgomery(unsigned(-x), M)
+        else
+            _make_rr_elem_montgomery(unsigned(x), M)
+        end
     end
 
-    @inline function RRElemMontgomery{T, M}(x::V) where {V <: Integer, T <: Unsigned, M}
-        RRElemMontgomery(T(mod(x, M)), M)
+    @inline function RRElemMontgomery{T, M}(x::BigInt) where {T <: Unsigned, M}
+        _make_rr_elem_montgomery(x, M)
     end
 end
 
 
- @inline @generated function montgomery_coeff(::Type{RRElemMontgomery{T, M}}) where {T, M}
+@inline function _make_rr_elem_montgomery(x::V, m::T) where {V <: Integer, T <: Unsigned}
+    # Assumes that `x` is non-negative
+    if bitsizeof(T) >= bitsizeof(V)
+        RRElemMontgomery(mod(convert(T, x), m), m)
+    else
+        RRElemMontgomery(convert(T, mod(x, convert(V, m))), m)
+    end
+end
+
+
+@inline @generated function montgomery_coeff(::Type{RRElemMontgomery{T, M}}) where {T, M}
     res = get_montgomery_coeff(M)
     :( $res )
 end

@@ -9,16 +9,26 @@ struct RRElem{T, M} <: AbstractRRElem
         new{T, m}(x)
     end
 
-    # If we're converting a negative number to a RRElem,
-    # a conversion Integer -> MPNumber -> RRElem will give a wrong result.
-    # So it has to be performed directly.
-    @inline function RRElem{T, M}(x::Integer) where {T, M}
-        # TODO: write an optimized version of this
-        # TODO: if `x` is already a MPNumber, no need to convert to BigInt
-        # @assert typeof(M) == T
-        m_i = convert(BigInt, M)
-        x_i = convert(BigInt, x)
-        new{T, M}(mod(x_i, m_i))
+    @inline function RRElem{T, M}(x::Integer) where {T <: Unsigned, M}
+        if x < 0
+            -_make_rr_elem(unsigned(-x), M)
+        else
+            _make_rr_elem(unsigned(x), M)
+        end
+    end
+
+    @inline function RRElem{T, M}(x::BigInt) where {T <: Unsigned, M}
+        _make_rr_elem(x, M)
+    end
+end
+
+
+@inline function _make_rr_elem(x::V, m::T) where {V <: Integer, T <: Unsigned}
+    # Assumes that `x` is non-negative
+    if bitsizeof(T) >= bitsizeof(V)
+        RRElem(mod(convert(T, x), m), m)
+    else
+        RRElem(convert(T, mod(x, convert(V, m))), m)
     end
 end
 
