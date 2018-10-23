@@ -165,17 +165,6 @@ function Base.divrem(x::RRElemMontgomery{T, M}, y::RRElemMontgomery{T, M}) where
 end
 
 
-@inline function modulus_reduction(x::RRElemMontgomery{T, M}, new_modulus::Unsigned) where {T, M}
-    nm = convert(T, new_modulus)
-    # TODO: optimize
-    xi = convert(BigInt, x)
-    mi = convert(BigInt, M)
-
-    # TODO: make it a purely integer algorithm
-    RRElemMontgomery(round(BigInt, xi * new_modulus / mi), nm)
-end
-
-
 Base.string(x::RRElemMontgomery{T, M}) where {T, M} = string(x.value) * "RRM"
 
 

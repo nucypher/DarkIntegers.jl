@@ -84,23 +84,6 @@ end
 end
 
 
-@inline function with_modulus(x::RRElem{T, M}, new_modulus::Unsigned) where {T, M}
-    nm = convert(T, new_modulus)
-    convert(RRElem{T, nm}, x)
-end
-
-
-@inline function modulus_reduction(x::RRElem{T, M}, new_modulus::Unsigned) where {T, M}
-    nm = convert(T, new_modulus)
-    # TODO: optimize
-    xi = convert(BigInt, x)
-    mi = convert(BigInt, M)
-
-    # TODO: make it a purely integer algorithm
-    convert(RRElem{T, nm}, round(BigInt, xi * new_modulus / mi))
-end
-
-
 @inline function Base.convert(::Type{RRElem{T, N}}, x::RRElem{T, M}) where {T, N, M}
     if N >= M
         RRElem(x.value, N)
