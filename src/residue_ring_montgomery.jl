@@ -82,6 +82,11 @@ end
 end
 
 
+@inline function change_base_type(::Type{V}, x::RRElemMontgomery{T, M}) where {T, M, V <: Unsigned}
+    RRElemMontgomery(convert(V, x.value), convert(V, M), _no_conversion)
+end
+
+
 @inline Base.promote_type(::Type{RRElemMontgomery{T, M}}, ::Type{<:Integer}) where {T, M} =
     RRElemMontgomery{T, M}
 @inline Base.promote_type(::Type{<:Integer}, ::Type{RRElemMontgomery{T, M}}) where {T, M} =
