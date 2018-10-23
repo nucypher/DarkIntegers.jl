@@ -1,6 +1,14 @@
 using Primes: factor
 
 
+rr_value(x::RRElem) = x.value
+rr_value(x::RRElemMontgomery) = x.value
+
+rr_base_type(::Type{RRElem{T, M}}) where {T, M} = T
+rr_base_type(::Type{RRElemMontgomery{T, M}}) where {T, M} = T
+
+rr_modulus(::RRElem{T, M}) where {T, M} = M
+rr_modulus(::RRElemMontgomery{T, M}) where {T, M} = M
 rr_modulus(::Type{RRElem{T, M}}) where {T, M} = M
 rr_modulus(::Type{RRElemMontgomery{T, M}}) where {T, M} = M
 
