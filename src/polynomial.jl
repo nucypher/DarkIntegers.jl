@@ -103,6 +103,11 @@ end
 end
 
 
+@inline function Base.:-(p1::Polynomial{T}) where T
+    Polynomial(.-p1.coeffs, p1.negacyclic, p1.mul_function)
+end
+
+
 @inline Base.:-(p1::Polynomial, p2::ZeroPolynomial) = p1
 
 
