@@ -82,6 +82,11 @@ end
 end
 
 
+@inline function Base.div(p1::Polynomial{T}, p2::Integer) where T
+   Polynomial(div.(p1.coeffs, p2), p1.negacyclic, p1.mul_function)
+end
+
+
 @inline function Base.:+(p1::Polynomial{T}, p2::Polynomial{T}) where T
     Polynomial(p1.coeffs .+ p2.coeffs, p1.negacyclic, p1.mul_function)
 end
