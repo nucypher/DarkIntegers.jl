@@ -1,45 +1,26 @@
-struct _NoConversion
-end
-
-const _no_conversion = _NoConversion()
-
-
 struct RRElemMontgomery{T, M} <: AbstractRRElem
 
     value :: T
 
+    # This is the only method using `new` to ensure `M` has the type `T`
+    # (since we cannot enforce it with Julia syntax)
     @inline function RRElemMontgomery(x::T, m::T, ::_NoConversion) where T <: Unsigned
         new{T, m}(x)
     end
 
-    @inline function RRElemMontgomery(x::T, m::T) where T <: Unsigned
-        RRElemMontgomery(to_montgomery(RRElemMontgomery{T, m}, x), m, _no_conversion)
+    @inline function RRElemMontgomery{T, M}(x::T, ::_NoConversion) where {T <: Unsigned, M}
+        RRElemMontgomery(x, M, _no_conversion)
     end
 
-    @inline function RRElemMontgomery(x::RRElem{T, M}) where {T <: Unsigned, M}
-        RRElemMontgomery(x.value, M)
+    @inline function RRElemMontgomery{T, M}(x::T) where {T <: Unsigned, M}
+        # No need to take the modulus first, conversion will take care of it.
+        RRElemMontgomery{T, M}(to_montgomery(RRElemMontgomery{T, M}, x), _no_conversion)
     end
 
     @inline function RRElemMontgomery{T, M}(x::Integer) where {T <: Unsigned, M}
-        if x < 0
-            -_make_rr_elem_montgomery(unsigned(-x), M)
-        else
-            _make_rr_elem_montgomery(unsigned(x), M)
-        end
-    end
-
-    @inline function RRElemMontgomery{T, M}(x::BigInt) where {T <: Unsigned, M}
-        _make_rr_elem_montgomery(x, M)
-    end
-end
-
-
-@inline function _make_rr_elem_montgomery(x::V, m::T) where {V <: Integer, T <: Unsigned}
-    # Assumes that `x` is non-negative
-    if bitsizeof(T) >= bitsizeof(V)
-        RRElemMontgomery(mod(convert(T, x), m), m)
-    else
-        RRElemMontgomery(convert(T, mod(x, convert(V, m))), m)
+        # Need to take the modulus before converting `x` to `T`,
+        # in case `x` does not fit in `T`.
+        RRElemMontgomery{T, M}(convert(T, mod(x, M)))
     end
 end
 
@@ -67,13 +48,17 @@ end
 
 
 @inline function Base.convert(::Type{RRElem{T, M}}, x::RRElemMontgomery{T, M}) where {T, M}
-    RRElem(from_montgomery(x), M)
+    RRElem(from_montgomery(x), M, _no_conversion)
+end
+
+@inline function Base.convert(::Type{RRElemMontgomery{T, M}}, x::RRElem{T, M}) where {T, M}
+    RRElemMontgomery{T, M}(x.value)
 end
 
 # TODO: this is used to prevent the convert(Integer, MPNumber) to activate.
 # Is there a better way? Technically, this shouldn't be used at all - it's the constructor's job.
 @inline Base.convert(::Type{RRElemMontgomery{T, M}}, x::MPNumber) where {T, M} =
-    RRElemMontgomery(x, M)
+    RRElemMontgomery{T, M}(x)
 
 @inline Base.convert(::Type{RRElemMontgomery{T, M}}, x::RRElemMontgomery{T, M}) where {T, M} = x
 
@@ -109,7 +94,7 @@ end
 
 
 @inline Base.one(::Type{RRElemMontgomery{T, M}}) where {T, M} =
-    RRElemMontgomery(one(T), M)
+    RRElemMontgomery{T, M}(one(T))
 
 
 @inline function Base.:+(x::RRElemMontgomery{T, M}, y::RRElemMontgomery{T, M}) where {T, M}
@@ -143,14 +128,14 @@ end
 function Base.div(x::RRElemMontgomery{T, M}, y::RRElemMontgomery{T, M}) where {T, M}
     x_T = from_montgomery(x)
     y_T = from_montgomery(y)
-    RRElemMontgomery(div(x_T, y_T), M)
+    RRElemMontgomery{T, M}(div(x_T, y_T))
 end
 
 
 function Base.div(x::RRElemMontgomery{T, M}, y::Unsigned) where {T, M}
     x_T = from_montgomery(x)
     y_T = convert(T, y) # TODO: assumes that `y` fits into RRElem
-    RRElemMontgomery(div(x_T, y_T), M)
+    RRElemMontgomery{T, M}(div(x_T, y_T))
 end
 
 
@@ -166,7 +151,7 @@ function Base.divrem(x::RRElemMontgomery{T, M}, y::RRElemMontgomery{T, M}) where
     x_T = from_montgomery(x)
     y_T = from_montgomery(y)
     d, r = divrem(x_T, y_T)
-    RRElemMontgomery(d, M), RRElemMontgomery(r, M)
+    RRElemMontgomery{T, M}(d), RRElemMontgomery{T, M}(r)
 end
 
 

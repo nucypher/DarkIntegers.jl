@@ -5,11 +5,41 @@ using DarkIntegers: mulmod, mulmod_bitshift, mulmod_modhilo, mulmod_widemul
 @testgroup "residue ring elements" begin
 
 
-@testcase "creation/conversion/promotion" begin
+@testcase "construction" begin
+    T = UInt16
+    modulus = T(177)
+    val = T(200)
+
+    # Check that even a value greater than the modulus is not modified
+    # when no conversion is requested.
+
+    x = RRElem(val, modulus, _no_conversion)
+    @test rr_value(x) == val
+
+    x = RRElem{T, modulus}(val, _no_conversion)
+    @test rr_value(x) == val
+
+    # Check that a value greater than the modulus is converted correctly
+
+    x = RRElem{T, modulus}(val)
+    @test rr_value(x) == mod(val, modulus)
+
+    big_val = Int64(2^50)
+    x = RRElem{T, modulus}(big_val)
+    @test rr_value(x) == convert(T, mod(big_val, modulus))
+
+    big_val = Int64(-2^50)
+    x = RRElem{T, modulus}(big_val)
+    @test rr_value(x) == convert(T, mod(big_val, modulus))
+
+end
+
+
+@testcase "conversion/promotion" begin
     T = MPNumber{2, UInt8}
     modulus = T(177)
-    x = RRElem(T(100), modulus)
-    y = RRElem(T(90), modulus)
+    x = RRElem{T, modulus}(T(100))
+    y = RRElem{T, modulus}(T(90))
 
     @test x + y == 13
     @test x + 1 == 101

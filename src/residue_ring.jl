@@ -1,41 +1,35 @@
 abstract type AbstractRRElem <: Unsigned end
 
 
+struct _NoConversion
+end
+
+const _no_conversion = _NoConversion()
+
+
 struct RRElem{T, M} <: AbstractRRElem
     value :: T
 
-    # TODO: or is it better to have `function RRElem{T, M}(x::T)`?
-    @inline function RRElem(x::T, m::T) where T
+    # This is the only method using `new` to ensure `M` has the type `T`
+    # (since we cannot enforce it with Julia syntax)
+    @inline function RRElem(x::T, m::T, ::_NoConversion) where T <: Unsigned
         new{T, m}(x)
     end
 
+    @inline function RRElem{T, M}(x::T, ::_NoConversion) where {T <: Unsigned, M}
+        RRElem(x, M, _no_conversion)
+    end
+
     @inline function RRElem{T, M}(x::Integer) where {T <: Unsigned, M}
-        if x < 0
-            -_make_rr_elem(unsigned(-x), M)
-        else
-            _make_rr_elem(unsigned(x), M)
-        end
-    end
-
-    @inline function RRElem{T, M}(x::BigInt) where {T <: Unsigned, M}
-        _make_rr_elem(x, M)
-    end
-end
-
-
-@inline function _make_rr_elem(x::V, m::T) where {V <: Integer, T <: Unsigned}
-    # Assumes that `x` is non-negative
-    if bitsizeof(T) >= bitsizeof(V)
-        RRElem(mod(convert(T, x), m), m)
-    else
-        RRElem(convert(T, mod(x, convert(V, m))), m)
+        # No need to take the modulus first, conversion will take care of it.
+        RRElem{T, M}(convert(T, mod(x, M)), _no_conversion)
     end
 end
 
 
 # TODO: this is used to prevent the convert(Integer, MPNumber) to activate.
 # Is there a better way? Technically, this shouldn't be used at all - it's the constructor's job.
-@inline Base.convert(::Type{RRElem{T, M}}, x::MPNumber) where {T, M} = RRElem(x, M)
+@inline Base.convert(::Type{RRElem{T, M}}, x::MPNumber) where {T, M} = RRElem(x, M, _no_conversion)
 @inline Base.convert(::Type{RRElem{T, M}}, x::RRElem{T, M}) where {T, M} = x
 @inline Base.convert(::Type{V}, x::RRElem{T, M}) where {V <: Integer, T, M} = convert(V, x.value)
 
@@ -45,7 +39,8 @@ end
 
 
 @inline function change_base_type(::Type{V}, x::RRElem{T, M}) where {T, M, V <: Unsigned}
-    RRElem(convert(V, x.value), convert(V, M))
+    # TODO: it does not take the modulus!
+    RRElem(convert(V, x.value), convert(V, M), _no_conversion)
 end
 
 
@@ -58,20 +53,20 @@ end
 
 # Unlike `one(x)`, `zero(x)` does not have a fallback `= zero(typeof(x))` in the standard library
 # and uses conversion instead. So we are defining our own.
-@inline Base.zero(::Type{RRElem{T, M}}) where {T, M} = RRElem(zero(T), M)
+@inline Base.zero(::Type{RRElem{T, M}}) where {T, M} = RRElem(zero(T), M, _no_conversion)
 @inline Base.zero(::RRElem{T, M}) where {T, M} = zero(RRElem{T, M})
 
 
-@inline Base.one(::Type{RRElem{T, M}}) where {T, M} = RRElem(one(T), M)
+@inline Base.one(::Type{RRElem{T, M}}) where {T, M} = RRElem(one(T), M, _no_conversion)
 
 
 @inline function Base.:+(x::RRElem{T, M}, y::RRElem{T, M}) where {T, M}
-    RRElem(addmod(x.value, y.value, M), M)
+    RRElem(addmod(x.value, y.value, M), M, _no_conversion)
 end
 
 
 @inline function Base.:-(x::RRElem{T, M}, y::RRElem{T, M}) where {T, M}
-    RRElem(submod(x.value, y.value, M), M)
+    RRElem(submod(x.value, y.value, M), M, _no_conversion)
 end
 
 
@@ -85,16 +80,16 @@ end
     xt = x.value
     yt = y.value
     res = mulmod_widemul(xt, yt, M)
-    RRElem(res, M)
+    RRElem(res, M, _no_conversion)
 end
 
 
 @inline function Base.convert(::Type{RRElem{T, N}}, x::RRElem{T, M}) where {T, N, M}
     if N >= M
-        RRElem(x.value, N)
+        RRElem(x.value, N, _no_conversion)
     else
         # TODO: optimize
-        RRElem(convert(T, convert(BigInt, x.value) % N))
+        RRElem(convert(T, convert(BigInt, x.value) % N), _no_conversion)
     end
 end
 
@@ -105,13 +100,13 @@ end
 
 
 @inline function Base.div(x::RRElem{T, M}, y::RRElem{T, M}) where {T, M}
-    RRElem(div(x.value, y.value), M)
+    RRElem(div(x.value, y.value), M, _no_conversion)
 end
 
 
 @inline function Base.div(x::RRElem{T, M}, y::Unsigned) where {T, M}
     # TODO: assumes that `y` fits into RRElem
-    div(x, convert(RRElem{T, M}, y))
+    div(x, RRElem{T, M}(y))
 end
 
 
@@ -124,7 +119,7 @@ end
 
 @inline function Base.divrem(x::RRElem{T, M}, y::RRElem{T, M}) where {T, M}
     d, r = divrem(x.value, y.value)
-    RRElem(d, M), RRElem(r, M)
+    RRElem(d, M, _no_conversion), RRElem(r, M, _no_conversion)
 end
 
 
