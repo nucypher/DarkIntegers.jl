@@ -418,15 +418,10 @@ end
 end
 
 
-@inline function Base.mod(x::MPNumber{N, T}, y::MPNumber{N, T}) where {N, T}
+@inline function Base.rem(x::MPNumber{N, T}, y::MPNumber{N, T}) where {N, T}
     # TODO: is there a faster way?
     q, r = divrem(x, y)
     r
-end
-
-
-@inline function Base.rem(x::MPNumber{N, T}, y::MPNumber{N, T}) where {N, T}
-    mod(x, y)
 end
 
 
