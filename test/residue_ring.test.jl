@@ -1,5 +1,5 @@
 using DarkIntegers
-using DarkIntegers: mulmod, mulmod_bitshift, mulmod_modhilo, mulmod_widemul
+using DarkIntegers: mulmod, mulmod_bitshift, mulmod_remhilo, mulmod_widemul
 
 
 @testgroup "residue ring elements" begin

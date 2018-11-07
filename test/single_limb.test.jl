@@ -1,6 +1,6 @@
 using DarkIntegers:
     UInt4, addhilo, mulhilo, mulhilo_widemul, mulhilo_same_type, bitsizeof,
-    divhilo, modhilo, divremhilo, divremhilo_widen, divremhilo_same_type
+    divhilo, remhilo, divremhilo, divremhilo_widen, divremhilo_same_type
 
 
 @testgroup "single limb arithmetic" begin
@@ -73,7 +73,7 @@ function divhilo_ref(bitsize, x_hi::T, x_lo::T, y::T) where T <: Unsigned
 end
 
 
-function modhilo_ref(bitsize, x_hi::T, x_lo::T, y::T) where T <: Unsigned
+function remhilo_ref(bitsize, x_hi::T, x_lo::T, y::T) where T <: Unsigned
     q, r, o = divremhilo_ref(bitsize, x_hi, x_lo, y)
     r
 end
@@ -97,16 +97,16 @@ end
 end
 
 
-@testcase "modhilo" begin
+@testcase "remhilo" begin
     check_function_random(
-        UInt64, modhilo, modhilo_ref, 3;
+        UInt64, remhilo, remhilo_ref, 3;
         args_filter_predicate=division_args_filter, ref_needs_bitsize=true)
 end
 
 
-@testcase tags=[:exhaustive] "modhilo, exhaustive" begin
+@testcase tags=[:exhaustive] "remhilo, exhaustive" begin
     check_function_exhaustive(
-        UInt4, modhilo, modhilo_ref, 3;
+        UInt4, remhilo, remhilo_ref, 3;
         args_filter_predicate=division_args_filter, ref_needs_bitsize=true)
 end
 

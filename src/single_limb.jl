@@ -161,7 +161,7 @@ end
 end
 
 
-@inline function modhilo(x_hi::T, x_lo::T, y::T) where T <: Unsigned
+@inline function remhilo(x_hi::T, x_lo::T, y::T) where T <: Unsigned
     q, r, o = divremhilo(x_hi, x_lo, y)
     r
 end

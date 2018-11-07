@@ -1,4 +1,4 @@
-using DarkIntegers: UInt4, addmod, submod, mulmod, mulmod_bitshift, mulmod_modhilo, mulmod_widemul
+using DarkIntegers: UInt4, addmod, submod, mulmod, mulmod_bitshift, mulmod_remhilo, mulmod_widemul
 
 
 @testgroup "single limb modulo arithmetic" begin
@@ -47,8 +47,8 @@ end
 end
 
 
-mulmod_funcs = [mulmod_bitshift, mulmod_modhilo, mulmod_widemul, mulmod]
-mulmod_names = ["bitshift", "modhilo", "widemul", "mulmod"]
+mulmod_funcs = [mulmod_bitshift, mulmod_remhilo, mulmod_widemul, mulmod]
+mulmod_names = ["bitshift", "remhilo", "widemul", "mulmod"]
 
 
 function mulmod_ref(x::T, y::T, modulus::T) where T <: Unsigned
@@ -80,8 +80,8 @@ end
     trial = @benchmark mulmod_bitshift($x, $y, $modulus)
     @test_result "bitshift: " * benchmark_result(trial)
 
-    trial = @benchmark mulmod_modhilo($x, $y, $modulus)
-    @test_result "modhilo: " * benchmark_result(trial)
+    trial = @benchmark mulmod_remhilo($x, $y, $modulus)
+    @test_result "remhilo: " * benchmark_result(trial)
 
     trial = @benchmark mulmod_widemul($x, $y, $modulus)
     @test_result "widemul: " * benchmark_result(trial)

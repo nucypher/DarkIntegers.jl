@@ -62,9 +62,9 @@ end
 end
 
 
-@inline function mulmod_modhilo(x::T, y::T, modulus::T) where T <: Unsigned
+@inline function mulmod_remhilo(x::T, y::T, modulus::T) where T <: Unsigned
     hi, lo = mulhilo(x, y)
-    modhilo(hi, lo, modulus)
+    remhilo(hi, lo, modulus)
 end
 
 
