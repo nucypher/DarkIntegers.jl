@@ -27,9 +27,6 @@ struct RRElem{T, M} <: AbstractRRElem
 end
 
 
-# TODO: this is used to prevent the convert(Integer, MPNumber) to activate.
-# Is there a better way? Technically, this shouldn't be used at all - it's the constructor's job.
-@inline Base.convert(::Type{RRElem{T, M}}, x::MPNumber) where {T, M} = RRElem(x, M, _no_conversion)
 @inline Base.convert(::Type{RRElem{T, M}}, x::RRElem{T, M}) where {T, M} = x
 @inline Base.convert(::Type{V}, x::RRElem{T, M}) where {V <: Integer, T, M} = convert(V, x.value)
 
