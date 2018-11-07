@@ -19,10 +19,6 @@ struct MPNumber{N, T <: Unsigned} <: Unsigned
         res
     end
 
-    @inline function MPNumber{N, T}(x::MPNumber{N, T}) where {N, T}
-        x
-    end
-
     @inline function MPNumber{N, T}(x::MPNumber{M, T}) where {N, M, T}
         res = zero(MPNumber{N, T})
         for i in 1:min(N, M)
