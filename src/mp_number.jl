@@ -9,6 +9,7 @@ struct MPNumber{N, T <: Unsigned} <: Unsigned
     value :: NTuple{N, T}
 
     MPNumber(x::NTuple{N, T}) where {N, T} = new{N, T}(x)
+    MPNumber{N, T}(x::NTuple{N, T}) where {N, T} = new{N, T}(x)
 
     @inline function MPNumber{N, T}(x::Integer) where {N, T}
         res = zero(MPNumber{N, T})
@@ -29,6 +30,7 @@ struct MPNumber{N, T <: Unsigned} <: Unsigned
 end
 
 
+# These are required to prevent the more general conversion to any integer from triggering.
 @inline Base.convert(::Type{MPNumber{N, T}}, x::MPNumber{N, T}) where {N, T} = x
 @inline Base.convert(::Type{MPNumber{N, T}}, x::MPNumber{M, T}) where {N, M, T} = MPNumber{N, T}(x)
 
