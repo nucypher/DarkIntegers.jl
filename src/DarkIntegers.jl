@@ -1,8 +1,18 @@
 module DarkIntegers
 
 include("uint4.jl")
+
 include("single_limb.jl")
+export addhilo
+export mulhilo
+export divremhilo
+export divhilo
+export remhilo
+
 include("single_limb_modulo.jl")
+export addmod
+export submod
+export mulmod
 
 include("mp_number.jl")
 export MPNumber
