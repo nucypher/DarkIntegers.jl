@@ -35,12 +35,6 @@ end
 @inline Base.promote_type(::Type{<:Integer}, ::Type{RRElem{T, M}}) where {T, M} = RRElem{T, M}
 
 
-@inline function change_base_type(::Type{V}, x::RRElem{T, M}) where {T, M, V <: Unsigned}
-    # TODO: it does not take the modulus!
-    RRElem(convert(V, x.value), convert(V, M), _no_conversion)
-end
-
-
 # We need this to correctly process arithmetic operations on RRElem and Int
 # (which is signed and the default in Julia for number literals)
 # without defining specific methods for each operator.
@@ -78,16 +72,6 @@ end
     yt = y.value
     res = mulmod_widemul(xt, yt, M)
     RRElem(res, M, _no_conversion)
-end
-
-
-@inline function Base.convert(::Type{RRElem{T, N}}, x::RRElem{T, M}) where {T, N, M}
-    if N >= M
-        RRElem(x.value, N, _no_conversion)
-    else
-        # TODO: optimize
-        RRElem(convert(T, convert(BigInt, x.value) % N), _no_conversion)
-    end
 end
 
 
