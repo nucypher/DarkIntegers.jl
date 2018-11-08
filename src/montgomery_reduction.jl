@@ -1,58 +1,49 @@
+"""
+Underlying algorithms for Montgomery representation of integers.
+"""
+
 using Base: setindex
 
 
+"""
+Calculate the coefficient used for multiplication and conversion from M. representation.
+Namely, `m' = -m^(-1) mod b`, where `b = typemax(T)+1`.
+"""
+function get_montgomery_coeff(modulus::T) where T <: Unsigned
+    # have to widen the type, since we need to use `typemax(T)+1`.
+    T2 = widen(T)
+    -T(invmod(T2(modulus), T2(typemax(T)) + 1))
+end
+
+
+"""
+An implementation of Montgomery coefficient for a multi-precision number.
+Using the fact that `-m^(-1) mod R == -(mod(m, b+1))^(-1) mod b`,
+where `b = typemax(T)+1` is the radix, and `R = b^N = typemax(MPNumber{N, T})+1`
+is the total size of the type.
+"""
 function get_montgomery_coeff(modulus::MPNumber{N, T}) where {N, T}
-    # calculate -m^(-1) mod b, where b = typemax(T)+1
     get_montgomery_coeff(modulus[1])
 end
 
 
-function get_montgomery_coeff(modulus::T) where T <: Unsigned
-    # calculate -m^(-1) mod b, where b = typemax(T)+1
-    -T(invmod(BigInt(modulus), BigInt(typemax(T)) + 1))
-end
-
-
-# `res += c * v`, where `res` is a multi-precision number of length `n+1`,
-# `v` is a multi-precision number of length `n`, and `c` is a single radix digit.
-# Modifies `res` and returns the carry bit (if there's an overflow in the `n+1`-th digit).
-@inline function _mul_addto(
-        res::MPNumber{N, T}, res_hi::T, c::T, v::MPNumber{N, T}) where {N, T}
-
-    hi_carry1 = false
-    hi_carry2 = false
-    hi_carry3 = false
-    hi = zero(T)
-    out = zero(MPNumber{N, T})
-    for j in 1:N
-        new_hi, lo = mulhilo(c, v[j])
-
-        r, new_hi_carry1 = _addc(res[j], lo)
-        r, new_hi_carry2 = _addc(r, hi)
-        r, new_hi_carry3 = _addc(r, T(hi_carry1 + hi_carry2 + hi_carry3))
-
-        out = setindex(out, r, j)
-        hi = new_hi
-        hi_carry1 = new_hi_carry1
-        hi_carry2 = new_hi_carry2
-        hi_carry3 = new_hi_carry3
-    end
-
-    out_hi, c1 = _addc(res_hi, hi)
-    out_hi, c2 = _addc(out_hi, T(hi_carry1 + hi_carry2 + hi_carry3))
-    out, out_hi, c1 || c2 # TODO: it seems that we can have at most 1 carried over to the n+2-th digit
-end
-
-
+"""
+Calculates `x + c * v`, where `x` is a multi-precision number of length `N+1`
+(passed as a number of length `N` + the highmost digit),
+`v` is a multi-precision number of length `N`, and `c` is a single radix digit.
+Returns a tuple of the result and the carry bit (if there's an overflow in the `N+1`-th digit).
+"""
 @inline @generated function _mul_addto_g(
-        res::MPNumber{N, T}, res_hi::T, c::T, v::MPNumber{N, T}) where {N, T}
+        x::MPNumber{N, T}, x_hi::T, c::T, v::MPNumber{N, T}) where {N, T}
+
+    # A generated version is a bit uglier, but works noticeably faster.
 
     loop_body = []
     for j in 1:N
         push!(loop_body, quote
             new_hi, lo = mulhilo(c, v[$j])
 
-            r, new_hi_carry1 = _addc(res[$j], lo)
+            r, new_hi_carry1 = _addc(x[$j], lo)
             r, new_hi_carry2 = _addc(r, hi)
             r, new_hi_carry3 = _addc(r, T(hi_carry1 + hi_carry2 + hi_carry3))
 
@@ -73,7 +64,7 @@ end
 
         $(loop_body...)
 
-        out_hi, c1 = _addc(res_hi, hi)
+        out_hi, c1 = _addc(x_hi, hi)
         out_hi, c2 = _addc(out_hi, T(hi_carry1 + hi_carry2 + hi_carry3))
 
         # TODO: it seems that we can have at most 1 carried over to the n+2-th digit
@@ -82,15 +73,14 @@ end
 end
 
 
-
-# Montgomery multiplication algorithm for multi-precision numbers.
+"""
+Montgomery multiplication (or Montgomery reduction algorithm).
+For `x = x' * R mod m` and `y = y' * R mod m`
+calculates `x' * y' * R mod m`, where `R = typemax(MPNumber{N, T}) + 1`.
+`m_prime` is the Montgomery coefficient (see [`get_montgomery_coeff`](@ref)).
+"""
 @Base.propagate_inbounds @inline function mulmod_montgomery(
         x::MPNumber{N, T}, y::MPNumber{N, T}, m::MPNumber{N, T}, m_prime::T) where {N, T}
-    """
-    Montgomery multiplication: for `x = x' * R mod m` and `y = y' * R mod m`
-    calculate `x' * y' * R mod m`, where `R = typemax(MPNumber{N, T}) + 1`.
-    `m_prime` is the Montgomery coefficient (see `get_montgomery_coeff()`).
-    """
 
     a = zero(MPNumber{N, T})
     a_hi = zero(T)
@@ -122,29 +112,45 @@ end
 end
 
 
+"""
+An implementation of Montgomery reduction for simple types.
+Treats them as `MPNumber`s of length 1.
+"""
 @inline function mulmod_montgomery(x::T, y::T, m::T, m_prime::T) where T <: Unsigned
     mulmod_montgomery(MPNumber((x,)), MPNumber((y,)), MPNumber((m,)), m_prime)[1]
 end
 
 
-# Calculate `R mod m` for use in `to_montgomery()`
-function get_to_montgomery_coeff(modulus::T) where T <: Unsigned
-    T(mod(convert(BigInt, typemax(T)) + 1, convert(BigInt, modulus)))
+"""
+Calculates the coefficient for conversion of an integer to Montgomery representation.
+The conversion formula is `x' = x * R mod m`, but `R = typemax(T) + 1`
+does not fit in the type of `x`.
+So we have to calculate `c = R mod m` and use it as `x' = x * c mod m`.
+"""
+function get_to_montgomery_coeff(m::T) where T <: Unsigned
+    T2 = widen(T)
+    T(mod(T2(typemax(T)) + 1, T2(m)))
 end
 
 
-# Given `x`, return `x * R mod m`,
-# where `R = b^n`, `b` is the digit size, and `n` is the number length.
+"""
+Converts an integer to Montgomery representation
+(that is, calculates `x * R mod m == x * coeff mod m` where `coeff = R mod m`,
+where `R = typemax(T) + 1`).
+"""
 @inline function to_montgomery(x::T, m::T, coeff::T) where T <: Unsigned
     mulmod(x, coeff, m)
 end
 
 
-# Given `x`, return `x / R mod m` (Montgomery reduction),
-# where `R = b^n`, `b` is the digit size, and `n` is the number length.
-# Obtained from `mulmod_montgomery()` by setting `x=1` and renaming `y` to `x`.
+"""
+Recovers an integer from Montgomery representation
+(that is, calculates `x` given `x * R mod m`, where `R = typemax(MPNumber{N, T}) + 1`).
+"""
 @Base.propagate_inbounds @inline function from_montgomery(
         x::MPNumber{N, T}, m::MPNumber{N, T}, m_prime::T) where {N, T}
+    # Montgomery multiplication of `1` and `x` in M. representation (`x * R`)
+    # results in `1 * (x * R) / R = x`.
     mulmod_montgomery(one(MPNumber{N, T}), x, m, m_prime)
 end
 
