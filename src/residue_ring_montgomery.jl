@@ -1,3 +1,17 @@
+"""
+Residue ring element in Montgomery representation.
+Multiplication is much faster than for [`RRElem`](@ref), addition and subtraction are the same,
+but division and conversion to regular integers is slower.
+
+Supports `+`, `-`, `*`, `divrem`, `div`, `rem`, `^`, `<`, `<=`, `>`, `>=`,
+`zero`, `one` and `isodd`.
+Note that the division is a regular division, not multiplication by the inverse
+(which is not guaranteed to exist for any `M`).
+
+    RRElemMontgomery{T, M}(x::Integer) where {T <: Unsigned, M}
+
+Creates an `RRElemMontgomery` object. `M` must have the type `T`.
+"""
 struct RRElemMontgomery{T, M} <: AbstractRRElem
 
     value :: T
@@ -25,6 +39,10 @@ struct RRElemMontgomery{T, M} <: AbstractRRElem
 end
 
 
+"""
+Caches the coefficient used for multiplication and conversion from Montgomery representation
+based on the type.
+"""
 @inline @generated function montgomery_coeff(::Type{RRElemMontgomery{T, M}}) where {T, M}
     res = get_montgomery_coeff(M)
     :( $res )
@@ -36,6 +54,9 @@ end
 end
 
 
+"""
+Caches the coefficient used for conversion to Montgomery representation based on the type.
+"""
 @inline @generated function to_montgomery_coeff(::Type{RRElemMontgomery{T, M}}) where {T, M}
     res = get_to_montgomery_coeff(M)
     :( $res )
@@ -137,7 +158,6 @@ end
 
 
 function Base.divrem(x::RRElemMontgomery{T, M}, y::RRElemMontgomery{T, M}) where {T, M}
-    # TODO: optimize?
     x_T = from_montgomery(x)
     y_T = from_montgomery(y)
     d, r = divrem(x_T, y_T)
