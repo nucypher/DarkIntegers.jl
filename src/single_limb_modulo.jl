@@ -46,6 +46,7 @@ end
     if x < t || x >= modulus
         x = x - modulus
     end
+    x
 end
 
 
@@ -65,7 +66,7 @@ Modulo multiplication using bitshift (by 1 bit) and modulo addition/subtraction.
         return y
     end
 
-    result  = zero(T)
+    result = zero(T)
 
     while !iszero(y)
         if isodd(y)
