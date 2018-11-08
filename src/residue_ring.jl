@@ -7,6 +7,18 @@ end
 const _no_conversion = _NoConversion()
 
 
+"""
+Residue ring element, an unsigned integer with all operations performed modulo `M`.
+
+Supports `+`, `-`, `*`, `divrem`, `div`, `rem`, `^`, `<`, `<=`, `>`, `>=`,
+`zero`, `one` and `isodd`.
+Note that the division is a regular division, not multiplication by the inverse
+(which is not guaranteed to exist for any `M`).
+
+    RRElem{T, M}(x::Integer) where {T <: Unsigned, M}
+
+Creates an `RRElem` object. `M` must have the type `T`.
+"""
 struct RRElem{T, M} <: AbstractRRElem
     value :: T
 
