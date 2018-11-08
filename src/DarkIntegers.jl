@@ -21,6 +21,8 @@ export Polynomial
 export shift_polynomial
 
 include("misc.jl")
+export encompassing_type
+
 include("residue_ring_generic.jl")
 export rr_base_type
 export rr_modulus

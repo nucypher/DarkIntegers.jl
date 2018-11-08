@@ -20,3 +20,7 @@ function encompassing_type(tp::Type{MPNumber{N, T}}) where {N, T}
         return BigInt
     end
 end
+
+encompassing_type(tp::Type{RRElem{T, M}}) where {T, M} = encompassing_type(T)
+
+encompassing_type(tp::Type{RRElemMontgomery{T, M}}) where {T, M} = encompassing_type(T)
