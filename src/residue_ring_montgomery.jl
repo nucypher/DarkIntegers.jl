@@ -55,11 +55,6 @@ end
     RRElemMontgomery{T, M}(x.value)
 end
 
-# TODO: this is used to prevent the convert(Integer, MPNumber) to activate.
-# Is there a better way? Technically, this shouldn't be used at all - it's the constructor's job.
-@inline Base.convert(::Type{RRElemMontgomery{T, M}}, x::MPNumber) where {T, M} =
-    RRElemMontgomery{T, M}(x)
-
 @inline Base.convert(::Type{RRElemMontgomery{T, M}}, x::RRElemMontgomery{T, M}) where {T, M} = x
 
 @inline function Base.convert(::Type{V}, x::RRElemMontgomery{T, M}) where V <: Integer where {T, M}
