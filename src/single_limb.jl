@@ -30,6 +30,13 @@ end
 end
 
 
+"""
+    addhilo(x_hi::T, x_lo::T, y::T) where T <: Unsigned
+
+Calculates `hi * B + lo = x_hi * B + x_lo + y`, where `B == typemax(T) + 1`.
+Returns the result as a pair `(hi::T, lo::T)`.
+An overflow in `hi` (if any) is ignored.
+"""
 @inline function addhilo(x_hi::T, x_lo::T, y::T) where T <: Unsigned
     r, c = _addc(x_lo, y)
     if c
@@ -73,9 +80,7 @@ _low_shift(tp::Type{<:Unsigned}) = sizeof(tp) * 4
 end
 
 
-"""
-Multiplication of unsigned integers returning a pair of (high bits, low bits).
-"""
+# Multiplication using conversion to a larger type
 @inline function mulhilo_widemul(x::T, y::T) where T <: Unsigned
     # Works for the types for which `widemul()` is defined in the base library
     # (that is, for which a type with double the bitsize exists)
@@ -83,6 +88,13 @@ Multiplication of unsigned integers returning a pair of (high bits, low bits).
     T(r >> bitsizeof(T)), T(r & typemax(T))
 end
 
+
+@doc """
+    mulhilo(x::T, y::T) where T <: Unsigned
+
+Calculates `hi * B + lo = x * y`, where `B == typemax(T) + 1`.
+Returns the result as a pair `(hi::T, lo::T)`.
+""" mulhilo()
 
 # `mulhilo_widemul()` seems to work faster when it's available.
 @inline mulhilo(x::T, y::T) where T <: Unsigned = mulhilo_widemul(x, y)
@@ -148,6 +160,15 @@ end
 end
 
 
+@doc """
+    divremhilo(x_hi::T, x_lo::T, y::T) where T <: Unsigned
+
+Calculates `divrem(x_hi * B + x_lo, y)`, where `B == typemax(T) + 1`.
+Returns a tuple `(q::T, r::T, o::Bool)`, where `q` is the quotient
+(the part of it fitting into the bits of `T`), `r` is the remainder is `o` is the overflow flag.
+""" divremhilo()
+
+
 # `mulhilo_widemul()` seems to work faster when it's available.
 @inline divremhilo(x_hi::T, x_lo::T, y::T) where T <: Unsigned = divremhilo_widen(x_hi, x_lo, y)
 
@@ -155,12 +176,24 @@ end
 @inline divremhilo(x_hi::UInt128, x_lo::UInt128, y::UInt128) = divremhilo_same_type(x_hi, x_lo, y)
 
 
+"""
+    divhilo(x_hi::T, x_lo::T, y::T) where T <: Unsigned
+
+Calculates `div(x_hi * B + x_lo, y)`, where `B == typemax(T) + 1`.
+Returns a tuple `(q::T, o::Bool)`, where `q` is the quotient
+(the part of it fitting into the bits of `T`), and `o` is the overflow flag.
+"""
 @inline function divhilo(x_hi::T, x_lo::T, y::T) where T <: Unsigned
     q, r, o = divremhilo(x_hi, x_lo, y)
     q, o
 end
 
 
+"""
+    remhilo(x_hi::T, x_lo::T, y::T) where T <: Unsigned
+
+Calculates `rem(x_hi * B + x_lo, y)`, where `B == typemax(T) + 1`.
+"""
 @inline function remhilo(x_hi::T, x_lo::T, y::T) where T <: Unsigned
     q, r, o = divremhilo(x_hi, x_lo, y)
     r
