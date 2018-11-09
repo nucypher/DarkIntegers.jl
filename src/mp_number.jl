@@ -232,17 +232,6 @@ end
 end
 
 
-@inline function Base.:^(x::MPNumber{N, T}, y::Integer) where {N, T}
-    # TODO: optimize
-    res = one(MPNumber{N, T})
-    @assert y >= 0
-    for i in 1:y
-        res *= x
-    end
-    res
-end
-
-
 @inline function divrem_single_limb(x::MPNumber{N, T}, y::T) where {N, T}
     r = zero(T)
     q = zero(MPNumber{N, T})
