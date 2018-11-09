@@ -165,7 +165,8 @@ function Base.divrem(x::RRElemMontgomery{T, M}, y::RRElemMontgomery{T, M}) where
 end
 
 
-Base.string(x::RRElemMontgomery{T, M}) where {T, M} = string(x.value) * "RRM"
+Base.string(x::RRElemMontgomery{T, M}) where {T, M} =
+    string(rr_value(change_representation(RRElem, x))) * "RRM"
 
 
 Base.show(io::IO, x::RRElemMontgomery{T, M}) where {T, M} = print(io, string(x))
