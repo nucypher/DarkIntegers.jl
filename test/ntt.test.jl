@@ -1,6 +1,4 @@
-using DarkIntegers:
-    AbstractRRElem, rr_modulus, ff_inverse, get_root, get_twiddle_base,
-    get_inverse_coeff, ntt
+using DarkIntegers: AbstractRRElem, get_twiddle_base, get_inverse_coeff, ntt
 
 
 @testgroup "NTT" begin
