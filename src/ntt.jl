@@ -1,12 +1,6 @@
 using Primes: factor
 
 
-function rr_modulus_simple(tp::Type{<:AbstractRRElem})
-    m = rr_modulus(tp)
-    convert(encompassing_type(typeof(m)), m)
-end
-
-
 function ff_inverse(x::T) where T <: AbstractRRElem
     m = rr_modulus_simple(T)
     x^(m - 2)

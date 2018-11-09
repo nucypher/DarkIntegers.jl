@@ -13,6 +13,12 @@ rr_modulus(::Type{RRElem{T, M}}) where {T, M} = M
 rr_modulus(::Type{RRElemMontgomery{T, M}}) where {T, M} = M
 
 
+function rr_modulus_simple(tp::Type{<:AbstractRRElem})
+    m = rr_modulus(tp)
+    convert(encompassing_type(typeof(m)), m)
+end
+
+
 @inline function change_modulus(new_modulus::Unsigned, x::RRElem{T, M}) where {T, M}
     nm = convert(T, new_modulus)
     if nm >= M
