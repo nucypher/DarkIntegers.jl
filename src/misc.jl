@@ -1,3 +1,9 @@
+@doc """
+    encompassing_type(tp::Unsigned)
+
+Returns the built-in type that covers all the range of `tp`.
+Works on `UInt*`, [`MPNumber`](@ref), [`RRElem`](@ref) and [`RRElemMontgomery`](@ref).
+""" encompassing_type()
 
 encompassing_type(tp::Type{<:Unsigned}) = tp
 
