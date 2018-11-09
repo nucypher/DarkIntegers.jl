@@ -136,19 +136,19 @@ Multiply the polynomial by `x^shift`. `shift` can be negative.
         p
     else
         n = length(p)
-        cycle = mod(fld(shift, n), 2)
+        cycle = isodd(fld(shift, n))
         shift = mod(shift, n)
 
-        global_neg = (cycle == 1 && p.negacyclic)
-        shift_neg = p.negacyclic
+        shift_first = p.negacyclic && (!cycle)
+        shift_last = p.negacyclic && cycle
 
         new_coeffs = similar(p.coeffs)
         coeffs = p.coeffs
         for j in 1:shift
-            new_coeffs[j] = !(global_neg && shift_neg) ? -coeffs[n-shift+j] : coeffs[n-shift+j]
+            new_coeffs[j] = shift_first ? -coeffs[n-shift+j] : coeffs[n-shift+j]
         end
         for j in shift+1:n
-            new_coeffs[j] = global_neg ? -coeffs[j-shift] : coeffs[j-shift]
+            new_coeffs[j] = shift_last ? -coeffs[j-shift] : coeffs[j-shift]
         end
 
         Polynomial(new_coeffs, p.negacyclic, p.mul_function)

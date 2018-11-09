@@ -4,7 +4,10 @@ using DarkIntegers: shift_polynomial, karatsuba_mul, ntt_mul
 @testgroup "polynomials" begin
 
 
-@testcase "shift_polynomial()" begin
+cyclicity = ([false, true] => ["cyclic", "negacyclic"])
+
+
+@testcase "shift_polynomial()" for negacyclic in cyclicity
 
     coeffs = 0:9
     modulus = 21
@@ -12,19 +15,20 @@ using DarkIntegers: shift_polynomial, karatsuba_mul, ntt_mul
     mr = rtp(modulus)
     mtp = RRElemMontgomery{rtp, mr}
 
-    p = Polynomial(mtp.(coeffs), true)
+    p = Polynomial(mtp.(coeffs), negacyclic)
+    s = negacyclic ? -1 : 1
 
-    @test shift_polynomial(p, 4) == Polynomial(mtp.([-(6:9); 0:5]), true)
-    @test shift_polynomial(p, 10) == Polynomial(mtp.([-(0:9);]), true)
-    @test shift_polynomial(p, 14) == Polynomial(mtp.([6:9; -(0:5)]), true)
-    @test shift_polynomial(p, 20) == Polynomial(mtp.([0:9;]), true)
-    @test shift_polynomial(p, 24) == Polynomial(mtp.([-(6:9); 0:5]), true)
+    @test shift_polynomial(p, 4) == Polynomial(mtp.([s .* (6:9); 0:5]), negacyclic)
+    @test shift_polynomial(p, 10) == Polynomial(mtp.([s .* (0:9);]), negacyclic)
+    @test shift_polynomial(p, 14) == Polynomial(mtp.([6:9; s .* (0:5)]), negacyclic)
+    @test shift_polynomial(p, 20) == Polynomial(mtp.([0:9;]), negacyclic)
+    @test shift_polynomial(p, 24) == Polynomial(mtp.([s .* (6:9); 0:5]), negacyclic)
 
-    @test shift_polynomial(p, -4) == Polynomial(mtp.([4:9; -(0:3)]), true)
-    @test shift_polynomial(p, -10) == Polynomial(mtp.([-(0:9);]), true)
-    @test shift_polynomial(p, -14) == Polynomial(mtp.([-(4:9); 0:3]), true)
-    @test shift_polynomial(p, -20) == Polynomial(mtp.([0:9;]), true)
-    @test shift_polynomial(p, -24) == Polynomial(mtp.([4:9; -(0:3)]), true)
+    @test shift_polynomial(p, -4) == Polynomial(mtp.([4:9; s .* (0:3)]), negacyclic)
+    @test shift_polynomial(p, -10) == Polynomial(mtp.([s .* (0:9);]), negacyclic)
+    @test shift_polynomial(p, -14) == Polynomial(mtp.([s .* (4:9); 0:3]), negacyclic)
+    @test shift_polynomial(p, -20) == Polynomial(mtp.([0:9;]), negacyclic)
+    @test shift_polynomial(p, -24) == Polynomial(mtp.([4:9; s .* (0:3)]), negacyclic)
 
 end
 
