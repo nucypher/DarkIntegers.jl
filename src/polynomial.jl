@@ -11,7 +11,6 @@ based on the element type an polynomial length.
         m = rr_modulus_simple(T)
         # Regular NTT needs (m - 1) to be a multiple of N,
         # tangent NTT (for negacyclic polynomials) needs it to be a multiple of 2N.
-        # TODO: when ntt_mul() supports posicyclic polynomials too, reflect it in the condition.
         factor = NC ? 2 * N : N
         if rem(m - 1, factor) == 0 && isprime(m)
             :( ntt_mul )
