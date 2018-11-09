@@ -34,8 +34,11 @@ include("misc.jl")
 export encompassing_type
 
 include("residue_ring_generic.jl")
-export rr_base_type
-export rr_modulus
+export change_modulus
+export change_representation
+export change_base_type
+export change_modulus_proportional
+export change_length
 
 include("ntt.jl")
 
