@@ -33,7 +33,7 @@ export shift_polynomial
 include("misc.jl")
 export encompassing_type
 
-include("residue_ring_generic.jl")
+include("modification.jl")
 export change_modulus
 export change_representation
 export change_base_type
