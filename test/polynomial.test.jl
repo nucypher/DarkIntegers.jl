@@ -59,9 +59,8 @@ function reference_mul(p1::Polynomial{T}, p2::Polynomial{T}) where T
 end
 
 
-@testcase "multiplication" begin
+@testcase "multiplication" for negacyclic in cyclicity
 
-    negacyclic = true
     # A prime slightly greater than 2^80, and (modulus - 1) is a multiple of 64 (required for NTT)
     modulus = BigInt(1440321777275241790996481)
     p1_ref = BigInt.(rand(UInt128, 64)) .% modulus
@@ -95,7 +94,7 @@ choice_types = [
 ]
 
 
-@testcase "multiplication choice" for tp in choice_types
+@testcase "multiplication choice" for tp in choice_types, negacyclic in cyclicity
 
     if tp <: AbstractRRElem
         max_val = Int(DarkIntegers.rr_modulus(tp))
@@ -104,7 +103,6 @@ choice_types = [
     end
 
     len = 32
-    negacyclic = true
     p1 = Polynomial(tp.(mod.(rand(Int, len), max_val)), negacyclic)
     p2 = Polynomial(tp.(mod.(rand(Int, len), max_val)), negacyclic)
 

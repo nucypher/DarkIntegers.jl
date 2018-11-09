@@ -5,13 +5,15 @@ using Primes: isprime
 Select the best available polynomial multiplication function
 based on the element type an polynomial length.
 """
-@inline @generated function _get_polynomial_mul_function(::Type{T}, ::Val{N}) where {T, N}
+@inline @generated function _get_polynomial_mul_function(
+        ::Type{T}, ::Val{N}, ::Val{NC}) where {T, N, NC}
     if T <: AbstractRRElem
         m = rr_modulus_simple(T)
         # Regular NTT needs (m - 1) to be a multiple of N,
         # tangent NTT (for negacyclic polynomials) needs it to be a multiple of 2N.
         # TODO: when ntt_mul() supports posicyclic polynomials too, reflect it in the condition.
-        if rem(m - 1, 2 * N) == 0 && isprime(m)
+        factor = NC ? 2 * N : N
+        if rem(m - 1, factor) == 0 && isprime(m)
             :( ntt_mul )
         else
             :( karatsuba_mul )
@@ -39,7 +41,7 @@ struct Polynomial{T}
 
     @inline function Polynomial(coeffs::AbstractArray{T, 1}, negacyclic::Bool) where T
         len = length(coeffs)
-        mul_function = _get_polynomial_mul_function(T, Val(len))
+        mul_function = _get_polynomial_mul_function(T, Val(len), Val(negacyclic))
         new{T}(coeffs, negacyclic, mul_function)
     end
 
@@ -67,7 +69,7 @@ end
 
 
 @inline function Base.:*(p1::Polynomial{T}, p2::Polynomial{T}) where T
-    # TODO: check that length(p1) == length(p2)?
+    @assert p1.negacyclic == p2.negacyclic && length(p1) == length(p2)
     p1.mul_function(p1, p2)
 end
 
@@ -228,6 +230,7 @@ end
 
 """
 Multiplies two polynomials using Karatsuba algorithm.
+Assumes the polynomials have the same length and the same value of the `negacyclic` field.
 """
 @Base.propagate_inbounds @inline function karatsuba_mul(
         p1::Polynomial{T}, p2::Polynomial{T}) where T
@@ -259,13 +262,22 @@ Multiplies two polynomials using Karatsuba algorithm.
     _karatsuba_mul(half_len, r1, 1, r3, 1, r3, half_len+1, buf, 1, buf2, 1)
     r1 .-= r2 .+ r0
 
-    # TODO: assuming p.negacyclic here, adding a variant for -1 should be simple
-    @simd for i in 1:half_len
-        r0[i+half_len] += r1[i]
-        r0[i] -= r1[i+half_len]
-    end
-    @simd for i in 1:full_len
-        r0[i] -= r2[i]
+    if p1.negacyclic
+        @simd for i in 1:half_len
+            r0[i+half_len] += r1[i]
+            r0[i] -= r1[i+half_len]
+        end
+        @simd for i in 1:full_len
+            r0[i] -= r2[i]
+        end
+    else
+        @simd for i in 1:half_len
+            r0[i+half_len] += r1[i]
+            r0[i] += r1[i+half_len]
+        end
+        @simd for i in 1:full_len
+            r0[i] += r2[i]
+        end
     end
 
     Polynomial(r0, p1.negacyclic, p1.mul_function)
@@ -274,16 +286,15 @@ end
 
 """
 Multiplies two polynomials using NTT.
+Assumes the polynomials have the same length and the same value of the `negacyclic` field.
 """
-# TODO: add support for posicyclic polynomials, using regular NTT
 @inline function ntt_mul(p1::Polynomial{T}, p2::Polynomial{T}) where T
-    @assert p1.negacyclic && p2.negacyclic
-    plan = get_ntt_plan(T, length(p1), true)
+    plan = get_ntt_plan(T, length(p1), p1.negacyclic)
     c1 = copy(p1.coeffs)
     ntt!(plan, c1, false)
     c2 = copy(p2.coeffs)
     ntt!(plan, c2, false)
     c1 .*= c2
     ntt!(plan, c1, true)
-    Polynomial(c1, true, p1.mul_function)
+    Polynomial(c1, p1.negacyclic, p1.mul_function)
 end
