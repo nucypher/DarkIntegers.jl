@@ -5,13 +5,25 @@ Multi-precision unsigned integers.
 using Base: setindex
 
 
+"""
+Multi-precision unsigned integer type, with `N` limbs of type `T`
+(which must be an unsigned integer type).
+
+Supports `+`, `-`, `*`, `divrem`, `div`, `rem`, `^`, `<`, `<=`, `>`, `>=`,
+`zero`, `one` and `isodd`.
+
+    MPNumber{N, T}(x::Integer) where {N, T <: Unsigned}
+
+Creates an `MPNumber` object. If `x` does not fit into `N` limbs of type `T`,
+the excess bits will be ignored.
+"""
 struct MPNumber{N, T <: Unsigned} <: Unsigned
     value :: NTuple{N, T}
 
     MPNumber(x::NTuple{N, T}) where {N, T} = new{N, T}(x)
     MPNumber{N, T}(x::NTuple{N, T}) where {N, T} = new{N, T}(x)
 
-    @inline function MPNumber{N, T}(x::Integer) where {N, T}
+    @inline function MPNumber{N, T}(x::Integer) where {N, T <: Unsigned}
         res = zero(MPNumber{N, T})
         for i in 1:N
             res = setindex(res, T(x & typemax(T)), i)
@@ -20,7 +32,7 @@ struct MPNumber{N, T <: Unsigned} <: Unsigned
         res
     end
 
-    @inline function MPNumber{N, T}(x::MPNumber{M, T}) where {N, M, T}
+    @inline function MPNumber{N, T}(x::MPNumber{M, T}) where {N, M, T <: Unsigned}
         res = zero(MPNumber{N, T})
         for i in 1:min(N, M)
             res = setindex(res, x[i], i)
