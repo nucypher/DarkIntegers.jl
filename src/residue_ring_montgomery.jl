@@ -10,7 +10,7 @@ Note that the division is a regular division, not multiplication by the inverse
 
     RRElemMontgomery{T, M}(x::Integer) where {T <: Unsigned, M}
 
-Creates an `RRElemMontgomery` object. `M` must have the type `T`.
+Creates an `RRElemMontgomery` object. `M` must have the type `T` and be an odd number.
 """
 struct RRElemMontgomery{T, M} <: AbstractRRElem
 
