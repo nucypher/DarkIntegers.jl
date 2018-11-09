@@ -72,7 +72,7 @@ end
 
 @inline function change_modulus_proportional(new_modulus::Unsigned, x::RRElem{T, M}) where {T, M}
     RRElem(
-        change_modulus_proportional(new_modulus, rr_value(x), rr_modulus(x)),
+        change_modulus_proportional(new_modulus, x.value, M),
         convert(T, new_modulus),
         _no_conversion)
 end
