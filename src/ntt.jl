@@ -1,13 +1,28 @@
 using Primes: factor
 
 
+"""
+Returns the inverse of `x` modulo `rr_modulus(T)`.
+The modulus must be a prime number.
+"""
 function ff_inverse(x::T) where T <: AbstractRRElem
     m = rr_modulus_simple(T)
-    x^(m - 2)
+    x^(m-2)
+    # TODO: can be implemented with `invmod()`, which is generally faster
+    # for non-Montgomery numbers, and works for any moduli, not just for prime ones.
+    # Currently blocked by Julia issue #29971.
+    #val = convert(encompassing_type(T), x)
+    #T(invmod(val, m))
 end
 
 
-function get_root(::Type{T}) where T <: AbstractRRElem
+"""
+Finds a generator element for a finite field defined by type `T`
+(that is, we assume that the modulus in `T` is prime).
+This means that every power of the returned `g` from `1` to `M-1` produces
+all the elements of the field (integers from `1` to `M-1`), and `g^(M-1) = 1`.
+"""
+function get_generator(::Type{T}) where T <: AbstractRRElem
     modulus = rr_modulus_simple(T)
     factors = keys(factor(modulus - 1))
     for w in 2:modulus-1
@@ -27,32 +42,48 @@ function get_root(::Type{T}) where T <: AbstractRRElem
 end
 
 
-function get_twiddle_base(::Type{T}, N, inverse) where T <: AbstractRRElem
+"""
+Returns the root of one for NTT
+(an analogue of the root of one in FFT, `e^(-2pi * im / N)`;
+the returned value also has the property `w^N = 1`).
+"""
+function get_root_of_one(::Type{T}, N::Integer, inverse::Bool) where T <: AbstractRRElem
     m = rr_modulus_simple(T)
-    w = get_root(T) # w^(modulus(T) - 1) = 1
-    b = w^div(m - 1, N)
+    g = get_generator(T) # g^(modulus(T) - 1) = 1
+    w = g^div(m - 1, N)
     if inverse
-        ff_inverse(b)
+        ff_inverse(w)
     else
-        b
+        w
     end
 end
 
 
-function get_inverse_coeff(::Type{T}, N) where T <: AbstractRRElem
-    # To compare with the DFT
-    m = rr_modulus_simple(T)
-    T(m - div(m - 1, N))
+"""
+Returns the scaling coefficient for the inverse NTT.
+Similarly to FFT, it's `1/N`, but in our case we need to take the finite field inverse.
+"""
+function get_inverse_coeff(::Type{T}, N::Integer) where T <: AbstractRRElem
+    # Can also be calculated as `N^(-1) mod M == (M - (M-1) ÷ N)`
+    ff_inverse(T(N))
 end
 
 
-function bitreverse(x, l)
-    # Slow, but simple function. Needs some optimized algorithm in practice.
-    parse(Int, "0b" * reverse(bitstring(x)[end-l+1:end]))
+"""
+Reverses the order of the lowest `l` bits in `x` and fills the rest with 0s.
+"""
+function bitreverse(x::T, l::Integer) where T <: Integer
+    # Slow, but simple function.
+    # TODO: can be optimized if its performance becomes critical.
+    parse(T, "0b" * reverse(bitstring(x)[end-l+1:end]))
 end
 
 
-function prepare_swap_indices(len)
+"""
+Returns the list of paris of indices for the elements that must be swapped
+at the start of the FFT algorithm.
+"""
+function prepare_swap_indices(len::Integer)
     log_len = round(Int, log2(len))
     indices = Tuple{Int, Int}[]
     for i in 1:len
@@ -65,9 +96,12 @@ function prepare_swap_indices(len)
 end
 
 
-function prepare_twiddle_factors(tp, len, inverse)
+"""
+Retruns the array of arrays of twiddle factors for each stage of the FFT algorithm.
+"""
+function prepare_twiddle_factors(tp::Type, len::Integer, inverse::Bool)
     log_len = round(Int, log2(len))
-    w = get_twiddle_base(tp, len, inverse)
+    w = get_root_of_one(tp, len, inverse)
     twiddles = Array{tp, 1}[]
     for stage in 1:log_len
         mmax = 2^(stage-1)
@@ -77,6 +111,9 @@ function prepare_twiddle_factors(tp, len, inverse)
 end
 
 
+"""
+Prepared NTT plan.
+"""
 struct NTTPlan{T <: AbstractRRElem}
     forward_coeffs :: Array{T, 1}
     use_forward_coeffs :: Bool
@@ -93,7 +130,7 @@ struct NTTPlan{T <: AbstractRRElem}
         end
 
         if tangent
-            w = get_twiddle_base(tp, 2 * len, false)
+            w = get_root_of_one(tp, 2 * len, false)
             idx = collect(0:len-1)
 
             forward_coeffs = w.^idx

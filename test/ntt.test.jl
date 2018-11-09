@@ -1,4 +1,4 @@
-using DarkIntegers: AbstractRRElem, get_twiddle_base, get_inverse_coeff, ntt
+using DarkIntegers: AbstractRRElem, get_root_of_one, get_inverse_coeff, ntt
 
 
 @testgroup "NTT" begin
@@ -6,7 +6,7 @@ using DarkIntegers: AbstractRRElem, get_twiddle_base, get_inverse_coeff, ntt
 
 function reference_dft(a::Array{T}, inverse) where T <: AbstractRRElem
     d = length(a)
-    r = get_twiddle_base(T, d, inverse)
+    r = get_root_of_one(T, d, inverse)
 
     R = Array{T}(undef, d, d)
     for i in 1:d
