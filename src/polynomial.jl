@@ -1,6 +1,10 @@
 using Primes: isprime
 
 
+"""
+Select the best available polynomial multiplication function
+based on the element type an polynomial length.
+"""
 @inline @generated function _get_polynomial_mul_function(::Type{T}, ::Val{N}) where {T, N}
     if T <: AbstractRRElem
         m = rr_modulus_simple(T)
@@ -19,8 +23,14 @@ end
 
 
 """
-Polynomials modulo `x^n+1`.
-The element type can be a modulo number (as long as it has arithmetic operators defined for it).
+Polynomials modulo `x^n-1` (cyclic) or `x^n+1` (negacyclic).
+Supports any type that has arithmetic operators defined for it,
+including [`RRElem`](@ref) and [`RRElemMontgomery`](@ref).
+
+    Polynomial(coeffs::AbstractArray{T, 1}, negacyclic::Bool) where T
+
+Create a polynomial given the array of coefficients
+(the `i`-th coefficient corresponds to the `(i-1)`-th power).
 """
 struct Polynomial{T}
     coeffs :: Array{T, 1}
@@ -46,6 +56,7 @@ end
 
 
 @inline Base.zero(::Polynomial{T}) where T = ZeroPolynomial()
+
 
 @inline Base.length(p::Polynomial{T}) where T = length(p.coeffs)
 
@@ -102,20 +113,22 @@ end
     Polynomial(p1.coeffs .- p2.coeffs, p1.negacyclic, p1.mul_function)
 end
 
-
 @inline function Base.:-(p1::Polynomial{T}, p2::Unsigned) where T
     Polynomial(p1.coeffs .- T(p2), p1.negacyclic, p1.mul_function)
 end
-
 
 @inline function Base.:-(p1::Polynomial{T}) where T
     Polynomial(.-p1.coeffs, p1.negacyclic, p1.mul_function)
 end
 
-
 @inline Base.:-(p1::Polynomial, p2::ZeroPolynomial) = p1
 
 
+"""
+    shift_polynomial(p::Polynomial{T}, shift::Integer) where T
+
+Multiply the polynomial by `x^shift`. `shift` can be negative.
+"""
 @Base.propagate_inbounds @inline function shift_polynomial(
         p::Polynomial{T}, shift::Integer) where T
 
@@ -143,20 +156,42 @@ end
 end
 
 
-@inline function mul_with_overflow(l, res, res_s, p1, p1_s, p2, p2_s)
+"""
+Multiplies two polynomials of length `l` whose coefficients are stored in arrays
+`p1c` and `p2c` starting from locations `p1_s` and `p2_s`, respectively.
+The result is placed in the array `res` starting from the location `res_s`.
+`res` is assumed to have enough space to store the full result of length `2l`.
+"""
+@inline function mul_naive(
+        l::Int, res::Array{T, 1}, res_s::Int,
+        p1c::Array{T, 1}, p1_s::Int, p2c::Array{T, 1}, p2_s::Int) where T
     @simd for j in 1:l
         for k in 1:l
-            res[res_s+j+k-2] += p2[p2_s+k-1] * p1[p1_s+j-1]
+            res[res_s+j+k-2] += p2c[p2_s+k-1] * p1c[p1_s+j-1]
         end
     end
 end
 
 
-@inline function _karatsuba_mul(full_len, res, res_s, p1c, p1_s, p2c, p2_s, buf, buf_s,
-        buf2, buf2_s)
+"""
+Recursive Karatsuba multiplication function.
+Multiplies two polynomials of length `full_len` (must be a power of 2)
+whose coefficients are stored in arrays
+`p1c` and `p2c` starting from locations `p1_s` and `p2_s`, respectively.
+The result is placed in the array `res` starting from the location `res_s`.
+`res` is assumed to have enough space to store the full result of length `2 * full_len`.
+`buf` and `buf2` are temporary buffers with enough space for `2 * full_len` elements
+starting from locations `buf_s` and `buf2_s`, respectively.
+"""
+@inline function _karatsuba_mul(
+        full_len::Int, res::Array{T, 1}, res_s::Int,
+        p1c::Array{T, 1}, p1_s::Int,
+        p2c::Array{T, 1}, p2_s::Int,
+        buf::Array{T, 1}, buf_s::Int,
+        buf2::Array{T, 1}, buf2_s::Int) where T
 
     if full_len <= 8
-        mul_with_overflow(full_len, res, res_s, p1c, p1_s, p2c, p2_s)
+        mul_naive(full_len, res, res_s, p1c, p1_s, p2c, p2_s)
         return
     end
 
@@ -191,6 +226,9 @@ end
 end
 
 
+"""
+Multiplies two polynomials using Karatsuba algorithm.
+"""
 @Base.propagate_inbounds @inline function karatsuba_mul(
         p1::Polynomial{T}, p2::Polynomial{T}) where T
 
@@ -234,7 +272,9 @@ end
 end
 
 
-# Multiplication of negacyclic polynomials based on tangent NTT
+"""
+Multiplies two polynomials using NTT.
+"""
 # TODO: add support for posicyclic polynomials, using regular NTT
 @inline function ntt_mul(p1::Polynomial{T}, p2::Polynomial{T}) where T
     @assert p1.negacyclic && p2.negacyclic
