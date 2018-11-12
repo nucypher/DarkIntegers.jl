@@ -26,15 +26,11 @@ struct RRElemMontgomery{T, M} <: AbstractRRElem
         RRElemMontgomery(x, M, _no_conversion)
     end
 
-    @inline function RRElemMontgomery{T, M}(x::T) where {T <: Unsigned, M}
-        # No need to take the modulus first, conversion will take care of it.
-        RRElemMontgomery{T, M}(to_montgomery(RRElemMontgomery{T, M}, x), _no_conversion)
-    end
-
     @inline function RRElemMontgomery{T, M}(x::Integer) where {T <: Unsigned, M}
         # Need to take the modulus before converting `x` to `T`,
         # in case `x` does not fit in `T`.
-        RRElemMontgomery{T, M}(convert(T, mod(x, M)))
+        RRElemMontgomery{T, M}(
+            to_montgomery(RRElemMontgomery{T, M}, convert(T, mod(x, M))), _no_conversion)
     end
 end
 
