@@ -69,8 +69,8 @@ end
     x = rand(rng, UInt128(1):modulus-1)
     y = rand(rng, UInt128(1):modulus-1)
 
-    x_m1 = RRElemMontgomery(x, modulus)
-    y_m1 = RRElemMontgomery(y, modulus)
+    x_m1 = RRElemMontgomery{UInt128, modulus}(x)
+    y_m1 = RRElemMontgomery{UInt128, modulus}(y)
     trial = @benchmark $x_m1 * $y_m1
     @test_result "UInt128: " * benchmark_result(trial)
 
@@ -78,8 +78,8 @@ end
     x_mp = mptp(x)
     y_mp = mptp(y)
     m_mp = mptp(modulus)
-    x_m2 = RRElemMontgomery(x_mp, m_mp)
-    y_m2 = RRElemMontgomery(y_mp, m_mp)
+    x_m2 = RRElemMontgomery{mptp, m_mp}(x_mp)
+    y_m2 = RRElemMontgomery{mptp, m_mp}(y_mp)
     trial = @benchmark $x_m2 * $y_m2
     @test_result "2xUInt64: " * benchmark_result(trial)
 
@@ -87,8 +87,8 @@ end
     x_mp = mptp(x)
     y_mp = mptp(y)
     m_mp = mptp(modulus)
-    x_m3 = RRElemMontgomery(x_mp, m_mp)
-    y_m3 = RRElemMontgomery(y_mp, m_mp)
+    x_m3 = RRElemMontgomery{mptp, m_mp}(x_mp)
+    y_m3 = RRElemMontgomery{mptp, m_mp}(y_mp)
     trial = @benchmark $x_m3 * $y_m3
     @test_result "3xUInt32: " * benchmark_result(trial)
 
