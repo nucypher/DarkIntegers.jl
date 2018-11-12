@@ -12,7 +12,7 @@ Namely, `m' = -m^(-1) mod b`, where `b = typemax(T)+1`.
 function get_montgomery_coeff(modulus::T) where T <: Unsigned
     # have to widen the type, since we need to use `typemax(T)+1`.
     T2 = widen(T)
-    -T(invmod(T2(modulus), T2(typemax(T)) + 1))
+    -T(invmod(convert(T2, modulus), convert(T2, typemax(T)) + 1))
 end
 
 
@@ -128,8 +128,9 @@ does not fit in the type of `x`.
 So we have to calculate `c = R mod m` and use it as `x' = x * c mod m`.
 """
 function get_to_montgomery_coeff(m::T) where T <: Unsigned
+    # have to widen the type, since we need to use `typemax(T)+1`.
     T2 = widen(T)
-    T(mod(T2(typemax(T)) + 1, T2(m)))
+    T(mod(convert(T2, typemax(T)) + 1, convert(T2, m)))
 end
 
 
