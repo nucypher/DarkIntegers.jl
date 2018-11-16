@@ -82,7 +82,7 @@ end
 @inline function Base.:*(x::RRElem{T, M}, y::RRElem{T, M}) where {T, M}
     xt = x.value
     yt = y.value
-    res = mulmod_widemul(xt, yt, M)
+    res = mulmod(xt, yt, M)
     RRElem(res, M, _no_conversion)
 end
 
