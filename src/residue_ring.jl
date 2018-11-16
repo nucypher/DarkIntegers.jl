@@ -98,8 +98,11 @@ end
 
 
 @inline function Base.div(x::RRElem{T, M}, y::Unsigned) where {T, M}
-    # TODO: assumes that `y` fits into RRElem
-    div(x, RRElem{T, M}(y))
+    if y >= M
+        zero(RRElem{T, M})
+    else
+        div(x, RRElem{T, M}(y))
+    end
 end
 
 

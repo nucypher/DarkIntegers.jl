@@ -140,9 +140,13 @@ end
 
 
 function Base.div(x::RRElemMontgomery{T, M}, y::Unsigned) where {T, M}
-    x_T = from_montgomery(x)
-    y_T = convert(T, y) # TODO: assumes that `y` fits into RRElem
-    RRElemMontgomery{T, M}(div(x_T, y_T))
+    if y >= M
+        zero(RRElemMontgomery{T, M})
+    else
+        x_T = from_montgomery(x)
+        y_T = convert(T, y)
+        RRElemMontgomery{T, M}(div(x_T, y_T))
+    end
 end
 
 
