@@ -9,6 +9,7 @@ include("residue_ring.test.jl")
 include("montgomery_reduction.test.jl")
 include("residue_ring_montgomery.test.jl")
 include("polynomial.test.jl")
+include("modification.test.jl")
 include("ntt.test.jl")
 
 exit(runtests())

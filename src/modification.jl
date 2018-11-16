@@ -103,13 +103,12 @@ end
 
 @inline function _change_modulus_proportional(
         new_modulus::Unsigned, x::T, old_modulus::T) where T <: Unsigned
-
-    # TODO: optimize
-    xi = convert(BigInt, x)
-    mi = convert(BigInt, old_modulus)
-
-    # TODO: make it a purely integer algorithm
-    convert(T, round(BigInt, xi * new_modulus / mi))
+    hi, lo = mulhilo(x, convert(T, new_modulus))
+    q, r = divremhilo(hi, lo, old_modulus)
+    if r >= old_modulus ÷ 2 + (isodd(old_modulus) ? one(T) : zero(T))
+        q += one(T)
+    end
+    q
 end
 
 
