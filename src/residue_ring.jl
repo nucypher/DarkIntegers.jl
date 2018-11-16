@@ -33,11 +33,16 @@ struct RRElem{T, M} <: AbstractRRElem
     end
 
     @inline function RRElem{T, M}(x::Integer) where {T <: Unsigned, M}
-        # No need to take the modulus first, conversion will take care of it.
         RRElem{T, M}(convert(T, mod(x, M)), _no_conversion)
     end
 end
 
+# Needed in cases when convert(RRElem, MPNumber) is requested
+# (including implicitly, e.g. in array element assignment)
+# to prevent convert(::Type{<:Integer}, x::MPNumber) from firing.
+@inline Base.convert(::Type{RRElem{T, M}}, x::V) where {T, M, V <: MPNumber} =
+    RRElem{T, M}(convert(encompassing_type(V), x))
+@inline Base.convert(::Type{RRElem{T, M}}, x::T) where {T <: MPNumber, M} = RRElem{T, M}(x)
 
 @inline Base.convert(::Type{RRElem{T, M}}, x::RRElem{T, M}) where {T, M} = x
 @inline Base.convert(::Type{V}, x::RRElem{T, M}) where {V <: Integer, T, M} = convert(V, x.value)

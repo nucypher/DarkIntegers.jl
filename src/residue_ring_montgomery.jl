@@ -64,6 +64,14 @@ end
 end
 
 
+# Needed in cases when convert(RRElemMontgomery, MPNumber) is requested
+# (including implicitly, e.g. in array element assignment)
+# to prevent convert(::Type{<:Integer}, x::MPNumber) from firing.
+@inline Base.convert(::Type{RRElemMontgomery{T, M}}, x::V) where {T, M, V <: MPNumber} =
+    RRElemMontgomery{T, M}(convert(encompassing_type(V), x))
+@inline Base.convert(::Type{RRElemMontgomery{T, M}}, x::T) where {T <: MPNumber, M} =
+    RRElemMontgomery{T, M}(x)
+
 @inline function Base.convert(::Type{RRElem{T, M}}, x::RRElemMontgomery{T, M}) where {T, M}
     RRElem(from_montgomery(x), M, _no_conversion)
 end
