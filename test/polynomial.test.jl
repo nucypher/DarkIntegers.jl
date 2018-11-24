@@ -1,4 +1,4 @@
-using DarkIntegers: shift_polynomial, karatsuba_mul, ntt_mul
+using DarkIntegers: shift_polynomial, karatsuba_mul, ntt_mul, nussbaumer_mul
 
 
 @testgroup "polynomials" begin
@@ -76,9 +76,11 @@ end
     ref = reference_mul(p1, p2)
     test1 = karatsuba_mul(p1, p2)
     test2 = ntt_mul(p1, p2)
+    test3 = nussbaumer_mul(p1, p2)
 
     @test ref == test1
     @test ref == test2
+    @test ref == test3
 end
 
 
@@ -133,6 +135,9 @@ end
 
     trial = @benchmark ntt_mul($p1, $p2)
     @test_result "NTT: " * benchmark_result(trial)
+
+    trial = @benchmark nussbaumer_mul($p1, $p2)
+    @test_result "Nussbaumer: " * benchmark_result(trial)
 
     trial = @benchmark $p1 * $p2
     @test_result "default: " * benchmark_result(trial)

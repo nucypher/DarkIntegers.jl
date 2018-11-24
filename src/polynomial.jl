@@ -297,3 +297,208 @@ Assumes the polynomials have the same length and the same value of the `negacycl
     ntt!(plan, c1, true)
     Polynomial(c1, p1.negacyclic, p1.mul_function)
 end
+
+
+@inline function nussbaumer_mul_cyclic(x::Array{T, 1}, y::Array{T, 1}) where T
+    # assuming that the polynomial length is power of 2
+    n = trailing_zeros(length(x))
+
+    if n == 1
+        z1 = x[1] * y[1] + x[2] * y[2]
+        z2 = (x[1] + x[2]) * (y[1] + y[2]) - z1
+        return [z1, z2]
+    end
+
+    m = length(x) >> 1
+
+    xx = copy(x)
+    yy = copy(y)
+
+    for k in 1:m
+        t = x[m + k]
+        xx[m + k] = x[k] - t
+        xx[k] = x[k] + t
+
+        t = y[m + k]
+        yy[m + k] = y[k] - t
+        yy[k] = y[k] + t
+    end
+
+    z = similar(x)
+    z[1:m] = nussbaumer_mul_cyclic(xx[1:m], yy[1:m])
+    z[m+1:2m] = nussbaumer_mul_negacyclic(xx[m+1:2m], yy[m+1:2m])
+
+    for k in 1:m
+        t = z[m + k]
+        z[m + k] = (z[k] - t)
+        z[k] = (z[k] + t)
+    end
+
+    # To avoid final rescaling `z` must be divided by 2 here.
+    # Instead, in order for the accumulated scaling from cyclic multiplication for the length `2^n`
+    # to be the same as for the negacyclic multiplication, we add a multiplication by 2
+    # for certain values of `n`.
+    if 2^trailing_zeros(n - 1) == n - 1
+        z .*= 2
+    end
+
+    z
+end
+
+
+@inline function bitreverse32(x::UInt32)
+    x = ((x & 0xaaaaaaaa) >> 1) | ((x & 0x55555555) << 1)
+    x = ((x & 0xcccccccc) >> 2) | ((x & 0x33333333) << 2)
+    x = ((x & 0xf0f0f0f0) >> 4) | ((x & 0x0f0f0f0f) << 4)
+    x = ((x & 0xff00ff00) >> 8) | ((x & 0x00ff00ff) << 8)
+    (x >> 16) | (x << 16)
+end
+
+
+function nussbaumer_mul_negacyclic(x::Array{T, 1}, y::Array{T, 1}) where T
+
+    n = trailing_zeros(length(x))
+
+    if n == 1
+        t = x[1] * (y[1] + y[2])
+        z1 = t - (x[1] + x[2]) * y[2]
+        z2 = t + (x[2] - x[1]) * y[1]
+        return [z1, z2]
+    end
+
+    m = 1 << (fld(n, 2))
+    r = 1 << (cld(n, 2))
+
+    X = Array{T}(undef, 2m, r)
+    Y = Array{T}(undef, 2m, r)
+
+    X[1:m,:] .= reshape(x, m, r)
+    X[m+1:2m,:] .= reshape(x, m, r)
+    Y[1:m,:] .= reshape(y, m, r)
+    Y[m+1:2m,:] .= reshape(y, m, r)
+
+    jmax = fld(n, 2)
+    for j in fld(n, 2)-1:-1:0
+        for st in 1:m
+            s = ((st - 1) >> j) << (j + 1)
+            t = (st - 1) & ((1 << j) - 1)
+
+            sp = bitreverse32(UInt32(s)) >> (32 - fld(n, 2) - 2 - j) # Remove hardcoding
+            sp = sp ÷ 2
+
+            k = sp * r ÷ m
+
+            cycle = isodd(fld(k, r))
+            k = mod(k, r)
+
+            shift_first = (!cycle) ? -1 : 1
+            shift_last = cycle ? -1 : 1
+
+            st_ = s + t + 1
+
+            Xl = copy(X[st_ + (1 << j),:])
+            X[st_+2^j,1:k] .= X[st_,1:k] .+ (-shift_first) .* Xl[r-k+1:r]
+            X[st_+2^j,k+1:r] .= X[st_,k+1:r] .+ (-shift_last) .* Xl[1:r-k]
+            X[st_,1:k] .= X[st_,1:k] .+ shift_first .* Xl[r-k+1:r]
+            X[st_,k+1:r] .= X[st_,k+1:r] .+ shift_last .* Xl[1:r-k]
+
+            Yl = copy(Y[st_ + (1 << j),:])
+            Y[st_+2^j,1:k] .= Y[st_,1:k] .+ (-shift_first) .* Yl[r-k+1:r]
+            Y[st_+2^j,k+1:r] .= Y[st_,k+1:r] .+ (-shift_last) .* Yl[1:r-k]
+            Y[st_,1:k] .= Y[st_,1:k] .+ shift_first .* Yl[r-k+1:r]
+            Y[st_,k+1:r] .= Y[st_,k+1:r] .+ shift_last .* Yl[1:r-k]
+
+        end
+    end
+
+    Z = similar(X)
+    for i = 1:2m
+        Z[i,:] .= nussbaumer_mul_negacyclic(X[i,:], Y[i,:])
+    end
+
+    for j = 0:fld(n, 2)
+        for st in 1:m
+            s = ((st - 1) >> j) << (j + 1)
+            t = (st - 1) & ((1 << j) - 1)
+
+            sp = bitreverse32(UInt32(s)) >> (32 - fld(n, 2) - 2 - j) # Remove hardcoding
+            sp = sp ÷ 2
+
+            k = -(sp * r ÷ m)
+
+            cycle = isodd(fld(k, r))
+            k = mod(k, r)
+
+            shift_first = (!cycle) ? -1 : 1
+            shift_last = cycle ? -1 : 1
+
+            st_ = s + t + 1
+
+            Zl = copy(Z[st_ + (1 << j),:])
+            Z[st_+2^j,1:k] .= shift_first .* (Z[st_,end-k+1:end] .- Zl[end-k+1:end])
+            Z[st_+2^j,k+1:end] .= shift_last .* (Z[st_,1:r-k] .- Zl[1:r-k])
+            Z[st_,:] .= (Z[st_,:] .+ Zl)
+
+            # To avoid final rescaling `Z` must be divided by 2 here.
+        end
+    end
+
+    z = similar(x)
+
+    z[1:m] .= Z[1:m,1] .- Z[m+1:2m,r]
+    for j = 2:r
+        z[m*(j-1)+1:m*j] .= Z[1:m,j] .+ Z[m+1:2m,j-1]
+    end
+
+    z
+end
+
+
+
+function get_scale(n, negacyclic)
+    if n < 2
+        0
+    else
+        if negacyclic
+            fld(n, 2) + 1 + get_scale(cld(n, 2), true)
+        else
+            1 + get_scale(n-1, true) + (2^trailing_zeros(n - 1) == n - 1)
+        end
+    end
+end
+
+
+"""
+Polynomial multiplication algorithm by
+H.J. Nussbaumer, "Fast Polynomial Transform Algorithms for Digital Convolution"
+IEEE Transactions on Acoustics, Speech, and Signal Processing, 28(2), 205–215 (1980)
+doi:10.1109/TASSP.1980.1163372
+
+The algorithm in a more clear form is provided in Knuth's TAOCP Vol.2, Exercise 4.6.4-59.
+"""
+@inline function nussbaumer_mul(p1::Polynomial{T}, p2::Polynomial{T}) where T
+    # Assuming that the polynomial length is power of 2
+    n = trailing_zeros(length(p1))
+
+    if p1.negacyclic
+        coeffs = nussbaumer_mul_negacyclic(p1.coeffs, p2.coeffs)
+    else
+        coeffs = nussbaumer_mul_cyclic(p1.coeffs, p2.coeffs)
+    end
+
+    # Since we did not divide by 2 in the internal multiplication functions
+    # (because it may be slow for some residue ring element representations),
+    # we need to rescale here.
+    scale_exp = get_scale(n, p1.negacyclic)
+    scale = 1 << scale_exp
+    if T <: AbstractRRElem
+        # Assuming here that gcd(scale, modulus) == 1
+        # Since scale is a power of 2, it is enough for the modulus to be odd.
+        coeffs .*= invmod(scale, rr_modulus_simple(T))
+    else
+        coeffs .÷= scale
+    end
+
+    Polynomial(coeffs, p1.negacyclic)
+end
+
