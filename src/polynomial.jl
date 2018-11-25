@@ -369,13 +369,13 @@ function nussbaumer_mul_negacyclic(x::Array{T, 1}, y::Array{T, 1}) where T
     m = 1 << (fld(n, 2))
     r = 1 << (cld(n, 2))
 
-    X = Array{T}(undef, 2m, r)
-    Y = Array{T}(undef, 2m, r)
+    X = Array{T}(undef, r, 2m)
+    Y = Array{T}(undef, r, 2m)
 
-    X[1:m,:] .= reshape(x, m, r)
-    X[m+1:2m,:] .= reshape(x, m, r)
-    Y[1:m,:] .= reshape(y, m, r)
-    Y[m+1:2m,:] .= reshape(y, m, r)
+    X[:,1:m] .= transpose(reshape(x, m, r))
+    X[:,m+1:2m] .= transpose(reshape(x, m, r))
+    Y[:,1:m] .= transpose(reshape(y, m, r))
+    Y[:,m+1:2m] .= transpose(reshape(y, m, r))
 
     jmax = fld(n, 2)
     for j in fld(n, 2)-1:-1:0
@@ -396,24 +396,24 @@ function nussbaumer_mul_negacyclic(x::Array{T, 1}, y::Array{T, 1}) where T
 
             st_ = s + t + 1
 
-            Xl = copy(X[st_ + (1 << j),:])
-            X[st_+2^j,1:k] .= X[st_,1:k] .+ (-shift_first) .* Xl[r-k+1:r]
-            X[st_+2^j,k+1:r] .= X[st_,k+1:r] .+ (-shift_last) .* Xl[1:r-k]
-            X[st_,1:k] .= X[st_,1:k] .+ shift_first .* Xl[r-k+1:r]
-            X[st_,k+1:r] .= X[st_,k+1:r] .+ shift_last .* Xl[1:r-k]
+            Xl = copy(X[:,st_ + (1 << j)])
+            X[1:k,st_+2^j] .= X[1:k,st_] .+ (-shift_first) .* Xl[r-k+1:r]
+            X[k+1:r,st_+2^j] .= X[k+1:r,st_] .+ (-shift_last) .* Xl[1:r-k]
+            X[1:k,st_] .= X[1:k,st_] .+ shift_first .* Xl[r-k+1:r]
+            X[k+1:r,st_] .= X[k+1:r,st_] .+ shift_last .* Xl[1:r-k]
 
-            Yl = copy(Y[st_ + (1 << j),:])
-            Y[st_+2^j,1:k] .= Y[st_,1:k] .+ (-shift_first) .* Yl[r-k+1:r]
-            Y[st_+2^j,k+1:r] .= Y[st_,k+1:r] .+ (-shift_last) .* Yl[1:r-k]
-            Y[st_,1:k] .= Y[st_,1:k] .+ shift_first .* Yl[r-k+1:r]
-            Y[st_,k+1:r] .= Y[st_,k+1:r] .+ shift_last .* Yl[1:r-k]
+            Yl = copy(Y[:,st_ + (1 << j)])
+            Y[1:k,st_+2^j] .= Y[1:k,st_] .+ (-shift_first) .* Yl[r-k+1:r]
+            Y[k+1:r,st_+2^j] .= Y[k+1:r,st_] .+ (-shift_last) .* Yl[1:r-k]
+            Y[1:k,st_] .= Y[1:k,st_] .+ shift_first .* Yl[r-k+1:r]
+            Y[k+1:r,st_] .= Y[k+1:r,st_] .+ shift_last .* Yl[1:r-k]
 
         end
     end
 
     Z = similar(X)
     for i = 1:2m
-        Z[i,:] .= nussbaumer_mul_negacyclic(X[i,:], Y[i,:])
+        Z[:,i] .= nussbaumer_mul_negacyclic(X[:,i], Y[:,i])
     end
 
     for j = 0:fld(n, 2)
@@ -434,16 +434,18 @@ function nussbaumer_mul_negacyclic(x::Array{T, 1}, y::Array{T, 1}) where T
 
             st_ = s + t + 1
 
-            Zl = copy(Z[st_ + (1 << j),:])
-            Z[st_+2^j,1:k] .= shift_first .* (Z[st_,end-k+1:end] .- Zl[end-k+1:end])
-            Z[st_+2^j,k+1:end] .= shift_last .* (Z[st_,1:r-k] .- Zl[1:r-k])
-            Z[st_,:] .= (Z[st_,:] .+ Zl)
+            Zl = copy(Z[:,st_ + (1 << j)])
+            Z[1:k,st_+2^j] .= shift_first .* (Z[end-k+1:end,st_] .- Zl[end-k+1:end])
+            Z[k+1:end,st_+2^j] .= shift_last .* (Z[1:r-k,st_] .- Zl[1:r-k])
+            Z[:,st_] .= (Z[:,st_] .+ Zl)
 
             # To avoid final rescaling `Z` must be divided by 2 here.
         end
     end
 
     z = similar(x)
+
+    Z = transpose(Z)
 
     z[1:m] .= Z[1:m,1] .- Z[m+1:2m,r]
     for j = 2:r
