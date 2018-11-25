@@ -355,106 +355,136 @@ end
 end
 
 
+
+
 function nussbaumer_mul_negacyclic(x::Array{T, 1}, y::Array{T, 1}) where T
+    full_n = trailing_zeros(length(x))
 
-    n = trailing_zeros(length(x))
-
-    if n == 1
-        t = x[1] * (y[1] + y[2])
-        z1 = t - (x[1] + x[2]) * y[2]
-        z2 = t + (x[2] - x[1]) * y[1]
-        return [z1, z2]
-    end
-
-    m = 1 << (fld(n, 2))
-    r = 1 << (cld(n, 2))
-
-    X = Array{T}(undef, r, 2m)
-    Y = Array{T}(undef, r, 2m)
-
-    X[:,1:m] .= transpose(reshape(x, m, r))
-    X[:,m+1:2m] .= transpose(reshape(x, m, r))
-    Y[:,1:m] .= transpose(reshape(y, m, r))
-    Y[:,m+1:2m] .= transpose(reshape(y, m, r))
-
-    jmax = fld(n, 2)
-    for j in fld(n, 2)-1:-1:0
-        for st in 1:m
-            s = ((st - 1) >> j) << (j + 1)
-            t = (st - 1) & ((1 << j) - 1)
-
-            sp = bitreverse32(UInt32(s)) >> (32 - fld(n, 2) - 2 - j) # Remove hardcoding
-            sp = sp ÷ 2
-
-            k = sp * r ÷ m
-
-            cycle = isodd(fld(k, r))
-            k = mod(k, r)
-
-            shift_first = (!cycle) ? -1 : 1
-            shift_last = cycle ? -1 : 1
-
-            st_ = s + t + 1
-
-            Xl = copy(X[:,st_ + (1 << j)])
-            X[1:k,st_+2^j] .= X[1:k,st_] .+ (-shift_first) .* Xl[r-k+1:r]
-            X[k+1:r,st_+2^j] .= X[k+1:r,st_] .+ (-shift_last) .* Xl[1:r-k]
-            X[1:k,st_] .= X[1:k,st_] .+ shift_first .* Xl[r-k+1:r]
-            X[k+1:r,st_] .= X[k+1:r,st_] .+ shift_last .* Xl[1:r-k]
-
-            Yl = copy(Y[:,st_ + (1 << j)])
-            Y[1:k,st_+2^j] .= Y[1:k,st_] .+ (-shift_first) .* Yl[r-k+1:r]
-            Y[k+1:r,st_+2^j] .= Y[k+1:r,st_] .+ (-shift_last) .* Yl[1:r-k]
-            Y[1:k,st_] .= Y[1:k,st_] .+ shift_first .* Yl[r-k+1:r]
-            Y[k+1:r,st_] .= Y[k+1:r,st_] .+ shift_last .* Yl[1:r-k]
-
+    if full_n > 1
+        stages = [full_n]
+        while true
+            new_n = cld(stages[end], 2)
+            if new_n == 1
+                break
+            end
+            push!(stages, new_n)
         end
+    else
+        stages = []
     end
 
+    x_src = x
+    y_src = y
+
+    for n in stages
+
+        batch = prod(size(x_src)) ÷ (2^n)
+        m = 1 << (fld(n, 2))
+        r = 1 << (cld(n, 2))
+
+        X = Array{T}(undef, r, 2m, batch)
+        Y = Array{T}(undef, r, 2m, batch)
+
+        X[:,1:m,:] .= permutedims(reshape(x_src, m, r, :), [2, 1, 3])
+        X[:,m+1:2m,:] .= permutedims(reshape(x_src, m, r, :), [2, 1, 3])
+        Y[:,1:m,:] .= permutedims(reshape(y_src, m, r, :), [2, 1, 3])
+        Y[:,m+1:2m,:] .= permutedims(reshape(y_src, m, r, :), [2, 1, 3])
+
+        for j in fld(n, 2)-1:-1:0
+            for st in 1:m
+                s = ((st - 1) >> j) << (j + 1)
+                t = (st - 1) & ((1 << j) - 1)
+
+                sp = bitreverse32(UInt32(s)) >> (32 - fld(n, 2) - 2 - j) # Remove hardcoding
+                sp = sp ÷ 2
+
+                k = sp * r ÷ m
+
+                cycle = isodd(fld(k, r))
+                k = mod(k, r)
+
+                shift_first = (!cycle) ? -1 : 1
+                shift_last = cycle ? -1 : 1
+
+                st_ = s + t + 1
+
+                Xl = copy(X[:,st_ + (1 << j),:])
+                X[1:k,st_+2^j,:] .= X[1:k,st_,:] .+ (-shift_first) .* Xl[r-k+1:r,:]
+                X[k+1:r,st_+2^j,:] .= X[k+1:r,st_,:] .+ (-shift_last) .* Xl[1:r-k,:]
+                X[1:k,st_,:] .= X[1:k,st_,:] .+ shift_first .* Xl[r-k+1:r,:]
+                X[k+1:r,st_,:] .= X[k+1:r,st_,:] .+ shift_last .* Xl[1:r-k,:]
+
+                Yl = copy(Y[:,st_ + (1 << j),:])
+                Y[1:k,st_+2^j,:] .= Y[1:k,st_,:] .+ (-shift_first) .* Yl[r-k+1:r,:]
+                Y[k+1:r,st_+2^j,:] .= Y[k+1:r,st_,:] .+ (-shift_last) .* Yl[1:r-k,:]
+                Y[1:k,st_,:] .= Y[1:k,st_,:] .+ shift_first .* Yl[r-k+1:r,:]
+                Y[k+1:r,st_,:] .= Y[k+1:r,st_,:] .+ shift_last .* Yl[1:r-k,:]
+
+            end
+        end
+
+        x_src = X
+        y_src = Y
+    end
+
+    # n=1 stage
+    X = reshape(x_src, 2, :)
+    Y = reshape(y_src, 2, :)
     Z = similar(X)
-    for i = 1:2m
-        Z[:,i] .= nussbaumer_mul_negacyclic(X[:,i], Y[:,i])
-    end
 
-    for j = 0:fld(n, 2)
-        for st in 1:m
-            s = ((st - 1) >> j) << (j + 1)
-            t = (st - 1) & ((1 << j) - 1)
+    t = X[1,:] .* (Y[1,:] .+ Y[2,:])
+    Z[1,:] .= t .- (X[1,:] .+ X[2,:]) .* Y[2,:]
+    Z[2,:] .= t .+ (X[2,:] .- X[1,:]) .* Y[1,:]
 
-            sp = bitreverse32(UInt32(s)) >> (32 - fld(n, 2) - 2 - j) # Remove hardcoding
-            sp = sp ÷ 2
+    for n in reverse(stages)
 
-            k = -(sp * r ÷ m)
+        batch = prod(size(Z)) ÷ (2 * 2^n)
+        m = 1 << (fld(n, 2))
+        r = 1 << (cld(n, 2))
 
-            cycle = isodd(fld(k, r))
-            k = mod(k, r)
+        Z = reshape(Z, r, 2m, batch)
 
-            shift_first = (!cycle) ? -1 : 1
-            shift_last = cycle ? -1 : 1
+        for j = 0:fld(n, 2)
+            for st in 1:m
+                s = ((st - 1) >> j) << (j + 1)
+                t = (st - 1) & ((1 << j) - 1)
 
-            st_ = s + t + 1
+                sp = bitreverse32(UInt32(s)) >> (32 - fld(n, 2) - 2 - j) # Remove hardcoding
+                sp = sp ÷ 2
 
-            Zl = copy(Z[:,st_ + (1 << j)])
-            Z[1:k,st_+2^j] .= shift_first .* (Z[end-k+1:end,st_] .- Zl[end-k+1:end])
-            Z[k+1:end,st_+2^j] .= shift_last .* (Z[1:r-k,st_] .- Zl[1:r-k])
-            Z[:,st_] .= (Z[:,st_] .+ Zl)
+                k = -(sp * r ÷ m)
 
-            # To avoid final rescaling `Z` must be divided by 2 here.
+                cycle = isodd(fld(k, r))
+                k = mod(k, r)
+
+                shift_first = (!cycle) ? -1 : 1
+                shift_last = cycle ? -1 : 1
+
+                st_ = s + t + 1
+
+                Zl = copy(Z[:,st_ + (1 << j),:])
+                Z[1:k,st_+2^j,:] .= shift_first .* (Z[end-k+1:end,st_,:] .- Zl[end-k+1:end,:])
+                Z[k+1:end,st_+2^j,:] .= shift_last .* (Z[1:r-k,st_,:] .- Zl[1:r-k,:])
+                Z[:,st_,:] .= (Z[:,st_,:] .+ Zl)
+
+                # To avoid final rescaling `Z` must be divided by 2 here.
+            end
         end
+
+        Z_new = Array{T}(undef, 2^n, batch)
+
+        Z = permutedims(Z, [2, 1, 3])
+
+        Z_new[1:m,:] .= Z[1:m,1,:] .- Z[m+1:2m,r,:]
+        for j = 2:r
+            Z_new[m*(j-1)+1:m*j,:] .= Z[1:m,j,:] .+ Z[m+1:2m,j-1,:]
+        end
+
+        Z = Z_new
     end
 
-    z = similar(x)
-
-    Z = transpose(Z)
-
-    z[1:m] .= Z[1:m,1] .- Z[m+1:2m,r]
-    for j = 2:r
-        z[m*(j-1)+1:m*j] .= Z[1:m,j] .+ Z[m+1:2m,j-1]
-    end
-
-    z
+    Z[:]
 end
-
 
 
 function get_scale(n, negacyclic)
@@ -503,4 +533,3 @@ The algorithm in a more clear form is provided in Knuth's TAOCP Vol.2, Exercise 
 
     Polynomial(coeffs, p1.negacyclic)
 end
-
