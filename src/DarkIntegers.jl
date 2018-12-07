@@ -42,4 +42,6 @@ export change_length
 
 include("ntt.jl")
 
+include("nussbaumer.jl")
+
 end
