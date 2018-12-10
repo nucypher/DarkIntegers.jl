@@ -42,6 +42,7 @@ export change_length
 
 include("ntt.jl")
 
+include("convolution_kernels.jl")
 include("nussbaumer.jl")
 
 end
