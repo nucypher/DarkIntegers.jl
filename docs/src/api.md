@@ -58,8 +58,8 @@ shift_polynomial
 change_representation
 change_base_type
 change_modulus
-change_modulus_proportional
 change_length
+rescale
 ```
 
 ## Miscellaneous

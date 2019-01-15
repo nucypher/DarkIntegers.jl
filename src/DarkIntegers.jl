@@ -37,8 +37,8 @@ include("modification.jl")
 export change_modulus
 export change_representation
 export change_base_type
-export change_modulus_proportional
 export change_length
+export rescale
 
 include("ntt.jl")
 

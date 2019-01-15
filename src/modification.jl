@@ -101,41 +101,44 @@ Apply `change_base_type()` to every coefficient of the polynomial.
 end
 
 
-@inline function _change_modulus_proportional(
-        new_modulus::Unsigned, x::T, old_modulus::T) where T <: Unsigned
-    hi, lo = mulhilo(x, convert(T, new_modulus))
-    q, r = divremhilo(hi, lo, old_modulus)
-    if r >= old_modulus ÷ 2 + (isodd(old_modulus) ? one(T) : zero(T))
-        q += one(T)
+@inline function _rescale(
+        new_max::Unsigned, x::T, old_max::T, round_result::Bool) where T <: Unsigned
+    nm = convert(T, new_max)
+    hi, lo = mulhilo(x, nm)
+    q, r = divremhilo(hi, lo, old_max)
+    if round_result
+        if r >= old_max ÷ 2 + (isodd(old_max) ? one(T) : zero(T))
+            q += one(T)
+            if q == nm
+                q = zero(T)
+            end
+        end
     end
     q
 end
 
 
 """
-    change_modulus_proportional(new_modulus::Unsigned, x::RRElem{T, M}) where {T, M}
+    rescale(new_max::Unsigned, x::RRElem{T, M}, round_result::Bool)
 
-Change the modulus of the given residue ring element, adjusting the value proportionally.
-That is, `x_new = round(T, x * new_modulus / M)` (with the proper handling of an overflow).
-The new modulus must be lower or equal to `M`.
+Rescale `x` proportionally to the range `[0, new_max)` (where `new_max <= M`).
+Equivalent to `floor(x * new_max / M)` or `round(...)`, depending on the value of `round_result`.
+If `round_result` is `true`, and the value if equal to `new_max` after rounding, it is set to 0.
 """
-@inline function change_modulus_proportional(new_modulus::Unsigned, x::RRElem{T, M}) where {T, M}
-    RRElem(
-        _change_modulus_proportional(new_modulus, x.value, M),
-        convert(T, new_modulus),
-        _no_conversion)
+@inline function rescale(
+        new_max::Unsigned, x::RRElem{T, M}, round_result::Bool) where {T, M}
+    RRElem(_rescale(new_max, x.value, M, round_result), M, _no_conversion)
 end
 
-"""
-    change_modulus_proportional(new_modulus::Unsigned, x::Polynomial{T}) where {T <: RRElem}
 
-Apply `change_modulus_proportional()` to every coefficient of the polynomial.
 """
-@inline function change_modulus_proportional(
-        new_modulus::Unsigned, p::Polynomial{T}) where {T <: RRElem}
-    Polynomial(
-        change_modulus_proportional.(new_modulus, p.coeffs),
-        p.negacyclic)
+    rescale(new_max::Unsigned, p::Polynomial{T}, round_result::Bool) where T <: RRElem
+
+Apply `rescale()` to every coefficient of the polynomial.
+"""
+@inline function rescale(
+        new_max::Unsigned, p::Polynomial{T}, round_result::Bool) where T <: RRElem
+    Polynomial(rescale.(new_max, p.coeffs, round_result), p.negacyclic)
 end
 
 

@@ -1,35 +1,45 @@
 using DarkIntegers
-using DarkIntegers: _change_modulus_proportional
+using DarkIntegers: _rescale
 
 
 @testgroup "modification" begin
 
 
-@inline function change_modulus_proportional_ref(
-        new_modulus::Unsigned, x::T, old_modulus::T) where T <: Unsigned
+@inline function rescale_ref(
+        new_max::Unsigned, x::T, old_max::T, round_result::Bool) where T <: Unsigned
     xi = convert(BigInt, x)
-    mi = convert(BigInt, old_modulus)
-    convert(T, round(BigInt, xi * new_modulus / mi))
+    mi = convert(BigInt, old_max)
+    float_res = xi * new_max / mi
+    if round_result
+        res = round(BigInt, float_res)
+        if res == new_max
+            res = zero(BigInt)
+        end
+    else
+        res = floor(BigInt, float_res)
+    end
+    convert(T, res)
 end
 
 
 @testcase(
-"change_modulus_proportional",
-for odd_new_modulus in ([false, true] => ["new modulus is even", "new modulus is odd"])
+"rescale",
+for odd_new_max in ([false, true] => ["new max is even", "new max is odd"]),
+    round_result in ([false, true] => ["floor", "round"])
 
     tp = UInt64
-    old_modulus_i = 2^12+1
-    old_modulus = tp(old_modulus_i)
-    new_modulus = unsigned(odd_new_modulus ? 2^4+1 : 2^4)
+    old_max_i = 2^12+1
+    old_max = tp(old_max_i)
+    new_max = unsigned(odd_new_max ? 2^4+1 : 2^4)
 
-    for i in 0:old_modulus_i-1
+    for i in 0:old_max_i-1
 
-        res = _change_modulus_proportional(new_modulus, tp(i), old_modulus)
-        ref = change_modulus_proportional_ref(new_modulus, tp(i), old_modulus)
+        res = _rescale(new_max, tp(i), old_max, round_result)
+        ref = rescale_ref(new_max, tp(i), old_max, round_result)
 
         if res != ref
             @critical @test_fail(
-                "Reducing $i from modulus $old_modulus to $new_modulus: got $res, expected $ref")
+                "Rescaling $i from $old_max to $new_max: got $res, expected $ref")
         end
     end
 
