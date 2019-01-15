@@ -4,7 +4,7 @@ using DarkIntegers
 
 makedocs(
     modules = [DarkIntegers],
-    format = :html,
+    format = Documenter.HTML(prettyurls=false),
     sitename = "DarkIntegers.jl",
     authors = "Bogdan Opanchuk",
     pages = [
@@ -13,7 +13,6 @@ makedocs(
         "API reference" => "api.md",
         "Version history" => "history.md",
     ],
-    html_prettyurls = false,
 )
 
 deploydocs(
