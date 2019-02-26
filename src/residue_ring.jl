@@ -48,6 +48,7 @@ end
 @inline Base.convert(::Type{V}, x::RRElem{T, M}) where {V <: Integer, T, M} = convert(V, x.value)
 
 
+@inline Base.promote_type(::Type{RRElem{T, M}}, ::Type{RRElem{T, M}}) where {T, M} = RRElem{T, M}
 @inline Base.promote_type(::Type{RRElem{T, M}}, ::Type{<:Integer}) where {T, M} = RRElem{T, M}
 @inline Base.promote_type(::Type{<:Integer}, ::Type{RRElem{T, M}}) where {T, M} = RRElem{T, M}
 

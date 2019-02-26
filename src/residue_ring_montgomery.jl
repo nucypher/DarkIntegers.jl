@@ -87,6 +87,9 @@ end
 end
 
 
+@inline Base.promote_type(
+    ::Type{RRElemMontgomery{T, M}}, ::Type{RRElemMontgomery{T, M}}) where {T, M} =
+    RRElemMontgomery{T, M}
 @inline Base.promote_type(::Type{RRElemMontgomery{T, M}}, ::Type{<:Integer}) where {T, M} =
     RRElemMontgomery{T, M}
 @inline Base.promote_type(::Type{<:Integer}, ::Type{RRElemMontgomery{T, M}}) where {T, M} =
