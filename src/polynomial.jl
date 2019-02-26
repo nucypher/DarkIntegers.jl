@@ -38,10 +38,14 @@ struct Polynomial{T}
     negacyclic :: Bool
     mul_function :: Function
 
-    @inline function Polynomial(coeffs::AbstractArray{T, 1}, negacyclic::Bool) where T
+    @inline function Polynomial(coeffs::Array{T, 1}, negacyclic::Bool) where T
         len = length(coeffs)
         mul_function = _get_polynomial_mul_function(T, Val(len), Val(negacyclic))
         new{T}(coeffs, negacyclic, mul_function)
+    end
+
+    @inline function Polynomial{T}(coeffs::Array{V, 1}, negacyclic::Bool) where {T, V}
+        Polynomial(convert.(T, coeffs), negacyclic)
     end
 
     @inline function Polynomial(coeffs::Array{T, 1}, negacyclic::Bool, mul_function) where T
