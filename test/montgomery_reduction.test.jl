@@ -4,6 +4,14 @@ using DarkIntegers:
     get_to_montgomery_coeff
 
 
+# Can't have it inside @testgroup, because then @benchmark does not see it.
+function batched_mulmod(res, x, y, modulus, m_prime)
+    @inbounds @simd for i in 1:length(x)
+        res[i] = mulmod_montgomery(x[i], y[i], modulus, m_prime)
+    end
+end
+
+
 @testgroup "Montgomery reduction" begin
 
 
@@ -79,30 +87,37 @@ end
 
 @testcase tags=[:performance] "mulmod_montgomery(), performance" for rng in fixed_rng
 
-    modulus = UInt128(2)^80 + 1
-    x = rand(rng, UInt128(1):modulus-1)
-    y = rand(rng, UInt128(1):modulus-1)
+    # Test batched performance to check how well the operations will be vectorized
 
+    batch = 1000
+
+    modulus = UInt128(2)^80 + 1
+    x = rand(rng, UInt128(1):modulus-1, batch)
+    y = rand(rng, UInt128(1):modulus-1, batch)
     m_prime = get_montgomery_coeff(modulus)
-    trial = @benchmark mulmod_montgomery($x, $y, $modulus, $m_prime)
+    res = similar(x)
+
+    trial = @benchmark batched_mulmod($res, $x, $y, $modulus, $m_prime)
     @test_result "UInt128: " * benchmark_result(trial)
 
-    mptp = MPNumber{2, UInt64}
-    x_mp = mptp(x)
-    y_mp = mptp(y)
-    m_mp = mptp(modulus)
-    m_prime_mp = get_montgomery_coeff(m_mp)
+    mp2tp = MPNumber{2, UInt64}
+    x_mp2 = mp2tp.(x)
+    y_mp2 = mp2tp.(y)
+    m_mp2 = mp2tp(modulus)
+    m_prime_mp2 = get_montgomery_coeff(m_mp2)
+    res_mp2 = similar(x_mp2)
 
-    trial = @benchmark mulmod_montgomery($x_mp, $y_mp, $m_mp, $m_prime_mp)
+    trial = @benchmark batched_mulmod($res_mp2, $x_mp2, $y_mp2, $m_mp2, $m_prime_mp2)
     @test_result "2xUInt64: " * benchmark_result(trial)
 
-    mptp = MPNumber{3, UInt32}
-    x_mp = mptp(x)
-    y_mp = mptp(y)
-    m_mp = mptp(modulus)
-    m_prime_mp = get_montgomery_coeff(m_mp)
+    mp3tp = MPNumber{3, UInt32}
+    x_mp3 = mp3tp.(x)
+    y_mp3 = mp3tp.(y)
+    m_mp3 = mp3tp(modulus)
+    m_prime_mp3 = get_montgomery_coeff(m_mp3)
+    res_mp3 = similar(x_mp3)
 
-    trial = @benchmark mulmod_montgomery($x_mp, $y_mp, $m_mp, $m_prime_mp)
+    trial = @benchmark batched_mulmod($res_mp3, $x_mp3, $y_mp3, $m_mp3, $m_prime_mp3)
     @test_result "3xUInt32: " * benchmark_result(trial)
 
 end
