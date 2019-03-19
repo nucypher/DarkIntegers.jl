@@ -1,10 +1,14 @@
-using DarkIntegers: UInt4, addmod, submod, mulmod, mulmod_bitshift, mulmod_remhilo, mulmod_widemul
+using DarkIntegers:
+    UInt4, addmod, submod, mulmod, mulmod_bitshift, mulmod_remhilo, mulmod_widemul,
+    addmod_no_overflow, addition_cant_overflow
 
 
 @testgroup "single limb modulo arithmetic" begin
 
 
 modulo_args_filter(x, y, modulus) = modulus >= 2 && x < modulus && y < modulus
+modulo_noverflow_args_filter(x, y, modulus) =
+    modulus >= 2 && addition_cant_overflow(modulus) && x < modulus && y < modulus
 
 
 function addmod_ref(x::T, y::T, modulus::T) where T <: Unsigned
@@ -24,6 +28,20 @@ end
     check_function_exhaustive(
         UInt4, addmod, addmod_ref, 3;
         args_filter_predicate=modulo_args_filter)
+end
+
+
+@testcase "addmod_no_overflow" begin
+    check_function_random(
+        UInt64, addmod_no_overflow, addmod_ref, 3;
+        args_filter_predicate=modulo_noverflow_args_filter)
+end
+
+
+@testcase tags=[:exhaustive] "addmod_no_overflow, exhaustive" begin
+    check_function_exhaustive(
+        UInt4, addmod_no_overflow, addmod_ref, 3;
+        args_filter_predicate=modulo_noverflow_args_filter)
 end
 
 

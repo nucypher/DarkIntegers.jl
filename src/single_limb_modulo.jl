@@ -7,6 +7,7 @@ Modulo arithmetic on opaque unsigned types.
     addmod(x::T, y::T, modulus::T) where T <: Unsigned
 
 Returns `mod(x + y, modulus)` (even if `x + y` overflows `T`).
+Assumes `x` and `y` are in range `0 ... modulus`.
 """
 @inline function addmod(x::T, y::T, modulus::T) where T <: Unsigned
     r = x + y
@@ -14,6 +15,28 @@ Returns `mod(x + y, modulus)` (even if `x + y` overflows `T`).
         r - modulus
     else
         r
+    end
+end
+
+
+# Check that `x+y`, where `0 <= x, y < modulus` can't overflow the container type.
+function addition_cant_overflow(modulus::T) where T
+    modulus - 1 <= typemax(T) ÷ 2
+end
+
+
+"""
+    addmod_no_overflow(x::T, y::T, modulus::T) where T <: Unsigned
+
+Same as `addmod()`, but assumes that `x + y` doesn't overflow `T`
+(that is, `modulus` is less than or equal to half of `typemax(T)+1`).
+"""
+@inline function addmod_no_overflow(x::T, y::T, modulus::T) where T <: Unsigned
+    r = x + y
+    if r < modulus
+        r
+    else
+        r - modulus
     end
 end
 
