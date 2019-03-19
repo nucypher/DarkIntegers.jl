@@ -46,9 +46,13 @@ end
 Returns the root of one for NTT
 (an analogue of the root of one in FFT, `e^(-2pi * im / N)`;
 the returned value also has the property `w^N = 1`).
+`(M-1)` must be divisible by `N`, where `M` is the modulus of the type `T`.
 """
 function get_root_of_one(::Type{T}, N::Integer, inverse::Bool) where T <: AbstractRRElem
     m = rr_modulus_simple(T)
+    if mod(m - 1, N) != 0
+        error("(modulus - 1) must be divisible by the NTT length")
+    end
     g = get_generator(T) # g^(modulus(T) - 1) = 1
     w = g^div(m - 1, N)
     if inverse
