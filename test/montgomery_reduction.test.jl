@@ -37,7 +37,7 @@ limb_type(tp) = tp
         m_prime = convert(UInt128, m_prime_tp)
         b = convert(UInt128, typemax(limb_type(tp))) + 1
 
-        if ((-m_prime) * m) % b != 1
+        if (m_prime * m) % b != 1
             @test_fail "Incorrect Montgomery coefficient for $m: $m_prime"
         end
     end
