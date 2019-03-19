@@ -115,8 +115,13 @@ end
     RRElemMontgomery{T, M}(one(T))
 
 
-@inline function Base.:+(x::RRElemMontgomery{T, M}, y::RRElemMontgomery{T, M}) where {T, M}
-    RRElemMontgomery(addmod(x.value, y.value, M), M, _no_conversion)
+@inline @generated function Base.:+(x::RRElemMontgomery{T, M}, y::RRElemMontgomery{T, M}) where {T, M}
+    if addition_cant_overflow(M)
+        addmod = :addmod_no_overflow
+    else
+        addmod = :addmod
+    end
+    :( RRElemMontgomery($addmod(x.value, y.value, M), M, _no_conversion) )
 end
 
 

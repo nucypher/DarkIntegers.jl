@@ -69,8 +69,14 @@ end
 @inline Base.one(::Type{RRElem{T, M}}) where {T, M} = RRElem(one(T), M, _no_conversion)
 
 
-@inline function Base.:+(x::RRElem{T, M}, y::RRElem{T, M}) where {T, M}
-    RRElem(addmod(x.value, y.value, M), M, _no_conversion)
+@inline @generated function Base.:+(x::RRElem{T, M}, y::RRElem{T, M}) where {T, M}
+    if addition_cant_overflow(M)
+        addmod = :addmod_no_overflow
+    else
+        addmod = :addmod
+    end
+
+    :( RRElem($addmod(x.value, y.value, M), M, _no_conversion) )
 end
 
 
