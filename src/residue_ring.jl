@@ -1,4 +1,4 @@
-abstract type AbstractRRElem <: Unsigned end
+abstract type AbstractRRElem{T, M} <: Unsigned end
 
 
 struct _NoConversion
@@ -19,7 +19,7 @@ Note that the division is a regular division, not multiplication by the inverse
 
 Creates an `RRElem` object. `M` must have the type `T`.
 """
-struct RRElem{T, M} <: AbstractRRElem
+struct RRElem{T, M} <: AbstractRRElem{T, M}
     value :: T
 
     # This is the only method using `new` to ensure `M` has the type `T`

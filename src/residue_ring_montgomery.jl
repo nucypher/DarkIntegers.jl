@@ -12,7 +12,7 @@ Note that the division is a regular division, not multiplication by the inverse
 
 Creates an `RRElemMontgomery` object. `M` must have the type `T` and be an odd number.
 """
-struct RRElemMontgomery{T, M} <: AbstractRRElem
+struct RRElemMontgomery{T, M} <: AbstractRRElem{T, M}
 
     value :: T
 
