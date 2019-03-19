@@ -10,7 +10,7 @@ Returns `mod(x + y, modulus)` (even if `x + y` overflows `T`).
 """
 @inline function addmod(x::T, y::T, modulus::T) where T <: Unsigned
     r = x + y
-    if r < x || r >= modulus
+    if r < x || !(r < modulus)
         r - modulus
     else
         r
