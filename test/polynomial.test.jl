@@ -118,12 +118,13 @@ end
 @testcase tags=[:performance] "multiplication, performance" begin
 
     negacyclic = true
-    # A prime slightly greater than 2^80, and (modulus - 1) is a multiple of 64 (required for NTT)
-    modulus = BigInt(1440321777275241790996481)
-    p1_ref = BigInt.(rand(UInt128, 64)) .% modulus
-    p2_ref = BigInt.(rand(UInt128, 64)) .% modulus
+    # A prime slightly greater than 2^59, and (modulus - 1) is a multiple of 2^17
+    # (required for NTT with sizes up to 2^16 to work)
+    modulus = BigInt(576460752308273153)
+    p1_ref = BigInt.(rand(UInt64, 512)) .% modulus
+    p2_ref = BigInt.(rand(UInt64, 512)) .% modulus
 
-    rtp = MPNumber{2, UInt64}
+    rtp = UInt64
     mr = convert(rtp, modulus)
     mtp = RRElemMontgomery{rtp, mr}
 
