@@ -29,7 +29,7 @@ struct RRElem{T, M} <: AbstractRRElem{T, M}
     end
 
     @inline function RRElem{T, M}(x::T, ::_NoConversion) where {T <: Unsigned, M}
-        RRElem(x, M, _no_conversion)
+        new{T, M}(x)
     end
 
     @inline function RRElem{T, M}(x::Integer) where {T <: Unsigned, M}

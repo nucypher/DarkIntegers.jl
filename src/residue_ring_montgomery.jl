@@ -23,7 +23,7 @@ struct RRElemMontgomery{T, M} <: AbstractRRElem{T, M}
     end
 
     @inline function RRElemMontgomery{T, M}(x::T, ::_NoConversion) where {T <: Unsigned, M}
-        RRElemMontgomery(x, M, _no_conversion)
+        new{T, M}(x)
     end
 
     @inline function RRElemMontgomery{T, M}(x::Integer) where {T <: Unsigned, M}
