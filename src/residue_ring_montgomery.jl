@@ -138,7 +138,21 @@ end
 
 @inline function Base.:*(x::RRElemMontgomery{T, M}, y::RRElemMontgomery{T, M}) where {T, M}
     res = mulmod_montgomery(x.value, y.value, M, montgomery_coeff(RRElemMontgomery{T, M}))
-    RRElemMontgomery(res, M, _no_conversion)
+    RRElemMontgomery{T, M}(res, _no_conversion)
+end
+
+#=
+Montgomery multiplication gives `x, y -> x * y * R^(-1) mod M`.
+So it works for one RRElem and RRElemMontgomery, returning an RRElem:
+`x, y * R -> x * y * R * R^(-1) mod M == x * y mod M`.
+=#
+@inline function Base.:*(x::RRElem{T, M}, y::RRElemMontgomery{T, M}) where {T, M}
+    res = mulmod_montgomery(x.value, y.value, M, montgomery_coeff(RRElemMontgomery{T, M}))
+    RRElem{T, M}(res, _no_conversion)
+end
+
+@inline function Base.:*(x::RRElemMontgomery{T, M}, y::RRElem{T, M}) where {T, M}
+    y * x
 end
 
 
