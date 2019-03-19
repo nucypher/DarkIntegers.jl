@@ -132,7 +132,7 @@ function check_function_exhaustive(
     tmin = convert(itp, typemin(tp))
     tmax = convert(itp, typemax(tp))
     for args in product([tmin:tmax for i in 1:arity]...)
-        if !args_filter_predicate(args...)
+        if !args_filter_predicate(tp.(args)...)
             continue
         end
         if !check_function(tp, test_func, ref_func, args, ref_needs_bitsize)
