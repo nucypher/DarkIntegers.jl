@@ -41,7 +41,12 @@ end
     af = ntt(a_rr, false)
     a_back = ntt(af, true)
 
-    @test af == af_ref
+    # The results will be in a different order, which is irrelevant for the NTT's main purpose
+    # (multiplying polynomials). So we just check that all the elements are the same.
+    af_bi = convert.(BigInt, af)
+    af_ref_bi = convert.(BigInt, af_ref)
+    @test sort(af_bi) == sort(af_ref_bi)
+
     @test a_back == a_back_ref
     @test a_back == a
 end

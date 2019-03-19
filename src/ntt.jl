@@ -79,93 +79,89 @@ Reverses the order of the lowest `l` bits in `x` and fills the rest with 0s.
 function bitreverse(x::T, l::Integer) where T <: Integer
     # Slow, but simple function.
     # TODO: can be optimized if its performance becomes critical.
-    parse(T, "0b" * reverse(bitstring(x)[end-l+1:end]))
-end
-
-
-"""
-Returns the list of paris of indices for the elements that must be swapped
-at the start of the FFT algorithm.
-"""
-function prepare_swap_indices(len::Integer)
-    log_len = round(Int, log2(len))
-    indices = Tuple{Int, Int}[]
-    for i in 1:len
-        j = bitreverse(i-1, log_len) + 1
-        if j > i
-            push!(indices, (i, j))
-        end
+    if l == 0
+        zero(T)
+    else
+        parse(T, "0b" * reverse(bitstring(x)[end-l+1:end]))
     end
-    indices
-end
-
-
-"""
-Retruns the array of arrays of twiddle factors for each stage of the FFT algorithm.
-"""
-function prepare_twiddle_factors(tp::Type, len::Integer, inverse::Bool)
-    log_len = round(Int, log2(len))
-    w = get_root_of_one(tp, len, inverse)
-    twiddles = Array{tp, 1}[]
-    for stage in 1:log_len
-        mmax = 2^(stage-1)
-        push!(twiddles, w.^((0:mmax-1) * 2^(log_len - stage)))
-    end
-    twiddles
 end
 
 
 """
 Prepared NTT plan.
-"""
-struct NTTPlan{T <: AbstractRRElem}
-    forward_coeffs :: Array{T, 1}
-    use_forward_coeffs :: Bool
-    inverse_coeffs :: Array{T, 1}
-    use_inverse_coeffs :: Bool
-    forward_twiddle_coeffs :: Array{Array{T, 1}}
-    inverse_twiddle_coeffs :: Array{Array{T, 1}}
-    swap_indices :: Array{Tuple{Int, Int}, 1}
 
-    function NTTPlan(tp::Type{<: AbstractRRElem}, len::Int, tangent::Bool)
+If `tangent` is `false`, the NTT can be used to multiply polynomials modulo `X^len-1` (cyclic),
+if it is `true`, it can be used to multiply polynomials modulo `X^len+1` (negacyclic).
+"""
+struct NTTPlan{T <: Unsigned, M}
+    inverse_coeff :: RRElemMontgomery{T, M}
+    forward_twiddle_coeffs :: Array{RRElemMontgomery{T, M}, 1}
+    inverse_twiddle_coeffs :: Array{RRElemMontgomery{T, M}, 1}
+
+    function NTTPlan(::Type{T}, modulus::T, len::Int, tangent::Bool) where T
+
+        #=
+        We store coefficients in Montgomery representation regardless of the actual array type.
+        Since Montgomery multiplication for `x` and `y` gives `x * y * R^(-1) mod M`,
+        it works both when `x` is an `RRElem` and `y` is an `RRElemMontgomery`,
+        and when `x` and `y` are `RRElemMontgomery`.
+        This makes multiplication by coefficients faster.
+        =#
+        coeffs_tp = RRElemMontgomery{T, modulus}
 
         if len < 2 || len & (len - 1) != 0
             error("len must be >=2 and a power of 2")
         end
 
-        if tangent
-            w = get_root_of_one(tp, 2 * len, false)
-            idx = collect(0:len-1)
+        log_len = trailing_zeros(len)
 
-            forward_coeffs = w.^idx
-            use_forward_coeffs = true
-            inverse_coeffs = get_inverse_coeff(tp, len) .* (w.^(mod.(2 * len .- idx, 2 * len)))
+        forward_twiddle_coeffs = Array{coeffs_tp}(undef, len)
+        inverse_twiddle_coeffs = Array{coeffs_tp}(undef, len)
+
+        if tangent
+            w = get_root_of_one(coeffs_tp, 2 * len, false)
         else
-            forward_coeffs = ones(tp, len)
-            use_forward_coeffs = false
-            inverse_coeffs = ones(tp, len) * get_inverse_coeff(tp, len)
+            w = get_root_of_one(coeffs_tp, len, false)
+        end
+        w_inv = ff_inverse(w)
+
+        forward_twiddle_coeffs[1] = 0 # unused
+        inverse_twiddle_coeffs[1] = 0 # unused
+        for stage in 0:log_len-1
+            m = 1 << stage
+            for i in 0:m-1
+                if tangent
+                    pwr = bitreverse(m + i, log_len)
+                else
+                    pwr = bitreverse(i, stage) << (log_len - stage - 1)
+                end
+
+                forward_twiddle_coeffs[m + i + 1] = w^pwr
+                inverse_twiddle_coeffs[m + i + 1] = w_inv^pwr
+            end
         end
 
-        new{tp}(
-            forward_coeffs,
-            use_forward_coeffs,
-            inverse_coeffs,
-            true,
-            prepare_twiddle_factors(tp, len, false),
-            prepare_twiddle_factors(tp, len, true),
-            prepare_swap_indices(len))
+        # Similarly to FFT, the scaling coefficient for the inverse transform is also `1/N`,
+        # but in our case we need to take the finite field inverse.
+        # Can also be calculated as `N^(-1) mod M == (M - (M-1) ÷ N)`.
+        inverse_coeff = get_inverse_coeff(coeffs_tp, len)
+
+        new{T, modulus}(
+            inverse_coeff,
+            forward_twiddle_coeffs,
+            inverse_twiddle_coeffs)
     end
 
 end
 
 
-const _ntt_plans = Dict{Tuple{Type, Int, Bool}, NTTPlan}()
+const _ntt_plans = Dict{Tuple{Type, Val, Int, Bool}, NTTPlan}()
 
 
-function get_ntt_plan(tp::Type{<: AbstractRRElem}, len::Int, tangent::Bool)
-    key = (tp, len, tangent)
+function _get_ntt_plan(::Type{T}, modulus::T, len::Int, tangent::Bool) where T
+    key = (T, Val(modulus), len, tangent)
     if !haskey(_ntt_plans, key)
-        plan = NTTPlan(tp, len, tangent)
+        plan = NTTPlan(T, modulus, len, tangent)
         _ntt_plans[key] = plan
         plan
     else
@@ -174,48 +170,84 @@ function get_ntt_plan(tp::Type{<: AbstractRRElem}, len::Int, tangent::Bool)
 end
 
 
-@Base.propagate_inbounds function ntt!(plan::NTTPlan{T}, data::Array{T, 1}, inverse::Bool) where T
-    len = length(data)
+get_ntt_plan(::Type{RRElem{T, M}}, len::Int, tangent::Bool) where {T, M} =
+    _get_ntt_plan(T, M, len, tangent)
+get_ntt_plan(::Type{RRElemMontgomery{T, M}}, len::Int, tangent::Bool) where {T, M} =
+    _get_ntt_plan(T, M, len, tangent)
 
-    if inverse
-        twiddle_coeffs = plan.inverse_twiddle_coeffs
-    else
-        twiddle_coeffs = plan.forward_twiddle_coeffs
+
+#=
+We are using a modification of the "decimation-in-frequency" FFT algorithm.
+This layout seems to be optimal for automatic vectorization.
+
+Since the primary purpose of NTT is polynomial multiplication,
+the order of the elements in the result is not important, so we skip the rearrangement step.
+=#
+
+
+@Base.propagate_inbounds function ntt!(
+        plan::NTTPlan{T, M}, output::Array{V, 1}, res::Array{V, 1}) where {T, M, V <: AbstractRRElem{T, M}}
+
+    len = length(res)
+    log_len = trailing_zeros(len)
+
+    output .= res
+
+    @inbounds for stage in 0:log_len-1
+        m = 1 << stage
+        logt1 = log_len - stage
+        t = 1 << (logt1 - 1)
+        @simd for i in 0:m-1
+            j1 = i << logt1
+            j2 = j1 + t - 1
+            w = plan.forward_twiddle_coeffs[m + i + 1]
+            for j in j1:j2
+                a = output[j+1]
+                temp = output[j+t+1] * w
+                output[j+1] = a + temp
+                output[j+t+1] = a - temp
+            end
+        end
     end
+end
 
-    if !inverse && plan.use_forward_coeffs
-        data .*= plan.forward_coeffs
-    end
 
-    for (i, j) in plan.swap_indices
-        data[j], data[i] = data[i], data[j]
-    end
+@Base.propagate_inbounds function intt!(
+        plan::NTTPlan{T, M}, output::Array{V, 1}, res::Array{V, 1}) where {T, M, V <: AbstractRRElem{T, M}}
 
-    logn = round(Int, log2(len))
-    for stage in 1:logn
-        mmax = 2^(stage-1)
-        istep = mmax * 2
-        ws = twiddle_coeffs[stage]
-        for m = 1:mmax
-            w = ws[m]
-            for i = m:istep:len
-                j = i + mmax
-                temp = w * data[j]
-                data[j] = data[i] - temp
-                data[i] += temp
+    len = length(res)
+    log_len = trailing_zeros(len)
+
+    output .= res
+
+    @inbounds for stage in log_len-1:-1:0
+        m = 1 << stage
+        logt1 = log_len - stage
+        t = 1 << (logt1 - 1)
+        @simd for i in 0:m-1
+            j1 = i << logt1
+            j2 = j1 + t - 1
+            w = plan.inverse_twiddle_coeffs[m + i + 1]
+            for j in j1:j2
+                a = output[j+1]
+                b = output[j+t+1]
+                output[j+1] = a + b
+                output[j+t+1] = (a - b) * w
             end
         end
     end
 
-    if inverse && plan.use_inverse_coeffs
-        data .*= plan.inverse_coeffs
-    end
+    output .*= plan.inverse_coeff
 end
 
 
 function ntt(data::Array{T, 1}, inverse::Bool) where T <: AbstractRRElem
     plan = get_ntt_plan(T, length(data), false)
-    data = copy(data)
-    ntt!(plan, data, inverse)
-    data
+    output = similar(data)
+    if inverse
+        intt!(plan, output, data)
+    else
+        ntt!(plan, output, data)
+    end
+    output
 end

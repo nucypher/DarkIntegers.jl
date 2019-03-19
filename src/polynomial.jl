@@ -293,13 +293,13 @@ Assumes the polynomials have the same length and the same value of the `negacycl
 """
 @inline function ntt_mul(p1::Polynomial{T}, p2::Polynomial{T}) where T
     plan = get_ntt_plan(T, length(p1), p1.negacyclic)
-    c1 = copy(p1.coeffs)
-    ntt!(plan, c1, false)
-    c2 = copy(p2.coeffs)
-    ntt!(plan, c2, false)
+    c1 = similar(p1.coeffs)
+    ntt!(plan, c1, p1.coeffs)
+    c2 = similar(p2.coeffs)
+    ntt!(plan, c2, p2.coeffs)
     c1 .*= c2
-    ntt!(plan, c1, true)
-    Polynomial(c1, p1.negacyclic, p1.mul_function)
+    intt!(plan, c2, c1)
+    Polynomial(c2, p1.negacyclic, p1.mul_function)
 end
 
 
