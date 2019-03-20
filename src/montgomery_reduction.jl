@@ -33,7 +33,7 @@ end
 
 """
 An implementation of Montgomery coefficient for a multi-precision number.
-Using the fact that `-m^(-1) mod R == -(mod(m, b+1))^(-1) mod b`,
+Using the fact that `m^(-1) mod R == (mod(m, b+1))^(-1) mod b`,
 where `b = typemax(T)+1` is the radix, and `R = b^N = typemax(MPNumber{N, T})+1`
 is the total size of the type.
 """
