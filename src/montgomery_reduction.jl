@@ -162,14 +162,19 @@ end
 
 """
 Calculates the coefficient for conversion of an integer to Montgomery representation.
-The conversion formula is `x' = x * R mod m`, but `R = typemax(T) + 1`
-does not fit in the type of `x`.
-So we have to calculate `c = R mod m` and use it as `x' = x * c mod m`.
 """
 function get_to_montgomery_coeff(m::T) where T <: Unsigned
-    # have to widen the type, since we need to use `typemax(T)+1`.
+    #=
+    The conversion formula is `x' = x * R mod m`.
+    We want to use the quick Montgomery multiplication, so we precalculate `R^2 mod m`,
+    and later use it as `x' = montgomery_mul(x, R^2 mod m) = x * R^2 * R^(-1) mod m = x * R mod m`.
+    (here R is the container type size)
+    =#
     T2 = widen(T)
-    T(mod(convert(T2, typemax(T)) + 1, convert(T2, m)))
+    R = convert(T2, typemax(T)) + 1
+    m2 = convert(T2, m)
+    R_mod_m = mod(R, m2)
+    T(mod(R_mod_m^2, m2))
 end
 
 
@@ -178,8 +183,13 @@ Converts an integer to Montgomery representation
 (that is, calculates `x * R mod m == x * coeff mod m` where `coeff = R mod m`,
 where `R = typemax(T) + 1`).
 """
-@inline function to_montgomery(x::T, m::T, coeff::T) where T <: Unsigned
-    mulmod(x, coeff, m)
+@inline function to_montgomery(
+        x::MPNumber{N, T}, m::MPNumber{N, T}, m_prime::T, coeff::MPNumber{N, T}) where {N, T}
+    mulmod_montgomery(x, coeff, m, m_prime)
+end
+
+@inline function to_montgomery(x::T, m::T, m_prime::T, coeff::T) where T <: Unsigned
+    mulmod_montgomery(x, coeff, m, m_prime)
 end
 
 

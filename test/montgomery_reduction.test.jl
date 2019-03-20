@@ -133,7 +133,7 @@ end
 
 
 function to_montgomery_test(x::T, modulus::T) where T
-    to_montgomery(x, modulus, get_to_montgomery_coeff(modulus))
+    to_montgomery(x, modulus, get_montgomery_coeff(modulus), get_to_montgomery_coeff(modulus))
 end
 
 
@@ -163,24 +163,27 @@ end
     modulus = UInt128(2)^80 + 1
     x = rand(rng, UInt128(1):modulus-1)
 
+    mc = get_montgomery_coeff(x)
     c = get_to_montgomery_coeff(x)
-    trial = @benchmark to_montgomery($x, $modulus, $c)
+    trial = @benchmark to_montgomery($x, $modulus, $mc, $c)
     @test_result "UInt128: " * benchmark_result(trial)
 
-    mptp = MPNumber{2, UInt64}
-    x_mp = mptp(x)
-    m_mp = mptp(modulus)
-    c_mp = get_to_montgomery_coeff(m_mp)
+    mptp1 = MPNumber{2, UInt64}
+    x_mp1 = mptp1(x)
+    m_mp1 = mptp1(modulus)
+    mc_mp1 = get_montgomery_coeff(m_mp1)
+    c_mp1 = get_to_montgomery_coeff(m_mp1)
 
-    trial = @benchmark to_montgomery($x_mp, $m_mp, $c_mp)
+    trial = @benchmark to_montgomery($x_mp1, $m_mp1, $mc_mp1, $c_mp1)
     @test_result "2xUInt64: " * benchmark_result(trial)
 
-    mptp = MPNumber{3, UInt32}
-    x_mp = mptp(x)
-    m_mp = mptp(modulus)
-    c_mp = get_to_montgomery_coeff(m_mp)
+    mptp2 = MPNumber{3, UInt32}
+    x_mp2 = mptp2(x)
+    m_mp2 = mptp2(modulus)
+    mc_mp2 = get_montgomery_coeff(m_mp2)
+    c_mp2 = get_to_montgomery_coeff(m_mp2)
 
-    trial = @benchmark to_montgomery($x_mp, $m_mp, $c_mp)
+    trial = @benchmark to_montgomery($x_mp2, $m_mp2, $mc_mp2, $c_mp2)
     @test_result "3xUInt32: " * benchmark_result(trial)
 
 end
@@ -226,20 +229,20 @@ end
     trial = @benchmark from_montgomery($x, $modulus, $c)
     @test_result "UInt128: " * benchmark_result(trial)
 
-    mptp = MPNumber{2, UInt64}
-    x_mp = mptp(x)
-    m_mp = mptp(modulus)
-    c_mp = get_montgomery_coeff(m_mp)
+    mptp1 = MPNumber{2, UInt64}
+    x_mp1 = mptp1(x)
+    m_mp1 = mptp1(modulus)
+    c_mp1 = get_montgomery_coeff(m_mp1)
 
-    trial = @benchmark from_montgomery($x_mp, $m_mp, $c_mp)
+    trial = @benchmark from_montgomery($x_mp1, $m_mp1, $c_mp1)
     @test_result "2xUInt64: " * benchmark_result(trial)
 
-    mptp = MPNumber{3, UInt32}
-    x_mp = mptp(x)
-    m_mp = mptp(modulus)
-    c_mp = get_montgomery_coeff(m_mp)
+    mptp2 = MPNumber{3, UInt32}
+    x_mp2 = mptp2(x)
+    m_mp2 = mptp2(modulus)
+    c_mp2 = get_montgomery_coeff(m_mp2)
 
-    trial = @benchmark from_montgomery($x_mp, $m_mp, $c_mp)
+    trial = @benchmark from_montgomery($x_mp2, $m_mp2, $c_mp2)
     @test_result "3xUInt32: " * benchmark_result(trial)
 
 end

@@ -60,7 +60,9 @@ end
 
 
 @inline function to_montgomery(::Type{RRElemMontgomery{T, M}}, x::T) where {T, M}
-    to_montgomery(x, M, to_montgomery_coeff(RRElemMontgomery{T, M}))
+    m_coeff = montgomery_coeff(RRElemMontgomery{T, M})
+    to_m_coeff = to_montgomery_coeff(RRElemMontgomery{T, M})
+    to_montgomery(x, M, m_coeff, to_m_coeff)
 end
 
 
