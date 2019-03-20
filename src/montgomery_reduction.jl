@@ -197,14 +197,12 @@ end
 Recovers an integer from Montgomery representation
 (that is, calculates `x` given `x * R mod m`, where `R = typemax(MPNumber{N, T}) + 1`).
 """
-@Base.propagate_inbounds @inline function from_montgomery(
-        x::MPNumber{N, T}, m::MPNumber{N, T}, m_prime::T) where {N, T}
+@inline function from_montgomery(x::MPNumber{N, T}, m::MPNumber{N, T}, m_prime::T) where {N, T}
     # Montgomery multiplication of `1` and `x` in M. representation (`x * R`)
     # results in `1 * (x * R) / R = x`.
     mulmod_montgomery(one(MPNumber{N, T}), x, m, m_prime)
 end
 
-
-@Base.propagate_inbounds @inline function from_montgomery(x::T, m::T, m_prime::T) where T <: Unsigned
-    from_montgomery(MPNumber((x,)), MPNumber((m,)), m_prime)[1]
+@inline function from_montgomery(x::T, m::T, m_prime::T) where T <: Unsigned
+    mulmod_montgomery(one(T), x, m, m_prime)
 end
