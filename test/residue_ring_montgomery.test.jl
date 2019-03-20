@@ -1,5 +1,5 @@
 using DarkIntegers
-using DarkIntegers: _no_conversion, rr_value
+using DarkIntegers: _verbatim, rr_value
 
 
 @testgroup "residue ring elements, Montgomery representation" begin
@@ -13,10 +13,10 @@ using DarkIntegers: _no_conversion, rr_value
     # Check that even a value greater than the modulus is not modified
     # when no conversion is requested.
 
-    x = RRElemMontgomery(val, modulus, _no_conversion)
+    x = RRElemMontgomery(val, modulus, _verbatim)
     @test rr_value(x) == val
 
-    x = RRElemMontgomery{T, modulus}(val, _no_conversion)
+    x = RRElemMontgomery{T, modulus}(val, _verbatim)
     @test rr_value(x) == val
 
     # Check that a value greater than the modulus is converted correctly

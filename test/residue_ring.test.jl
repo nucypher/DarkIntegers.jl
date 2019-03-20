@@ -1,5 +1,5 @@
 using DarkIntegers
-using DarkIntegers: mulmod, mulmod_bitshift, mulmod_remhilo, mulmod_widemul
+using DarkIntegers: _verbatim, mulmod, mulmod_bitshift, mulmod_remhilo, mulmod_widemul
 
 
 @testgroup "residue ring elements" begin
@@ -13,10 +13,10 @@ using DarkIntegers: mulmod, mulmod_bitshift, mulmod_remhilo, mulmod_widemul
     # Check that even a value greater than the modulus is not modified
     # when no conversion is requested.
 
-    x = RRElem(val, modulus, _no_conversion)
+    x = RRElem(val, modulus, _verbatim)
     @test rr_value(x) == val
 
-    x = RRElem{T, modulus}(val, _no_conversion)
+    x = RRElem{T, modulus}(val, _verbatim)
     @test rr_value(x) == val
 
     # Check that a value greater than the modulus is converted correctly

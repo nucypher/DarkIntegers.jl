@@ -1,3 +1,9 @@
+struct _NoModulo
+end
+
+const _no_modulo = _NoModulo()
+
+
 """
 Residue ring element in Montgomery representation.
 Multiplication is much faster than for [`RRElem`](@ref), addition and subtraction are the same,
@@ -18,19 +24,22 @@ struct RRElemMontgomery{T, M} <: AbstractRRElem{T, M}
 
     # This is the only method using `new` to ensure `M` has the type `T`
     # (since we cannot enforce it with Julia syntax)
-    @inline function RRElemMontgomery(x::T, m::T, ::_NoConversion) where T <: Unsigned
+    @inline function RRElemMontgomery(x::T, m::T, ::_Verbatim) where T <: Unsigned
         new{T, m}(x)
     end
 
-    @inline function RRElemMontgomery{T, M}(x::T, ::_NoConversion) where {T <: Unsigned, M}
+    @inline function RRElemMontgomery{T, M}(x::T, ::_Verbatim) where {T <: Unsigned, M}
         new{T, M}(x)
+    end
+
+    @inline function RRElemMontgomery{T, M}(x::T, ::_NoModulo) where {T <: Unsigned, M}
+        RRElemMontgomery{T, M}(to_montgomery(RRElemMontgomery{T, M}, x), _verbatim)
     end
 
     @inline function RRElemMontgomery{T, M}(x::Integer) where {T <: Unsigned, M}
         # Need to take the modulus before converting `x` to `T`,
         # in case `x` does not fit in `T`.
-        RRElemMontgomery{T, M}(
-            to_montgomery(RRElemMontgomery{T, M}, convert(T, mod(x, M))), _no_conversion)
+        RRElemMontgomery{T, M}(convert(T, mod(x, M)), _no_modulo)
     end
 end
 
@@ -75,11 +84,11 @@ end
     RRElemMontgomery{T, M}(x)
 
 @inline function Base.convert(::Type{RRElem{T, M}}, x::RRElemMontgomery{T, M}) where {T, M}
-    RRElem(from_montgomery(x), M, _no_conversion)
+    RRElem(from_montgomery(x), M, _verbatim)
 end
 
 @inline function Base.convert(::Type{RRElemMontgomery{T, M}}, x::RRElem{T, M}) where {T, M}
-    RRElemMontgomery{T, M}(x.value)
+    RRElemMontgomery{T, M}(x.value, M, _no_modulo)
 end
 
 @inline Base.convert(::Type{RRElemMontgomery{T, M}}, x::RRElemMontgomery{T, M}) where {T, M} = x
@@ -108,7 +117,7 @@ end
 # Unlike `one(x)`, `zero(x)` does not have a fallback `= zero(typeof(x))` in the standard library
 # and uses conversion instead. So we are defining our own.
 @inline Base.zero(::Type{RRElemMontgomery{T, M}}) where {T, M} =
-    RRElemMontgomery(zero(T), M, _no_conversion)
+    RRElemMontgomery(zero(T), M, _verbatim)
 @inline Base.zero(::RRElemMontgomery{T, M}) where {T, M} =
     zero(RRElemMontgomery{T, M})
 
@@ -123,12 +132,12 @@ end
     else
         addmod = :addmod
     end
-    :( RRElemMontgomery($addmod(x.value, y.value, M), M, _no_conversion) )
+    :( RRElemMontgomery($addmod(x.value, y.value, M), M, _verbatim) )
 end
 
 
 @inline function Base.:-(x::RRElemMontgomery{T, M}, y::RRElemMontgomery{T, M}) where {T, M}
-    RRElemMontgomery(submod(x.value, y.value, M), M, _no_conversion)
+    RRElemMontgomery(submod(x.value, y.value, M), M, _verbatim)
 end
 
 
@@ -140,7 +149,7 @@ end
 
 @inline function Base.:*(x::RRElemMontgomery{T, M}, y::RRElemMontgomery{T, M}) where {T, M}
     res = mulmod_montgomery(x.value, y.value, M, montgomery_coeff(RRElemMontgomery{T, M}))
-    RRElemMontgomery{T, M}(res, _no_conversion)
+    RRElemMontgomery{T, M}(res, _verbatim)
 end
 
 #=
@@ -150,7 +159,7 @@ So it works for one RRElem and RRElemMontgomery, returning an RRElem:
 =#
 @inline function Base.:*(x::RRElem{T, M}, y::RRElemMontgomery{T, M}) where {T, M}
     res = mulmod_montgomery(x.value, y.value, M, montgomery_coeff(RRElemMontgomery{T, M}))
-    RRElem{T, M}(res, _no_conversion)
+    RRElem{T, M}(res, _verbatim)
 end
 
 @inline function Base.:*(x::RRElemMontgomery{T, M}, y::RRElem{T, M}) where {T, M}

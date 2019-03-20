@@ -1,10 +1,10 @@
 abstract type AbstractRRElem{T, M} <: Unsigned end
 
 
-struct _NoConversion
+struct _Verbatim
 end
 
-const _no_conversion = _NoConversion()
+const _verbatim = _Verbatim()
 
 
 """
@@ -24,16 +24,16 @@ struct RRElem{T, M} <: AbstractRRElem{T, M}
 
     # This is the only method using `new` to ensure `M` has the type `T`
     # (since we cannot enforce it with Julia syntax)
-    @inline function RRElem(x::T, m::T, ::_NoConversion) where T <: Unsigned
+    @inline function RRElem(x::T, m::T, ::_Verbatim) where T <: Unsigned
         new{T, m}(x)
     end
 
-    @inline function RRElem{T, M}(x::T, ::_NoConversion) where {T <: Unsigned, M}
+    @inline function RRElem{T, M}(x::T, ::_Verbatim) where {T <: Unsigned, M}
         new{T, M}(x)
     end
 
     @inline function RRElem{T, M}(x::Integer) where {T <: Unsigned, M}
-        RRElem{T, M}(convert(T, mod(x, M)), _no_conversion)
+        RRElem{T, M}(convert(T, mod(x, M)), _verbatim)
     end
 end
 
@@ -62,11 +62,11 @@ end
 
 # Unlike `one(x)`, `zero(x)` does not have a fallback `= zero(typeof(x))` in the standard library
 # and uses conversion instead. So we are defining our own.
-@inline Base.zero(::Type{RRElem{T, M}}) where {T, M} = RRElem(zero(T), M, _no_conversion)
+@inline Base.zero(::Type{RRElem{T, M}}) where {T, M} = RRElem(zero(T), M, _verbatim)
 @inline Base.zero(::RRElem{T, M}) where {T, M} = zero(RRElem{T, M})
 
 
-@inline Base.one(::Type{RRElem{T, M}}) where {T, M} = RRElem(one(T), M, _no_conversion)
+@inline Base.one(::Type{RRElem{T, M}}) where {T, M} = RRElem(one(T), M, _verbatim)
 
 
 @inline @generated function Base.:+(x::RRElem{T, M}, y::RRElem{T, M}) where {T, M}
@@ -76,12 +76,12 @@ end
         addmod = :addmod
     end
 
-    :( RRElem($addmod(x.value, y.value, M), M, _no_conversion) )
+    :( RRElem($addmod(x.value, y.value, M), M, _verbatim) )
 end
 
 
 @inline function Base.:-(x::RRElem{T, M}, y::RRElem{T, M}) where {T, M}
-    RRElem(submod(x.value, y.value, M), M, _no_conversion)
+    RRElem(submod(x.value, y.value, M), M, _verbatim)
 end
 
 
@@ -95,7 +95,7 @@ end
     xt = x.value
     yt = y.value
     res = mulmod(xt, yt, M)
-    RRElem(res, M, _no_conversion)
+    RRElem(res, M, _verbatim)
 end
 
 
@@ -105,7 +105,7 @@ end
 
 
 @inline function Base.div(x::RRElem{T, M}, y::RRElem{T, M}) where {T, M}
-    RRElem(div(x.value, y.value), M, _no_conversion)
+    RRElem(div(x.value, y.value), M, _verbatim)
 end
 
 
@@ -127,7 +127,7 @@ end
 
 @inline function Base.divrem(x::RRElem{T, M}, y::RRElem{T, M}) where {T, M}
     d, r = divrem(x.value, y.value)
-    RRElem(d, M, _no_conversion), RRElem(r, M, _no_conversion)
+    RRElem(d, M, _verbatim), RRElem(r, M, _verbatim)
 end
 
 
