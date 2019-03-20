@@ -87,21 +87,21 @@ end
     trial = @benchmark $x_m1 * $y_m1
     @test_result "UInt128: " * benchmark_result(trial)
 
-    mptp = MPNumber{2, UInt64}
-    x_mp = mptp(x)
-    y_mp = mptp(y)
-    m_mp = mptp(modulus)
-    x_m2 = RRElemMontgomery{mptp, m_mp}(x_mp)
-    y_m2 = RRElemMontgomery{mptp, m_mp}(y_mp)
+    mptp1 = MPNumber{2, UInt64}
+    x_mp = mptp1(x)
+    y_mp = mptp1(y)
+    m_mp = mptp1(modulus)
+    x_m2 = RRElemMontgomery{mptp1, m_mp}(x_mp)
+    y_m2 = RRElemMontgomery{mptp1, m_mp}(y_mp)
     trial = @benchmark $x_m2 * $y_m2
     @test_result "2xUInt64: " * benchmark_result(trial)
 
-    mptp = MPNumber{3, UInt32}
-    x_mp = mptp(x)
-    y_mp = mptp(y)
-    m_mp = mptp(modulus)
-    x_m3 = RRElemMontgomery{mptp, m_mp}(x_mp)
-    y_m3 = RRElemMontgomery{mptp, m_mp}(y_mp)
+    mptp2 = MPNumber{3, UInt32}
+    x_mp = mptp2(x)
+    y_mp = mptp2(y)
+    m_mp = mptp2(modulus)
+    x_m3 = RRElemMontgomery{mptp2, m_mp}(x_mp)
+    y_m3 = RRElemMontgomery{mptp2, m_mp}(y_mp)
     trial = @benchmark $x_m3 * $y_m3
     @test_result "3xUInt32: " * benchmark_result(trial)
 
