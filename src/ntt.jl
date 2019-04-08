@@ -241,8 +241,8 @@ end
 end
 
 
-function ntt(data::Array{T, 1}, inverse::Bool) where T <: AbstractRRElem
-    plan = get_ntt_plan(T, length(data), false)
+function ntt(data::Array{T, 1}; inverse::Bool=false, negacyclic::Bool=false) where T <: AbstractRRElem
+    plan = get_ntt_plan(T, length(data), negacyclic)
     output = similar(data)
     if inverse
         intt!(plan, output, data)
