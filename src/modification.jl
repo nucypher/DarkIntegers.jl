@@ -28,9 +28,9 @@ If the new modulus is smaller than the current one, the value will be taken modu
 @inline function change_modulus(new_modulus::Unsigned, x::RRElem{T, M}) where {T, M}
     nm = convert(T, new_modulus)
     if nm >= M
-        RRElem(x.value, nm, _no_conversion)
+        RRElem(x.value, nm, _verbatim)
     else
-        RRElem(mod(x.value, nm), nm, _no_conversion)
+        RRElem(mod(x.value, nm), nm, _verbatim)
     end
 end
 
@@ -82,12 +82,12 @@ The modulus `M` must fit into `V`.
 
 @inline function change_base_type(::Type{V}, x::RRElem{T, M}) where {T, M, V <: Unsigned}
     @assert M <= typemax(V)
-    RRElem(convert(V, x.value), convert(V, M), _no_conversion)
+    RRElem(convert(V, x.value), convert(V, M), _verbatim)
 end
 
 @inline function change_base_type(::Type{V}, x::RRElemMontgomery{T, M}) where {T, M, V <: Unsigned}
     @assert M <= typemax(V)
-    RRElemMontgomery(convert(V, x.value), convert(V, M), _no_conversion)
+    RRElemMontgomery(convert(V, x.value), convert(V, M), _verbatim)
 end
 
 """
@@ -127,7 +127,7 @@ If `round_result` is `true`, and the value if equal to `new_max` after rounding,
 """
 @inline function rescale(
         new_max::Unsigned, x::RRElem{T, M}, round_result::Bool) where {T, M}
-    RRElem(_rescale(new_max, x.value, M, round_result), M, _no_conversion)
+    RRElem(_rescale(new_max, x.value, M, round_result), M, _verbatim)
 end
 
 
