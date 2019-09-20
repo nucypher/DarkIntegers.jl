@@ -206,6 +206,13 @@ function Base.divrem(x::RRElemMontgomery{T, M}, y::RRElemMontgomery{T, M}) where
 end
 
 
+@inline function Base.inv(x::RRElemMontgomery{T, M}) where {T, M}
+    value = convert(encompassing_type(T), x)
+    m = convert(encompassing_type(T), M)
+    RRElemMontgomery{T, M}(convert(T, invmod_(value, m)), _no_modulo)
+end
+
+
 Base.string(x::RRElemMontgomery{T, M}) where {T, M} =
     string(rr_value(change_representation(RRElem, x))) * "RRM"
 

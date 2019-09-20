@@ -108,4 +108,19 @@ end
 end
 
 
+@testcase "inv" for rng in fixed_rng
+    modulus = UInt64(251)
+    tp = RRElemMontgomery{UInt64, modulus}
+
+    for i in 1:100
+        x = rand(rng, 1:250)
+        x_tp = convert(tp, x)
+        ix = inv(x_tp)
+        if x * ix != one(tp)
+            @test_fail "Incorrect result for $x: $(convert(Int, ix))"
+        end
+    end
+end
+
+
 end

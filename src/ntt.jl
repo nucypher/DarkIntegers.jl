@@ -2,21 +2,6 @@ using Primes: factor
 
 
 """
-Returns the inverse of `x` modulo `rr_modulus(T)`.
-The modulus must be a prime number.
-"""
-function ff_inverse(x::T) where T <: AbstractRRElem
-    m = rr_modulus_simple(T)
-    x^(m-2)
-    # TODO: can be implemented with `invmod()`, which is generally faster
-    # for non-Montgomery numbers, and works for any moduli, not just for prime ones.
-    # Currently blocked by Julia issue #29971.
-    #val = convert(encompassing_type(T), x)
-    #T(invmod(val, m))
-end
-
-
-"""
 Finds a generator element for a finite field defined by type `T`
 (that is, we assume that the modulus in `T` is prime).
 This means that every power of the returned `g` from `1` to `M-1` produces
@@ -56,7 +41,7 @@ function get_root_of_one(::Type{T}, N::Integer, inverse::Bool) where T <: Abstra
     g = get_generator(T) # g^(modulus(T) - 1) = 1
     w = g^div(m - 1, N)
     if inverse
-        ff_inverse(w)
+        inv(w)
     else
         w
     end
@@ -69,7 +54,7 @@ Similarly to FFT, it's `1/N`, but in our case we need to take the finite field i
 """
 function get_inverse_coeff(::Type{T}, N::Integer) where T <: AbstractRRElem
     # Can also be calculated as `N^(-1) mod M == (M - (M-1) ÷ N)`
-    ff_inverse(T(N))
+    inv(T(N))
 end
 
 
@@ -123,7 +108,7 @@ struct NTTPlan{T <: Unsigned, M}
         else
             w = get_root_of_one(coeffs_tp, len, false)
         end
-        w_inv = ff_inverse(w)
+        w_inv = inv(w)
 
         forward_twiddle_coeffs[1] = 0 # unused
         inverse_twiddle_coeffs[1] = 0 # unused

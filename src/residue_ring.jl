@@ -131,6 +131,13 @@ end
 end
 
 
+@inline function Base.inv(x::RRElem{T, M}) where {T, M}
+    value = convert(encompassing_type(T), x)
+    m = convert(encompassing_type(T), M)
+    RRElem{T, M}(convert(T, invmod_(value, m)), _verbatim)
+end
+
+
 @inline Base.:<(x::RRElem{T, M}, y::RRElem{T, M}) where {T, M} = x.value < y.value
 
 
