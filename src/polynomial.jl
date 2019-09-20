@@ -54,6 +54,16 @@ struct Polynomial{T}
 end
 
 
+# Required for broadcasting
+
+
+Base.length(x::Polynomial{T}) where T = 1
+
+
+Base.iterate(x::Polynomial{T}) where T = (x, nothing)
+Base.iterate(x::Polynomial{T}, state) where T = nothing
+
+
 # It has to match a polynomial with any size and modulus,
 # So it can't be a `Polynomial` object.
 struct ZeroPolynomial
@@ -63,16 +73,13 @@ end
 @inline Base.zero(::Polynomial{T}) where T = ZeroPolynomial()
 
 
-@inline Base.length(p::Polynomial{T}) where T = length(p.coeffs)
-
-
 @inline function Base.:(==)(p1::Polynomial{T}, p2::Polynomial{T}) where T
     p1.negacyclic == p2.negacyclic && p1.coeffs == p2.coeffs
 end
 
 
 @inline function Base.:*(p1::Polynomial{T}, p2::Polynomial{T}) where T
-    @assert p1.negacyclic == p2.negacyclic && length(p1) == length(p2)
+    @assert p1.negacyclic == p2.negacyclic && length(p1.coeffs) == length(p2.coeffs)
     p1.mul_function(p1, p2)
 end
 
@@ -140,7 +147,7 @@ Multiply the polynomial by `x^shift`. `shift` can be negative.
     if shift == 0
         p
     else
-        n = length(p)
+        n = length(p.coeffs)
         cycle = isodd(fld(shift, n))
         shift = mod(shift, n)
 
@@ -238,8 +245,8 @@ Assumes the polynomials have the same length and the same value of the `negacycl
 @Base.propagate_inbounds @inline function karatsuba_mul(
         p1::Polynomial{T}, p2::Polynomial{T}) where T
 
-    full_len = length(p1)
-    half_len = div(length(p1), 2)
+    full_len = length(p1.coeffs)
+    half_len = div(length(p1.coeffs), 2)
 
     z = zero(T)
     r0 = similar(p1.coeffs)
@@ -292,7 +299,7 @@ Multiplies two polynomials using NTT.
 Assumes the polynomials have the same length and the same value of the `negacyclic` field.
 """
 @inline function ntt_mul(p1::Polynomial{T}, p2::Polynomial{T}) where T
-    plan = get_ntt_plan(T, length(p1), p1.negacyclic)
+    plan = get_ntt_plan(T, length(p1.coeffs), p1.negacyclic)
     c1 = similar(p1.coeffs)
     ntt!(plan, c1, p1.coeffs)
     c2 = similar(p2.coeffs)
