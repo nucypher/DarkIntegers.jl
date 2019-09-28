@@ -227,6 +227,39 @@ end
 end
 
 
+@inline function Base.:>>(x::MPNumber{N, T}, y::Int) where {N, T}
+    res = zero(MPNumber{N, T})
+
+    if y >= N * bitsizeof(T)
+        return res
+    end
+
+    msl = _most_significant_limb(x)
+    if msl == 0
+        return res
+    end
+
+    full_limbs = y ÷ bitsizeof(T)
+    remainder = y % bitsizeof(T)
+
+    if remainder == 0
+        for i in 1:(msl - full_limbs)
+            res = setindex(res, x[i + full_limbs], i)
+        end
+    else
+        for i in 1:(msl - full_limbs)
+            lo = x[i + full_limbs] >> remainder
+            if i < msl - full_limbs
+                lo |= x[i + full_limbs + 1] << (bitsizeof(T) - remainder)
+            end
+            res = setindex(res, lo, i)
+        end
+    end
+
+    res
+end
+
+
 @inline function Base.isodd(x::MPNumber{N, T}) where {N, T}
     isodd(x.value[1])
 end

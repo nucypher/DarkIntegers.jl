@@ -164,4 +164,41 @@ end
 end
 
 
+@testcase "lshift" for rng in fixed_rng
+    for limbs in 1:8
+        for msl in 1:limbs
+            for shift in [0:8:64; 2:8:72]
+                tp = MPNumber{limbs, UInt8}
+                x = rand(rng, UInt64) & ((UInt64(1) << (msl * 8)) - 1)
+                x_mp = convert(tp, x)
+                res_mp = x_mp >> shift
+                res = convert(UInt64, res_mp)
+                ref = x >> shift
+                if res != ref
+                    @test_fail "Incorrect result for x=$x_mp and shift=$shift"
+                end
+            end
+        end
+    end
+end
+
+
+@testcase tags=[:performance] "lshift performance" for rng in fixed_rng
+    x = MPNumber{8, UInt32}(reverse((
+        0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFE,
+        0xBAAEDCE6, 0xAF48A03B, 0xBFD25E8C, 0xD0364141)))
+
+    mptp = MPNumber{8, UInt32}
+
+    function make_args(rng)
+        x = rand(rng, one(BigInt):((one(BigInt) << 256) - one(BigInt)))
+        y = rand(rng, 1:65)
+        convert(mptp, x), y
+    end
+
+    trial = benchmark_distribution(rng, >>, make_args, 2)
+    @test_result "8xUInt32: " * benchmark_distribution_result(trial)
+end
+
+
 end
