@@ -149,5 +149,12 @@ Change length of the polynomial, padding it with zeros.
 The new length must be greater or equal to the current length.
 """
 @inline function change_length(new_length::Integer, p::Polynomial{T}) where T
-    Polynomial([p.coeffs; zeros(T, new_length - length(p.coeffs))], p.negacyclic)
+    old_length = length(p.coeffs)
+    if new_length > old_length
+        Polynomial([p.coeffs; zeros(T, new_length - length(p.coeffs))], p.negacyclic)
+    elseif new_length < old_length
+        Polynomial(p.coeffs[1:new_length], p.negacyclic)
+    else
+        p
+    end
 end
