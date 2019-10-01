@@ -260,6 +260,20 @@ end
 end
 
 
+@inline function Base.trailing_zeros(x::MPNumber{N, T}) where {N, T}
+    bs = bitsizeof(T)
+    res = 0
+    @inbounds for i in 1:N
+        t = trailing_zeros(x[i])
+        res += t
+        if t != bs
+            break
+        end
+    end
+    res
+end
+
+
 @inline function Base.isodd(x::MPNumber{N, T}) where {N, T}
     isodd(x.value[1])
 end
