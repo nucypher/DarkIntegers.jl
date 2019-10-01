@@ -243,11 +243,11 @@ end
     remainder = y % bitsizeof(T)
 
     if remainder == 0
-        for i in 1:(msl - full_limbs)
+        @inbounds for i in 1:(msl - full_limbs)
             res = setindex(res, x[i + full_limbs], i)
         end
     else
-        for i in 1:(msl - full_limbs)
+        @inbounds for i in 1:(msl - full_limbs)
             lo = x[i + full_limbs] >> remainder
             if i < msl - full_limbs
                 lo |= x[i + full_limbs + 1] << (bitsizeof(T) - remainder)
