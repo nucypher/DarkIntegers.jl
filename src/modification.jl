@@ -13,6 +13,12 @@ rr_modulus(::Type{RRElem{T, M}}) where {T, M} = M
 rr_modulus(::Type{RRElemMontgomery{T, M}}) where {T, M} = M
 
 
+function rr_value_simple(val::AbstractRRElem)
+    v = rr_value(val)
+    convert(encompassing_type(typeof(v)), v)
+end
+
+
 function rr_modulus_simple(tp::Type{<:AbstractRRElem})
     m = rr_modulus(tp)
     convert(encompassing_type(typeof(m)), m)
