@@ -207,9 +207,8 @@ end
 
 
 @inline function Base.inv(x::RRElemMontgomery{T, M}) where {T, M}
-    value = convert(encompassing_type(T), x)
-    m = convert(encompassing_type(T), M)
-    RRElemMontgomery{T, M}(convert(T, invmod_(value, m)), _no_modulo)
+    value = from_montgomery(x)
+    RRElemMontgomery{T, M}(invmod_(value, M), _no_modulo)
 end
 
 

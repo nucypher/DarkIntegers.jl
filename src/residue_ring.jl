@@ -132,9 +132,7 @@ end
 
 
 @inline function Base.inv(x::RRElem{T, M}) where {T, M}
-    value = convert(encompassing_type(T), x)
-    m = convert(encompassing_type(T), M)
-    RRElem{T, M}(convert(T, invmod_(value, m)), _verbatim)
+    RRElem{T, M}(invmod_(x.value, M), _verbatim)
 end
 
 
