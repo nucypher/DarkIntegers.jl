@@ -1,0 +1,19 @@
+version: 2.1
+orbs:
+  codecov: codecov/codecov@1.0.2 # need to allow 3rd party orbs in project settings on circleci
+jobs:
+  build:
+    working_directory: /root/project/DarkIntegers # Clone into a directory whose name matches your Package.
+    docker:
+      - image: julia:1.2 # image comes from Docker hub
+    steps:
+      - checkout
+      - run:
+          name: Install and test this package
+          command: julia -e  'using Pkg; Pkg.update(); Pkg.clone(pwd()); Pkg.build("DarkIntegers"); Pkg.test("DarkIntegers", coverage=true);'
+      - run:
+          name: Process code-coverage
+          command: julia -e 'using Pkg; cd(Pkg.dir("DarkIntegers")); Pkg.add("Coverage"); using Coverage; coverage = process_folder(); LCOV.writefile("coverage-lcov.info", coverage)'
+      #- codecov/upload:
+      #    file: "coverage-lcov.info"
+      #    token: "..." # get from https://codecov.io/gh/github-name/DarkIntegers.jl/settings
