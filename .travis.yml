@@ -5,6 +5,8 @@ os:
   - osx
 julia:
   - 1.0
+  - 1.1
+  - 1.2
   - nightly
 notifications:
   email: false
@@ -30,4 +32,4 @@ matrix:
 after_success:
   - julia -e 'import Pkg; cd(Pkg.dir("DarkIntegers")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())';
   - julia -e 'import Pkg; cd(Pkg.dir("DarkIntegers")); Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())';
-#  - julia -e 'import Pkg; cd(Pkg.dir("DarkIntegers")); Pkg.add("Documenter"); include("docs/make.jl")'
+  - julia -e 'import Pkg; cd(Pkg.dir("DarkIntegers")); Pkg.add("Documenter"); include("docs/make.jl")'
