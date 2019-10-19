@@ -1,4 +1,3 @@
-using Statistics
 using Base.Iterators: product
 using Random
 using BenchmarkTools: prettytime, prettymemory, @benchmark
@@ -62,6 +61,11 @@ function benchmark_distribution(
         rng, test_func, make_args, Val(nargs), samples, iterations)
 end
 
+
+mean(vals::AbstractArray) = sum(vals) / length(vals)
+
+
+std(vals::AbstractArray) = sqrt(sum((vals .- mean(vals)).^2 / (length(vals) - 1)))
 
 
 function benchmark_distribution_result(trial::DistributionTrial)
