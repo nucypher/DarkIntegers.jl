@@ -11,7 +11,7 @@ jobs:
       - run:
           name: Install and test this package
       #    command: julia -e  'using Pkg; Pkg.update(); Pkg.clone(pwd()); Pkg.build("DarkIntegers"); Pkg.test("DarkIntegers", coverage=true);'
-           command: julia --project=/root/project/DarkIntegers -e 'using Pkg; Pkg.test(; coverage=true)'
+          command: julia --project=/root/project/DarkIntegers -e 'using Pkg; Pkg.test(; coverage=true)'
       - run:
           name: Process code-coverage
           command: julia -e 'using Pkg; cd(Pkg.dir("DarkIntegers")); Pkg.add("Coverage"); using Coverage; coverage = process_folder(); LCOV.writefile("coverage-lcov.info", coverage)'
