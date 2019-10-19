@@ -1,5 +1,7 @@
 # Dark Integers
 
+Master branch: [![CircleCI](https://circleci.com/gh/nucypher/DarkIntegers.jl/tree/master.svg?style=svg)](https://circleci.com/gh/nucypher/DarkIntegers.jl/tree/master) [![codecov](https://codecov.io/gh/nucypher/DarkIntegers.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/nucypher/DarkIntegers.jl)
+
 `DarkIntegers.jl` is a lightweight library for working with unsigned integers and polynomials. It includes:
 
 * Modulo arithmetic for primitive types;
