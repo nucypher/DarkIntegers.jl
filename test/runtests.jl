@@ -12,4 +12,4 @@ include("polynomial.test.jl")
 include("modification.test.jl")
 include("ntt.test.jl")
 
-exit(runtests(options=Dict(:exclude_tags => ["performance", "exhaustive"])))
+exit(runtests(options=Dict(:exclude_tags => [:performance, :exhaustive])))
