@@ -10,11 +10,10 @@ jobs:
       - checkout
       - run:
           name: Install and test this package
-      #    command: julia -e  'using Pkg; Pkg.update(); Pkg.clone(pwd()); Pkg.build("DarkIntegers"); Pkg.test("DarkIntegers", coverage=true);'
           command: julia --project=/root/project/DarkIntegers -e 'using Pkg; Pkg.test(; coverage=true)'
       - run:
           name: Process code-coverage
-          command: julia -e 'using Pkg; cd(Pkg.dir("DarkIntegers")); Pkg.add("Coverage"); using Coverage; coverage = process_folder(); LCOV.writefile("coverage-lcov.info", coverage)'
+          command: julia --project=/root/project/DarkIntegers -e 'using Pkg; Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())'
       #- codecov/upload:
       #    file: "coverage-lcov.info"
-      #    token: "..." # get from https://codecov.io/gh/github-name/DarkIntegers.jl/settings
+      #    token: "dee149ff-4af0-4ea0-ad1a-586224c803a4"
