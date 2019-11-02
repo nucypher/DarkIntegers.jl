@@ -38,6 +38,18 @@ jobs:
       - run:
           name: Process code-coverage
           command: julia --project=/root/project/DarkIntegers -e 'using Pkg; Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())'
+  docs:
+    working_directory: /root/project/DarkIntegers # Clone into a directory whose name matches your Package.
+    docker:
+      - image: julia:1.2 # image comes from Docker hub
+    steps:
+      - checkout
+      - run:
+          name: Instantiate the package
+          command: julia --project=/root/project/DarkIntegers/docs -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate(); Pkg.add("Documenter")'
+      - run:
+          name: Generate and upload the documentation
+          command: julia --project=/root/project/DarkIntegers/docs docs/make.jl
 workflows:
   version: 2
   test:
@@ -45,3 +57,4 @@ workflows:
       - test-julia10
       - test-julia12
       - test-julia13
+      - docs
