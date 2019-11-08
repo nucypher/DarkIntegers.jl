@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Manual · DarkIntegers.jl</title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="assets/documenter.js"></script><script src="siteinfo.js"></script><script src="../versions.js"></script><link href="assets/documenter.css" rel="stylesheet" type="text/css"/></head><body><nav class="toc"><h1>DarkIntegers.jl</h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" id="search-form" action="search.html"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li><a class="toctext" href="index.html">Home</a></li><li class="current"><a class="toctext" href="manual.html">Manual</a><ul class="internal"><li><a class="toctext" href="#Multi-precision-numbers-1">Multi-precision numbers</a></li><li><a class="toctext" href="#Residue-ring-elements-1">Residue ring elements</a></li><li><a class="toctext" href="#Montgomery-representation-1">Montgomery representation</a></li><li><a class="toctext" href="#Cyclic-polynomials-1">Cyclic polynomials</a></li></ul></li><li><a class="toctext" href="api.html">API reference</a></li><li><a class="toctext" href="history.html">Version history</a></li></ul></nav><article id="docs"><header><nav><ul><li><a href="manual.html">Manual</a></li></ul><a class="edit-page" href="https://github.com/nucypher/DarkIntegers.jl/blob/master/docs/src/manual.md"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>Manual</span><a class="fa fa-bars" href="#"></a></div></header><h1><a class="nav-anchor" id="Manual-1" href="#Manual-1">Manual</a></h1><p>In this section we assume that every example is preceded with</p><pre><code class="language-julia">using DarkIntegers</code></pre><h2><a class="nav-anchor" id="Multi-precision-numbers-1" href="#Multi-precision-numbers-1">Multi-precision numbers</a></h2><p>The basic facility in <code>DarkIntegers</code> are multi-precision unsigned integers <a href="api.html#DarkIntegers.MPNumber"><code>MPNumber{N, T}</code></a>. The type takes two parameters, <code>N</code> (an integer) being the number of limbs, or digits, and <code>T</code> (an unsigned integer type) is the type of a limb. Its functionality is closer to that of <code>BigInt</code>, but <a href="api.html#DarkIntegers.MPNumber"><code>MPNumber</code></a> still has fixed length (although it can be much greater than what any Julia built-in type supports). On the other hand, operations with it do not require dynamic memory allocation and are faster than the <code>BigInt</code> ones.</p><p>The <a href="api.html#DarkIntegers.MPNumber"><code>MPNumber</code></a> constructor takes any integer:</p><pre><code class="language-">a = MPNumber{2, UInt8}(65534)
+println(a)
+
+# output
+
+{(0xfe, 0xff)}</code></pre><p>Note that the limbs are arranged in the big-endian order.</p><p>A multi-precision number can be converted back to any integer:</p><pre><code class="language-">b = convert(Int, a)
+println(b)
+
+# output
+
+65534</code></pre><p>Multi-precision numbers support arithmetic operations and comparisons and act identically to built-in unsigned integer types:</p><pre><code class="language-">a = MPNumber{2, UInt8}(65534)
+b = MPNumber{2, UInt8}(65533)
+println(a + b)
+println(convert(Int, a + b))
+
+# output
+{(0xfb, 0xff)}
+65531</code></pre><h2><a class="nav-anchor" id="Residue-ring-elements-1" href="#Residue-ring-elements-1">Residue ring elements</a></h2><p>The next level above multi-precision integers (and built-in unsigned integers) are residue ring elements, that is, unsigned integers with the arithmetic operations performed modulo some number. The residue ring element type <a href="api.html#DarkIntegers.RRElem"><code>RRElem{T, M}</code></a> is parametrized by the number type <code>T</code> (an unsigned integer) and the modulus <code>M</code> (which is a <em>value</em> of type <code>T</code>).</p><p>Similarly to <a href="api.html#DarkIntegers.MPNumber"><code>MPNumber</code></a> objects, <a href="api.html#DarkIntegers.RRElem"><code>RRElem</code></a> objects can be constructed out of an integer. If the integer is greater than the modulus, it will be truncated (by applying <code>mod()</code>):</p><pre><code class="language-julia">modulus = UInt8(200)
+a = RRElem{UInt8, modulus}(250)
+println(a)
+
+# output
+50RR</code></pre><p>All arithmetic operations on <a href="api.html#DarkIntegers.RRElem"><code>RRElem</code></a> objects are performed modulo <code>modulus</code>. Any regular integers in mixed expressions are promoted to <a href="api.html#DarkIntegers.RRElem"><code>RRElem</code></a> objects:</p><pre><code class="language-julia">println(a + 101)
+
+# output
+151RR</code></pre><p><a href="api.html#DarkIntegers.RRElem"><code>RRElem</code></a> objects can be converted back to integers:</p><pre><code class="language-julia">println(convert(Int, a))
+
+# output
+50</code></pre><h2><a class="nav-anchor" id="Montgomery-representation-1" href="#Montgomery-representation-1">Montgomery representation</a></h2><p>Residue ring elements can be converted to an alternate representation, which makes use of <a href="https://en.wikipedia.org/wiki/Montgomery_modular_multiplication">Montgomery reduction</a> for multiplication. As a result, the multiplication becomes much faster, addition and subtraction stay the same, and division (and conversion to and from integers) become slower. The representation implemented as the type <a href="api.html#DarkIntegers.RRElemMontgomery"><code>RRElemMontgomery{T, M}</code></a>, which is parametrized in the same way as <a href="api.html#DarkIntegers.RRElem"><code>RRElem</code></a>. Depending on the relative amount of different arithmetic operations one needs to perform, either <a href="api.html#DarkIntegers.RRElem"><code>RRElem</code></a> or <a href="api.html#DarkIntegers.RRElemMontgomery"><code>RRElemMontgomery</code></a> may perform better.</p><p>The interface is the same as the one for <a href="api.html#DarkIntegers.RRElem"><code>RRElem</code></a>, except for the restriction on <code>M</code> to be an odd number:</p><pre><code class="language-julia">modulus = UInt8(201)
+a = RRElemMontgomery{UInt8, modulus}(250)
+println(a)
+println(convert(Int, a + 101))
+
+# output
+49RRM
+150</code></pre><h2><a class="nav-anchor" id="Cyclic-polynomials-1" href="#Cyclic-polynomials-1">Cyclic polynomials</a></h2><p>Anything type supporting arithmetic operations (including <a href="api.html#DarkIntegers.MPNumber"><code>MPNumber</code></a>, <a href="api.html#DarkIntegers.RRElem"><code>RRElem</code></a> and <a href="api.html#DarkIntegers.RRElemMontgomery"><code>RRElemMontgomery</code></a>) can serve as the coefficient type in the <a href="api.html#DarkIntegers.Polynomial"><code>Polynomial</code></a> type. <code>DarkIntegers</code> supports cyclic polynomials (with operations performed modulo <code>x^n-1</code>, where <code>n</code> is some non-negative integer called the length of the polynomial) and negacyclic ones (with operations performed modulo <code>x^n+1</code>).</p><p>Polynomials are created out of a coefficient array (where the <code>i</code>-th element corresponds to the <code>(i-1)</code>-th power of <code>x</code>) and the negacyclicity flag:</p><pre><code class="language-julia">p = Polynomial([1, 2, 3, 4], true) # creates a negacyclic polynomial
+println(p)
+println(p + 1)
+println(p * 2)
+
+# output
+Polynomial{Int64}([1, 2, 3, 4], true, DarkIntegers.karatsuba_mul)
+Polynomial{Int64}([2, 2, 3, 4], true, DarkIntegers.karatsuba_mul)
+Polynomial{Int64}([2, 4, 6, 8], true, DarkIntegers.karatsuba_mul)</code></pre><p>The polynomial can be multiplied by a power of <code>x</code> using <a href="api.html#DarkIntegers.shift_polynomial"><code>shift_polynomial</code></a>. Since the polynomial we created is cyclic, the coefficients with the powers greater or equal to <code>n</code> will reappear from the other side with the opposite sign (one can work it out by applying the <code>x^n+1</code> modulus manually):</p><pre><code class="language-julia">println(shift_polynomial(p, 2))
+
+# output
+Polynomial{Int64}([-3, -4, 1, 2], true, DarkIntegers.karatsuba_mul)</code></pre><p>Note the multiplication function that is the part of the <a href="api.html#DarkIntegers.Polynomial"><code>Polynomial</code></a> structure. The default for the multiplication is Karatsuba algorithm; if possible a more faster NTT-based algorithm will be chosen. It requires:</p><ul><li>the coefficient type to be a residue ring element (<a href="api.html#DarkIntegers.RRElem"><code>RRElem</code></a> or <a href="api.html#DarkIntegers.RRElemMontgomery"><code>RRElemMontgomery</code></a>) with a prime modulus;</li><li>the length of the polynomial to be a power of 2;</li><li>the length of the polynomial to be a factor of <code>(modulus - 1)</code> for cyclic polynomials, and <code>(modulus - 1)/2</code> for negacyclic ones.</li></ul><p>For example:</p><pre><code class="language-julia">modulus = UInt8(241)
+tp = RRElem{UInt8, modulus}
+p1 = Polynomial(tp[1, 2, 3, 4], true)
+p2 = Polynomial(tp[1, 0, 1, 0], true)
+println(p1)
+println(p2)
+println(p1 * p2)
+
+# output
+Polynomial{RRElem{UInt8,0xf1}}(RRElem{UInt8,0xf1}[1RR, 2RR, 3RR, 4RR], true, DarkIntegers.ntt_mul)
+Polynomial{RRElem{UInt8,0xf1}}(RRElem{UInt8,0xf1}[1RR, 0RR, 1RR, 0RR], true, DarkIntegers.ntt_mul)
+Polynomial{RRElem{UInt8,0xf1}}(RRElem{UInt8,0xf1}[239RR, 239RR, 4RR, 6RR], true, DarkIntegers.ntt_mul)</code></pre><footer><hr/><a class="previous" href="index.html"><span class="direction">Previous</span><span class="title">Home</span></a><a class="next" href="api.html"><span class="direction">Next</span><span class="title">API reference</span></a></footer></article></body></html>
