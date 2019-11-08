@@ -45,6 +45,9 @@ jobs:
     steps:
       - checkout
       - run:
+          name: Install git # Documenter will push to the gh-pages branch and needs it
+          command: apt-get update && apt-get install -y git
+      - run:
           name: Instantiate the package
           command: julia --project=/root/project/DarkIntegers/docs -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate(); Pkg.add("Documenter")'
       - run:
