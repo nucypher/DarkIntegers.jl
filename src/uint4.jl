@@ -89,7 +89,6 @@ end
 # `sizeof` gives the size in bytes, so it is too coarse for UInt4.
 # We need the exact size in bits for various functions.
 bitsizeof(::Type{UInt4}) = 4
-bitsizeof(tp) = 8 * sizeof(tp)
 
 
 # For mulhilo()

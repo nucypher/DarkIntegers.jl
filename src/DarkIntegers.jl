@@ -1,5 +1,7 @@
 module DarkIntegers
 
+include("utils.jl")
+
 include("uint4.jl")
 
 include("single_limb.jl")
