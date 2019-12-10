@@ -4,6 +4,14 @@
 CurrentModule = DarkIntegers
 ```
 
+## Utility functions
+
+```@docs
+bitsizeof
+num_bits
+```
+
+
 ## Single-limb arithmetic
 
 ```@docs

@@ -1,3 +1,7 @@
+#=
+Utility functions for integers.
+=#
+
 # Taken from https://github.com/JuliaLang/julia/pull/30515
 # as a workaround for https://github.com/JuliaLang/julia/issues/29971
 # Replace by `invmod` when it is merged.
@@ -31,3 +35,41 @@ Size, in bits, of object `x` if it is not a type.
 """
 bitsizeof(::Type{T}) where T = sizeof(T) << 3
 bitsizeof(::T) where T = bitsizeof(T)
+
+
+"""
+    num_bits(x)
+
+Returns the number of bits in the representation of the absolute value of an integer.
+"""
+num_bits(x::T) where T <: Unsigned = bitsizeof(T) - leading_zeros(x)
+
+function num_bits(x::T) where T <: Signed
+    if x == typemin(T)
+        bitsizeof(T)
+    else
+        num_bits(unsigned(signbit(x) ? -x : x))
+    end
+end
+
+function num_bits(x::BigInt)
+    if iszero(x)
+        return 0
+    end
+
+    if signbit(x)
+        x = -x
+    end
+
+    for i in abs(x.size):-1:1
+        limb = unsafe_load(x.d, i)
+
+        # BigInts seem to resize automatically, but we're venturing
+        # into the undocumented territory here, so just in case
+        # handle possible empty limbs.
+        if !iszero(limb)
+            limb_bits = sizeof(limb) << 3
+            return (i - 1) * limb_bits + (limb_bits - leading_zeros(limb))
+        end
+    end
+end

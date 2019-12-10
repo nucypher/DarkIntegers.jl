@@ -1,6 +1,8 @@
 module DarkIntegers
 
 include("utils.jl")
+export bitsizeof
+export num_bits
 
 include("uint4.jl")
 
