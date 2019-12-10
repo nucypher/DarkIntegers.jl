@@ -73,3 +73,12 @@ function num_bits(x::BigInt)
         end
     end
 end
+
+
+"""
+    encompassing_type(tp::Type{<:Unsigned})
+
+Returns the built-in type that covers all the range of `tp`
+(not necessarily unsigned).
+"""
+encompassing_type(tp::Type{<:Unsigned}) = tp

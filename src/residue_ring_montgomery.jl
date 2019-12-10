@@ -227,3 +227,6 @@ Base.length(x::RRElemMontgomery{T, M}) where {T, M} = 1
 
 Base.iterate(x::RRElemMontgomery{T, M}) where {T, M} = (x, nothing)
 Base.iterate(x::RRElemMontgomery{T, M}, state) where {T, M} = nothing
+
+
+encompassing_type(tp::Type{RRElemMontgomery{T, M}}) where {T, M} = encompassing_type(T)

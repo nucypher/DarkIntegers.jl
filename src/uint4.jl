@@ -94,3 +94,6 @@ bitsizeof(::Type{UInt4}) = 4
 # For mulhilo()
 _low_mask(::Type{UInt4}) = UInt4(UInt8(0x3))
 _low_shift(tp::Type{UInt4}) = 2
+
+
+encompassing_type(::Type{UInt4}) = UInt8

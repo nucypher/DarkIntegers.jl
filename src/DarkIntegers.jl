@@ -3,6 +3,7 @@ module DarkIntegers
 include("utils.jl")
 export bitsizeof
 export num_bits
+export encompassing_type
 
 include("uint4.jl")
 
@@ -35,8 +36,6 @@ include("polynomial.jl")
 export Polynomial
 export shift_polynomial
 
-include("misc.jl")
-export encompassing_type
 
 include("modification.jl")
 export change_modulus

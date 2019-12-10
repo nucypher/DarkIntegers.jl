@@ -162,3 +162,6 @@ Base.length(x::RRElem{T, M}) where {T, M} = 1
 
 Base.iterate(x::RRElem{T, M}) where {T, M} = (x, nothing)
 Base.iterate(x::RRElem{T, M}, state) where {T, M} = nothing
+
+
+encompassing_type(tp::Type{RRElem{T, M}}) where {T, M} = encompassing_type(T)

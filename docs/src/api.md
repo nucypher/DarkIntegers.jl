@@ -9,6 +9,7 @@ CurrentModule = DarkIntegers
 ```@docs
 bitsizeof
 num_bits
+encompassing_type
 ```
 
 
@@ -68,10 +69,4 @@ change_base_type
 change_modulus
 change_length
 rescale
-```
-
-## Miscellaneous
-
-```@docs
-encompassing_type
 ```
