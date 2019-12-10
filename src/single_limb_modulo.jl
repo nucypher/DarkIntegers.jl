@@ -121,3 +121,26 @@ Returns `mod(x * y, modulus)` (even if `x * y` overflows `T`).
     mulmod_widemul(x, y, modulus)
 @inline mulmod(x::T, y::T, modulus::T) where T <: Union{UInt64, UInt128} =
     mulmod_bitshift(x, y, modulus)
+
+
+function powmod(x::T, y::V, modulus::T) where {T, V}
+    if signbit(y)
+        throw(DomainError(y, "Cannot raise to a negative power"))
+    end
+
+    if iszero(y)
+        one(T)
+    elseif isone(y)
+        x
+    else
+        acc = one(T)
+        while y > one(V)
+            if isodd(y)
+                acc = mulmod(acc, x, modulus)
+            end
+            x = mulmod(x, x, modulus)
+            y = halve(y)
+        end
+        mulmod(x, acc, modulus)
+    end
+end

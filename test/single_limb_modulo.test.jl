@@ -106,4 +106,24 @@ end
 end
 
 
+function powmod_ref(x::T, y::V, modulus::T) where {T, V}
+    convert(T, mod(big(x) ^ y, modulus))
+end
+
+
+@testcase "powmod" begin
+    # Going with a smaller type to avoid exhausting the memory.
+    check_function_random(
+        UInt8, powmod, powmod_ref, 3;
+        args_filter_predicate=modulo_args_filter)
+end
+
+
+@testcase tags=[:exhaustive] "powmod, exhaustive" begin
+    check_function_exhaustive(
+        UInt4, powmod, powmod_ref, 3;
+        args_filter_predicate=modulo_args_filter)
+end
+
+
 end

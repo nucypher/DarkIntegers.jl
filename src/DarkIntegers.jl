@@ -15,6 +15,7 @@ include("single_limb_modulo.jl")
 export addmod
 export submod
 export mulmod
+export powmod
 
 include("mp_number.jl")
 export MPNumber
