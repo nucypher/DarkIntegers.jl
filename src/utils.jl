@@ -22,4 +22,12 @@ end
 @inline double(x::Integer) = x << 1
 
 
-bitsizeof(tp) = sizeof(tp) << 3
+"""
+    bitsizeof(::Type{T}) where T
+    bitsizeof(x)
+
+Size, in bits, of the canonical binary representation of the given type `T`.
+Size, in bits, of object `x` if it is not a type.
+"""
+bitsizeof(::Type{T}) where T = sizeof(T) << 3
+bitsizeof(::T) where T = bitsizeof(T)
