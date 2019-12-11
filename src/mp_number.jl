@@ -2,7 +2,6 @@
 Multi-precision unsigned integers.
 """
 
-using Base: setindex
 
 
 """

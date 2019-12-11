@@ -1,6 +1,3 @@
-using Primes: isprime
-
-
 """
 Select the best available polynomial multiplication function
 based on the element type an polynomial length.

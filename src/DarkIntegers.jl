@@ -1,5 +1,9 @@
 module DarkIntegers
 
+using Base: setindex
+using Primes: factor, isprime
+
+
 include("utils.jl")
 export bitsizeof
 export num_bits
@@ -35,7 +39,6 @@ export RRElemMontgomery
 include("polynomial.jl")
 export Polynomial
 export shift_polynomial
-
 
 include("modification.jl")
 export change_modulus

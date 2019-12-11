@@ -1,6 +1,3 @@
-using Primes: factor
-
-
 """
 Finds a generator element for a finite field defined by type `T`
 (that is, we assume that the modulus in `T` is prime).

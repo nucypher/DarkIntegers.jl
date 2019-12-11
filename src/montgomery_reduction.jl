@@ -17,9 +17,6 @@ This leads to 4x performance increase for arrays of UInt64, for example,
 because the new version can be vectorized much more efficiently.
 """
 
-using Base: setindex
-
-
 """
 Calculate the coefficient used for multiplication and conversion from M. representation.
 Namely, `m' = m^(-1) mod b`, where `b = typemax(T)+1`.
