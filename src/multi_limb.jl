@@ -563,3 +563,6 @@ function encompassing_type(tp::Type{MLUInt{N, T}}) where {N, T}
         return BigInt
     end
 end
+
+
+Base.eltype(::Type{MLUInt{N, T}}) where {N, T} = T

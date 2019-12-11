@@ -15,10 +15,6 @@ end
 @testgroup "Montgomery reduction" begin
 
 
-limb_type(::Type{MLUInt{N, T}}) where {N, T} = T
-limb_type(tp) = tp
-
-
 @testcase "Montgomery coefficient" for tp in (UInt32, MLUInt{4, UInt8})
 
     for i in 1:100
@@ -29,13 +25,13 @@ limb_type(tp) = tp
         m_tp = tp(m)
         m_prime_tp = get_montgomery_coeff(m_tp)
 
-        expected_tp = limb_type(tp)
+        expected_tp = eltype(tp)
         if !(typeof(m_prime_tp) == expected_tp)
             @test_fail "Expected type $expected_tp, got $(typeof(m_prime_tp))"
         end
 
         m_prime = convert(UInt128, m_prime_tp)
-        b = convert(UInt128, typemax(limb_type(tp))) + 1
+        b = convert(UInt128, typemax(eltype(tp))) + 1
 
         if (m_prime * m) % b != 1
             @test_fail "Incorrect Montgomery coefficient for $m: $m_prime"
