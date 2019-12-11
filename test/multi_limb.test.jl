@@ -6,59 +6,59 @@ using DarkIntegers: UInt4, mulmod, mulmod_bitshift, mulmod_widemul
 
 
 @testcase "+" begin
-    check_function_random(MPNumber{4, UInt64}, +, +, 2)
+    check_function_random(MLUInt{4, UInt64}, +, +, 2)
 end
 
 
 @testcase tags=[:exhaustive] "+, exhaustive" begin
-    check_function_exhaustive(MPNumber{3, UInt4}, +, +, 2)
+    check_function_exhaustive(MLUInt{3, UInt4}, +, +, 2)
 end
 
 
 @testcase "-" begin
-    check_function_random(MPNumber{4, UInt64}, -, -, 2)
+    check_function_random(MLUInt{4, UInt64}, -, -, 2)
 end
 
 
 @testcase tags=[:exhaustive] "-, exhaustive" begin
-    check_function_exhaustive(MPNumber{3, UInt4}, -, -, 2)
+    check_function_exhaustive(MLUInt{3, UInt4}, -, -, 2)
 end
 
 
 @testcase "*" begin
-    check_function_random(MPNumber{4, UInt64}, *, *, 2)
+    check_function_random(MLUInt{4, UInt64}, *, *, 2)
 end
 
 
 @testcase tags=[:exhaustive] "*, exhaustive" begin
-    check_function_exhaustive(MPNumber{3, UInt4}, *, *, 2)
+    check_function_exhaustive(MLUInt{3, UInt4}, *, *, 2)
 end
 
 
 @testcase "div" begin
     check_function_random(
-        MPNumber{4, UInt64}, div, div, 2;
+        MLUInt{4, UInt64}, div, div, 2;
         args_filter_predicate=(x, y) -> y > 0)
 end
 
 
 @testcase tags=[:exhaustive] "div, exhaustive" begin
     check_function_exhaustive(
-        MPNumber{3, UInt4}, div, div, 2;
+        MLUInt{3, UInt4}, div, div, 2;
         args_filter_predicate=(x, y) -> y > 0)
 end
 
 
 @testcase "divrem" begin
     check_function_random(
-        MPNumber{4, UInt64}, divrem, divrem, 2;
+        MLUInt{4, UInt64}, divrem, divrem, 2;
         args_filter_predicate=(x, y) -> y > 0)
 end
 
 
 @testcase tags=[:exhaustive] "divrem, exhaustive" begin
     check_function_exhaustive(
-        MPNumber{3, UInt4}, divrem, divrem, 2;
+        MLUInt{3, UInt4}, divrem, divrem, 2;
         args_filter_predicate=(x, y) -> y > 0)
 end
 
@@ -67,11 +67,11 @@ end
     xi = 12345
     yi = 400
 
-    tp = MPNumber{2, UInt8}
+    tp = MLUInt{2, UInt8}
     modulus = 2^bitsizeof(tp)
 
-    x = MPNumber{2, UInt8}(xi)
-    y = MPNumber{2, UInt8}(yi)
+    x = MLUInt{2, UInt8}(xi)
+    y = MLUInt{2, UInt8}(yi)
 
     @test x + y == mod(xi + yi, modulus)
     @test x + 1 == mod(xi + 1, modulus)
@@ -106,13 +106,13 @@ modulo_args_filter(x, y, modulus) = modulus >= 2 && x < modulus && y < modulus
 
 @testcase "mulmod" for func in (mulmod_funcs => mulmod_names)
     check_function_random(
-        MPNumber{4, UInt8}, func, mulmod_ref, 3;
+        MLUInt{4, UInt8}, func, mulmod_ref, 3;
         args_filter_predicate=modulo_args_filter)
 end
 
 
 @testcase tags=[:performance] "mulmod performance" for rng in fixed_rng
-    mptp = MPNumber{2, UInt64}
+    mptp = MLUInt{2, UInt64}
 
     modulus = UInt128(2)^80 + 1
     x = rand(rng, UInt128(1):modulus-1)
@@ -134,7 +134,7 @@ end
 
 
 @testcase tags=[:performance] "divrem performance, single limb divisor" for rng in fixed_rng
-    mptp = MPNumber{2, UInt64}
+    mptp = MLUInt{2, UInt64}
 
     x = rand(rng, UInt128(1):typemax(UInt128))
     y = rand(rng, UInt128(1):UInt128(typemax(UInt64)))
@@ -151,7 +151,7 @@ end
 
 
 @testcase tags=[:performance] "divrem performance, multiple limb divisor" for rng in fixed_rng
-    mptp = MPNumber{8, UInt16}
+    mptp = MLUInt{8, UInt16}
 
     function make_args(rng)
         x = rand(rng, UInt128(1):typemax(UInt128))
@@ -168,7 +168,7 @@ end
     for limbs in 1:8
         for msl in 1:limbs
             for shift in [0:8:64; 2:8:72]
-                tp = MPNumber{limbs, UInt8}
+                tp = MLUInt{limbs, UInt8}
                 x = rand(rng, UInt64) & ((UInt64(1) << (msl * 8)) - 1)
                 x_mp = convert(tp, x)
                 res_mp = x_mp >> shift
@@ -184,11 +184,11 @@ end
 
 
 @testcase tags=[:performance] "lshift performance" for rng in fixed_rng
-    x = MPNumber{8, UInt32}(reverse((
+    x = MLUInt{8, UInt32}(reverse((
         0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFE,
         0xBAAEDCE6, 0xAF48A03B, 0xBFD25E8C, 0xD0364141)))
 
-    mptp = MPNumber{8, UInt32}
+    mptp = MLUInt{8, UInt32}
 
     function make_args(rng)
         x = rand(rng, one(BigInt):((one(BigInt) << 256) - one(BigInt)))

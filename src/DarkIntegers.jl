@@ -24,8 +24,8 @@ export submod
 export mulmod
 export powmod
 
-include("mp_number.jl")
-export MPNumber
+include("multi_limb.jl")
+export MLUInt
 
 include("residue_ring.jl")
 export RRElem

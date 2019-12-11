@@ -31,10 +31,10 @@ end
 """
 An implementation of Montgomery coefficient for a multi-precision number.
 Using the fact that `m^(-1) mod R == (mod(m, b+1))^(-1) mod b`,
-where `b = typemax(T)+1` is the radix, and `R = b^N = typemax(MPNumber{N, T})+1`
+where `b = typemax(T)+1` is the radix, and `R = b^N = typemax(MLUInt{N, T})+1`
 is the total size of the type.
 """
-function get_montgomery_coeff(modulus::MPNumber{N, T}) where {N, T}
+function get_montgomery_coeff(modulus::MLUInt{N, T}) where {N, T}
     get_montgomery_coeff(modulus[1])
 end
 
@@ -45,7 +45,7 @@ and `y` is a single radix digit.
 Returns the `N+1`-long result as tuple of the lowest digit
 and a multi-precision number with the `N` highest digits.
 """
-@inline @generated function _mul_by_single(x::MPNumber{N, T}, y::T) where {N, T}
+@inline @generated function _mul_by_single(x::MLUInt{N, T}, y::T) where {N, T}
 
     body = []
 
@@ -68,7 +68,7 @@ and a multi-precision number with the `N` highest digits.
     end
 
     quote
-        w = zero(MPNumber{N, T})
+        w = zero(MLUInt{N, T})
         c = zero(T)
         w_lo = zero(T)
 
@@ -83,11 +83,11 @@ end
 """
 Montgomery multiplication (or Montgomery reduction algorithm).
 For `x = x' * R mod m` and `y = y' * R mod m`
-calculates `x' * y' * R mod m`, where `R = typemax(MPNumber{N, T}) + 1`.
+calculates `x' * y' * R mod m`, where `R = typemax(MLUInt{N, T}) + 1`.
 `m_prime` is the Montgomery coefficient (see [`get_montgomery_coeff`](@ref)).
 """
 @Base.propagate_inbounds @inline @generated function mulmod_montgomery(
-        x::MPNumber{N, T}, y::MPNumber{N, T}, m::MPNumber{N, T}, m_prime::T) where {N, T}
+        x::MLUInt{N, T}, y::MLUInt{N, T}, m::MLUInt{N, T}, m_prime::T) where {N, T}
 
     body = []
 
@@ -119,7 +119,7 @@ calculates `x' * y' * R mod m`, where `R = typemax(MPNumber{N, T}) + 1`.
         if i > 1
             push!(body, quote
                 if (a_lo + p1_lo) < a_lo
-                    a += one(MPNumber{N, T})
+                    a += one(MLUInt{N, T})
                 end
             end)
         end
@@ -137,7 +137,7 @@ calculates `x' * y' * R mod m`, where `R = typemax(MPNumber{N, T}) + 1`.
             new_a = [:(a[$j]) for j in 2:N]
             push!(body, quote
                 a_lo = a[1]
-                a = MPNumber{N, T}(($(new_a...), zero(T)))
+                a = MLUInt{N, T}(($(new_a...), zero(T)))
             end)
         end
     end
@@ -150,10 +150,10 @@ end
 
 """
 An implementation of Montgomery reduction for simple types.
-Treats them as `MPNumber`s of length 1.
+Treats them as `MLUInt`s of length 1.
 """
 @inline function mulmod_montgomery(x::T, y::T, m::T, m_prime::T) where T <: Unsigned
-    mulmod_montgomery(MPNumber((x,)), MPNumber((y,)), MPNumber((m,)), m_prime)[1]
+    mulmod_montgomery(MLUInt((x,)), MLUInt((y,)), MLUInt((m,)), m_prime)[1]
 end
 
 
@@ -181,7 +181,7 @@ Converts an integer to Montgomery representation
 where `R = typemax(T) + 1`).
 """
 @inline function to_montgomery(
-        x::MPNumber{N, T}, m::MPNumber{N, T}, m_prime::T, coeff::MPNumber{N, T}) where {N, T}
+        x::MLUInt{N, T}, m::MLUInt{N, T}, m_prime::T, coeff::MLUInt{N, T}) where {N, T}
     mulmod_montgomery(x, coeff, m, m_prime)
 end
 
@@ -192,12 +192,12 @@ end
 
 """
 Recovers an integer from Montgomery representation
-(that is, calculates `x` given `x * R mod m`, where `R = typemax(MPNumber{N, T}) + 1`).
+(that is, calculates `x` given `x * R mod m`, where `R = typemax(MLUInt{N, T}) + 1`).
 """
-@inline function from_montgomery(x::MPNumber{N, T}, m::MPNumber{N, T}, m_prime::T) where {N, T}
+@inline function from_montgomery(x::MLUInt{N, T}, m::MLUInt{N, T}, m_prime::T) where {N, T}
     # Montgomery multiplication of `1` and `x` in M. representation (`x * R`)
     # results in `1 * (x * R) / R = x`.
-    mulmod_montgomery(one(MPNumber{N, T}), x, m, m_prime)
+    mulmod_montgomery(one(MLUInt{N, T}), x, m, m_prime)
 end
 
 @inline function from_montgomery(x::T, m::T, m_prime::T) where T <: Unsigned

@@ -11,7 +11,7 @@ cyclicity = ([false, true] => ["cyclic", "negacyclic"])
 
     coeffs = 0:9
     modulus = 21
-    rtp = UInt8 # MPNumber{2, UInt8}
+    rtp = UInt8 # MLUInt{2, UInt8}
     mr = rtp(modulus)
     mtp = RRElemMontgomery{rtp, mr}
 
@@ -38,7 +38,7 @@ end
     modulus = BigInt(1) << 80 + 1
     p1_ref = BigInt.(rand(UInt128, 64)) .% modulus
 
-    rtp = MPNumber{2, UInt64}
+    rtp = MLUInt{2, UInt64}
     mr = rtp(modulus)
     mtp = RRElemMontgomery{rtp, mr}
 
@@ -66,7 +66,7 @@ end
     p1_ref = BigInt.(rand(UInt128, 64)) .% modulus
     p2_ref = BigInt.(rand(UInt128, 64)) .% modulus
 
-    rtp = MPNumber{2, UInt64}
+    rtp = MLUInt{2, UInt64}
     mr = convert(rtp, modulus)
     mtp = RRElemMontgomery{rtp, mr}
 

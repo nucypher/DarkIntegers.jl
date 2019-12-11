@@ -10,19 +10,19 @@ Multi-precision unsigned integer type, with `N` limbs of type `T`
 Supports `+`, `-`, `*`, `divrem`, `div`, `rem`, `^`, `<`, `<=`, `>`, `>=`,
 `zero`, `one` and `isodd`.
 
-    MPNumber{N, T}(x::Integer) where {N, T <: Unsigned}
+    MLUInt{N, T}(x::Integer) where {N, T <: Unsigned}
 
-Creates an `MPNumber` object. If `x` does not fit into `N` limbs of type `T`,
+Creates an `MLUInt` object. If `x` does not fit into `N` limbs of type `T`,
 the excess bits will be ignored.
 """
-struct MPNumber{N, T <: Unsigned} <: Unsigned
+struct MLUInt{N, T <: Unsigned} <: Unsigned
     limbs :: NTuple{N, T}
 
-    MPNumber(x::NTuple{N, T}) where {N, T} = new{N, T}(x)
-    MPNumber{N, T}(x::NTuple{N, T}) where {N, T} = new{N, T}(x)
+    MLUInt(x::NTuple{N, T}) where {N, T} = new{N, T}(x)
+    MLUInt{N, T}(x::NTuple{N, T}) where {N, T} = new{N, T}(x)
 
-    @inline function MPNumber{N, T}(x::Integer) where {N, T <: Unsigned}
-        res = zero(MPNumber{N, T})
+    @inline function MLUInt{N, T}(x::Integer) where {N, T <: Unsigned}
+        res = zero(MLUInt{N, T})
         for i in 1:N
             res = setindex(res, T(x & typemax(T)), i)
             x >>= bitsizeof(T)
@@ -30,8 +30,8 @@ struct MPNumber{N, T <: Unsigned} <: Unsigned
         res
     end
 
-    @inline function MPNumber{N, T}(x::MPNumber{M, T}) where {N, M, T <: Unsigned}
-        res = zero(MPNumber{N, T})
+    @inline function MLUInt{N, T}(x::MLUInt{M, T}) where {N, M, T <: Unsigned}
+        res = zero(MLUInt{N, T})
         for i in 1:min(N, M)
             res = setindex(res, x[i], i)
         end
@@ -41,10 +41,10 @@ end
 
 
 # These are required to prevent the more general conversion to any integer from triggering.
-@inline Base.convert(::Type{MPNumber{N, T}}, x::MPNumber{N, T}) where {N, T} = x
-@inline Base.convert(::Type{MPNumber{N, T}}, x::MPNumber{M, T}) where {N, M, T} = MPNumber{N, T}(x)
+@inline Base.convert(::Type{MLUInt{N, T}}, x::MLUInt{N, T}) where {N, T} = x
+@inline Base.convert(::Type{MLUInt{N, T}}, x::MLUInt{M, T}) where {N, M, T} = MLUInt{N, T}(x)
 
-@inline function Base.convert(::Type{V}, x::MPNumber{N, T}) where {V <: Integer, N, T}
+@inline function Base.convert(::Type{V}, x::MLUInt{N, T}) where {V <: Integer, N, T}
     res = zero(V)
     for i in 1:N
         res += convert(V, x[i]) << (bitsizeof(T) * (i - 1))
@@ -53,67 +53,67 @@ end
 end
 
 
-@inline Base.promote_type(::Type{MPNumber{N, T}}, ::Type{<:Integer}) where {N, T} = MPNumber{N, T}
-@inline Base.promote_type(::Type{<:Integer}, ::Type{MPNumber{N, T}}) where {N, T} = MPNumber{N, T}
-@inline Base.promote_type(::Type{MPNumber{N, T}}, ::Type{MPNumber{M, T}}) where {N, M, T} =
-    MPNumber{max(M, N), T}
-@inline Base.promote_type(::Type{MPNumber{N, T}}, ::Type{MPNumber{N, T}}) where {N, T} =
-    MPNumber{N, T}
+@inline Base.promote_type(::Type{MLUInt{N, T}}, ::Type{<:Integer}) where {N, T} = MLUInt{N, T}
+@inline Base.promote_type(::Type{<:Integer}, ::Type{MLUInt{N, T}}) where {N, T} = MLUInt{N, T}
+@inline Base.promote_type(::Type{MLUInt{N, T}}, ::Type{MLUInt{M, T}}) where {N, M, T} =
+    MLUInt{max(M, N), T}
+@inline Base.promote_type(::Type{MLUInt{N, T}}, ::Type{MLUInt{N, T}}) where {N, T} =
+    MLUInt{N, T}
 
 
-# We need this to correctly process arithmetic operations on MPNumber and Int
+# We need this to correctly process arithmetic operations on MLUInt and Int
 # (which is signed and the default in Julia for number literals)
 # without defining specific methods for each operator.
-@inline Base.signed(x::MPNumber{N, T}) where {N, T} = x
-@inline Base.unsigned(x::MPNumber{N, T}) where {N, T} = x
+@inline Base.signed(x::MLUInt{N, T}) where {N, T} = x
+@inline Base.unsigned(x::MLUInt{N, T}) where {N, T} = x
 
 
-# Because MPNumber <: Unsigned, show() will be bypassed sometimes in favor of string()
-Base.string(x::MPNumber{N, T}) where {N, T} = "{" * string(x.limbs) * "}"
+# Because MLUInt <: Unsigned, show() will be bypassed sometimes in favor of string()
+Base.string(x::MLUInt{N, T}) where {N, T} = "{" * string(x.limbs) * "}"
 
 
-Base.show(io::IO, x::MPNumber{N, T}) where {N, T} = print(io, string(x))
+Base.show(io::IO, x::MLUInt{N, T}) where {N, T} = print(io, string(x))
 
 
-@inline @generated function Base.zero(::Type{MPNumber{N, T}}) where {N, T}
+@inline @generated function Base.zero(::Type{MLUInt{N, T}}) where {N, T}
     exprs = [:(zero(T)) for i in 1:N]
     quote
-        MPNumber(tuple($(exprs...)))
+        MLUInt(tuple($(exprs...)))
     end
 end
 
 
-@inline @generated function Base.one(::Type{MPNumber{N, T}}) where {N, T}
+@inline @generated function Base.one(::Type{MLUInt{N, T}}) where {N, T}
     exprs = [i == 1 ? :(one(T)) : :(zero(T)) for i in 1:N]
     quote
-        MPNumber(tuple($(exprs...)))
+        MLUInt(tuple($(exprs...)))
     end
 end
 
 
-@inline Base.typemin(::Type{MPNumber{N, T}}) where {N, T} = zero(MPNumber{N, T})
+@inline Base.typemin(::Type{MLUInt{N, T}}) where {N, T} = zero(MLUInt{N, T})
 
 
-@inline @generated function Base.typemax(::Type{MPNumber{N, T}}) where {N, T}
+@inline @generated function Base.typemax(::Type{MLUInt{N, T}}) where {N, T}
     exprs = [:(typemax(T)) for i in 1:N]
     quote
-        MPNumber(tuple($(exprs...)))
+        MLUInt(tuple($(exprs...)))
     end
 end
 
 
-@inline function Base.setindex(x::MPNumber{N, T}, v::T, i::Integer) where {N, T}
-    MPNumber(setindex(x.limbs, v, i))
+@inline function Base.setindex(x::MLUInt{N, T}, v::T, i::Integer) where {N, T}
+    MLUInt(setindex(x.limbs, v, i))
 end
 
 
-@inline Base.getindex(x::MPNumber{N, T}, i::Integer) where {N, T} = x.limbs[i]
+@inline Base.getindex(x::MLUInt{N, T}, i::Integer) where {N, T} = x.limbs[i]
 
 
 
-@inline function Base.:+(x::MPNumber{N, T}, y::MPNumber{N, T}) where {N, T}
+@inline function Base.:+(x::MLUInt{N, T}, y::MLUInt{N, T}) where {N, T}
     c = false
-    out = zero(MPNumber{N, T})
+    out = zero(MLUInt{N, T})
     for i in 1:N
         r, new_c = _addc(x[i], y[i])
         r, new_c2 = _addc(r, T(c))
@@ -127,9 +127,9 @@ end
 end
 
 
-@inline function Base.:-(x::MPNumber{N, T}, y::MPNumber{N, T}) where {N, T}
+@inline function Base.:-(x::MLUInt{N, T}, y::MLUInt{N, T}) where {N, T}
     c = false
-    out = zero(MPNumber{N, T})
+    out = zero(MLUInt{N, T})
     for i in 1:N
         r, new_c = _subc(x[i], y[i])
         r, new_c2 = _subc(r, T(c))
@@ -143,10 +143,10 @@ end
 end
 
 
-@inline Base.:-(x::MPNumber{N, T}) where {N, T} = zero(MPNumber{N, T}) - x
+@inline Base.:-(x::MLUInt{N, T}) where {N, T} = zero(MLUInt{N, T}) - x
 
 
-@inline function Base.:>=(x::MPNumber{N, T}, y::MPNumber{N, T}) where {N, T}
+@inline function Base.:>=(x::MLUInt{N, T}, y::MLUInt{N, T}) where {N, T}
     for i in N:-1:1
         if x[i] == y[i]
             continue
@@ -157,7 +157,7 @@ end
 end
 
 
-@inline function Base.:>(x::MPNumber{N, T}, y::MPNumber{N, T}) where {N, T}
+@inline function Base.:>(x::MLUInt{N, T}, y::MLUInt{N, T}) where {N, T}
     for i in N:-1:1
         if x[i] == y[i]
             continue
@@ -168,7 +168,7 @@ end
 end
 
 
-@inline function Base.:<=(x::MPNumber{N, T}, y::MPNumber{N, T}) where {N, T}
+@inline function Base.:<=(x::MLUInt{N, T}, y::MLUInt{N, T}) where {N, T}
     for i in N:-1:1
         if x[i] == y[i]
             continue
@@ -179,7 +179,7 @@ end
 end
 
 
-@inline function Base.:<(x::MPNumber{N, T}, y::MPNumber{N, T}) where {N, T}
+@inline function Base.:<(x::MLUInt{N, T}, y::MLUInt{N, T}) where {N, T}
     for i in N:-1:1
         if x[i] == y[i]
             continue
@@ -190,7 +190,7 @@ end
 end
 
 
-@inline function _most_significant_limb(x::MPNumber{N, T}) where {N, T}
+@inline function _most_significant_limb(x::MLUInt{N, T}) where {N, T}
     for i in N:-1:1
         if x[i] > 0
             return i
@@ -200,12 +200,12 @@ end
 end
 
 
-@inline function Base.:*(x::MPNumber{N, T}, y::MPNumber{N, T}) where {N, T}
+@inline function Base.:*(x::MLUInt{N, T}, y::MLUInt{N, T}) where {N, T}
     # TODO: to protect from timing attacks we can assume n == t == N
     # This will also allow us to use a generated function and may turn out to be faster...
     n = _most_significant_limb(x) - 1
     t = _most_significant_limb(y) - 1
-    w = zero(MPNumber{N, T})
+    w = zero(MLUInt{N, T})
     for i in 1:t+1
         c = zero(T)
         hi = zero(T)
@@ -225,8 +225,8 @@ end
 end
 
 
-@inline function Base.:>>(x::MPNumber{N, T}, y::Int) where {N, T}
-    res = zero(MPNumber{N, T})
+@inline function Base.:>>(x::MLUInt{N, T}, y::Int) where {N, T}
+    res = zero(MLUInt{N, T})
 
     if y >= N * bitsizeof(T)
         return res
@@ -258,7 +258,7 @@ end
 end
 
 
-@inline function Base.trailing_zeros(x::MPNumber{N, T}) where {N, T}
+@inline function Base.trailing_zeros(x::MLUInt{N, T}) where {N, T}
     bs = bitsizeof(T)
     res = 0
     @inbounds for i in 1:N
@@ -272,19 +272,19 @@ end
 end
 
 
-@inline function Base.isodd(x::MPNumber{N, T}) where {N, T}
+@inline function Base.isodd(x::MLUInt{N, T}) where {N, T}
     isodd(x[1])
 end
 
 
-@inline function divrem_single_limb(x::MPNumber{N, T}, y::T) where {N, T}
+@inline function divrem_single_limb(x::MLUInt{N, T}, y::T) where {N, T}
     r = zero(T)
-    q = zero(MPNumber{N, T})
+    q = zero(MLUInt{N, T})
     for j in N-1:-1:0
         d, r = divremhilo(r, x[j+1], y)
         q = setindex(q, d, j+1)
     end
-    q, setindex(zero(MPNumber{N, T}), r, 1)
+    q, setindex(zero(MLUInt{N, T}), r, 1)
 end
 
 
@@ -299,7 +299,7 @@ end
 # and the overflow flag for the subtraction.
 # Assumes that `x_start+z_end <= N+1` and `z_end <= N`.
 @inline function _mul_sub_from_part(
-        x::MPNumber{N, T}, x_start, y::T, z::MPNumber{N, T}, z_end) where {N, T}
+        x::MLUInt{N, T}, x_start, y::T, z::MLUInt{N, T}, z_end) where {N, T}
 
     hi_carry1 = false
     hi_carry2 = false
@@ -336,7 +336,7 @@ end
 
 # Returns `x[x_start:x_start+y_end] + y[1:y_end]`.
 # Assumes `x_start+y_end <= N+1` and `y_end <= N`.
-@inline function _add_to_part(x::MPNumber{N, T}, x_start, y::MPNumber{N, T}, y_end) where {N, T}
+@inline function _add_to_part(x::MLUInt{N, T}, x_start, y::MLUInt{N, T}, y_end) where {N, T}
 
     c = false
     for i in 1:y_end
@@ -358,7 +358,7 @@ end
 end
 
 
-@inline function Base.divrem(x::MPNumber{N, T}, y::MPNumber{N, T}) where {N, T}
+@inline function Base.divrem(x::MLUInt{N, T}, y::MLUInt{N, T}) where {N, T}
 
     # Division algorithm from D. Knuth's "The Art of Computer Programming", vol. 2.
 
@@ -366,7 +366,7 @@ end
     n = _most_significant_limb(y)
 
     if n > t || y > x
-        return zero(MPNumber{N, T}), x
+        return zero(MLUInt{N, T}), x
     end
 
     if n == 1
@@ -374,7 +374,7 @@ end
     end
 
     m = t - n
-    q = zero(MPNumber{N, T})
+    q = zero(MLUInt{N, T})
 
     # For efficiency, we are normalizing the divisor so that the most significant bit
     # of its most significant limb is set.
@@ -430,7 +430,7 @@ end
             # so this loop can theoretically be unrolled.
             while true
                 thi, tlo = mulhilo(q_hat, y_pp)
-                if MPNumber((tlo, thi)) <= MPNumber((x_ppp, r_hat))
+                if MLUInt((tlo, thi)) <= MLUInt((x_ppp, r_hat))
                     break
                 end
 
@@ -457,37 +457,37 @@ end
 end
 
 
-@inline function Base.div(x::MPNumber{N, T}, y::MPNumber{N, T}) where {N, T}
+@inline function Base.div(x::MLUInt{N, T}, y::MLUInt{N, T}) where {N, T}
     # TODO: is there a faster way?
     q, r = divrem(x, y)
     q
 end
 
 
-@inline function Base.rem(x::MPNumber{N, T}, y::MPNumber{N, T}) where {N, T}
+@inline function Base.rem(x::MLUInt{N, T}, y::MLUInt{N, T}) where {N, T}
     # TODO: is there a faster way?
     q, r = divrem(x, y)
     r
 end
 
 
-Base.sizeof(::Type{MPNumber{N, T}}) where {N, T} = sizeof(T) * N
+Base.sizeof(::Type{MLUInt{N, T}}) where {N, T} = sizeof(T) * N
 
 
 # Required for broadcasting
 
 
-Base.length(x::MPNumber{N, T}) where {N, T} = 1
+Base.length(x::MLUInt{N, T}) where {N, T} = 1
 
 
-Base.iterate(x::MPNumber{N, T}) where {N, T} = (x, nothing)
-Base.iterate(x::MPNumber{N, T}, state) where {N, T} = nothing
+Base.iterate(x::MLUInt{N, T}) where {N, T} = (x, nothing)
+Base.iterate(x::MLUInt{N, T}, state) where {N, T} = nothing
 
 
-# The following methods are needed for MPNumber to support mulmod_bitshift()
+# The following methods are needed for MLUInt to support mulmod_bitshift()
 
 
-@inline function double(x::MPNumber{N, T}) where {N, T}
+@inline function double(x::MLUInt{N, T}) where {N, T}
     msb = false
     for i in 1:N
         new_msb = leading_zeros(x[i]) == 0
@@ -505,7 +505,7 @@ _msb(::Type{UInt32}) = UInt32(0x80000000)
 _msb(::Type{UInt64}) = UInt64(0x8000000000000000)
 
 
-@inline function halve(x::MPNumber{N, T}) where {N, T}
+@inline function halve(x::MLUInt{N, T}) where {N, T}
     lsb = false
     for i in N:-1:1
         new_lsb = trailing_zeros(x[i]) == 0
@@ -516,16 +516,16 @@ _msb(::Type{UInt64}) = UInt64(0x8000000000000000)
 end
 
 
-# The following methods are needed for MPNumber to support mulmod_widemul()
+# The following methods are needed for MLUInt to support mulmod_widemul()
 
 
-Base.widen(::Type{MPNumber{N, T}}) where {N, T} = MPNumber{N*2, T}
+Base.widen(::Type{MLUInt{N, T}}) where {N, T} = MLUInt{N*2, T}
 
 
-function Base.widemul(x::MPNumber{N, T}, y::MPNumber{N, T}) where {N, T}
+function Base.widemul(x::MLUInt{N, T}, y::MLUInt{N, T}) where {N, T}
     n = _most_significant_limb(x) - 1
     t = _most_significant_limb(y) - 1
-    w = zero(MPNumber{N*2, T})
+    w = zero(MLUInt{N*2, T})
     for i in 1:t+1
         c = zero(T)
         hi = zero(T)
@@ -542,11 +542,11 @@ function Base.widemul(x::MPNumber{N, T}, y::MPNumber{N, T}) where {N, T}
 end
 
 
-@inline mulmod(x::MPNumber{N, T}, y::MPNumber{N, T}, modulus::MPNumber{N, T}) where {N, T} =
+@inline mulmod(x::MLUInt{N, T}, y::MLUInt{N, T}, modulus::MLUInt{N, T}) where {N, T} =
     mulmod_widemul(x, y, modulus)
 
 
-function encompassing_type(tp::Type{MPNumber{N, T}}) where {N, T}
+function encompassing_type(tp::Type{MLUInt{N, T}}) where {N, T}
     total_size = cld(N * bitsizeof(T), 8)
 
     if total_size <= 1

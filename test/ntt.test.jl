@@ -25,7 +25,7 @@ function reference_dft(a::Array{T}, inverse) where T <: AbstractRRElem
 end
 
 
-@testcase "correctness" for tp in (UInt64, MPNumber{2, UInt32}), rr_tp in (RRElem, RRElemMontgomery)
+@testcase "correctness" for tp in (UInt64, MLUInt{2, UInt32}), rr_tp in (RRElem, RRElemMontgomery)
 
     len = 8
 

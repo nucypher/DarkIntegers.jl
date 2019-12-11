@@ -75,12 +75,12 @@ end
 end
 
 
-# Needed in cases when convert(RRElemMontgomery, MPNumber) is requested
+# Needed in cases when convert(RRElemMontgomery, MLUInt) is requested
 # (including implicitly, e.g. in array element assignment)
-# to prevent convert(::Type{<:Integer}, x::MPNumber) from firing.
-@inline Base.convert(::Type{RRElemMontgomery{T, M}}, x::V) where {T, M, V <: MPNumber} =
+# to prevent convert(::Type{<:Integer}, x::MLUInt) from firing.
+@inline Base.convert(::Type{RRElemMontgomery{T, M}}, x::V) where {T, M, V <: MLUInt} =
     RRElemMontgomery{T, M}(convert(encompassing_type(V), x))
-@inline Base.convert(::Type{RRElemMontgomery{T, M}}, x::T) where {T <: MPNumber, M} =
+@inline Base.convert(::Type{RRElemMontgomery{T, M}}, x::T) where {T <: MLUInt, M} =
     RRElemMontgomery{T, M}(x)
 
 @inline function Base.convert(::Type{RRElem{T, M}}, x::RRElemMontgomery{T, M}) where {T, M}

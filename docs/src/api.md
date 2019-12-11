@@ -36,7 +36,7 @@ mulmod
 ## Multi-precision numbers
 
 ```@docs
-MPNumber
+MLUint
 ```
 
 

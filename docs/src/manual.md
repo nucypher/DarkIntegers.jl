@@ -12,16 +12,16 @@ end
 ```
 
 
-## Multi-precision numbers
+## Multi-limb integers
 
-The basic facility in `DarkIntegers` are multi-precision unsigned integers [`MPNumber{N, T}`](@ref MPNumber).
+The basic facility in `DarkIntegers` are multi-limb unsigned integers [`MLUInt{N, T}`](@ref MLUInt).
 The type takes two parameters, `N` (an integer) being the number of limbs, or digits, and `T` (an unsigned integer type) is the type of a limb.
-Its functionality is closer to that of `BigInt`, but [`MPNumber`](@ref) still has fixed length (although it can be much greater than what any Julia built-in type supports).
+Its functionality is closer to that of `BigInt`, but [`MLUInt`](@ref) still has fixed length (although it can be much greater than what any Julia built-in type supports).
 On the other hand, operations with it do not require dynamic memory allocation and are faster than the `BigInt` ones.
 
-The [`MPNumber`](@ref) constructor takes any integer:
+The [`MLUInt`](@ref) constructor takes any integer:
 ```@jldoctest mpnumber-basics
-a = MPNumber{2, UInt8}(65534)
+a = MLUInt{2, UInt8}(65534)
 println(a)
 
 # output
@@ -30,7 +30,7 @@ println(a)
 ```
 Note that the limbs are arranged in the big-endian order.
 
-A multi-precision number can be converted back to any integer:
+A multi-limb integer can be converted back to any integer:
 ```@jldoctest mpnumber-basics
 b = convert(Int, a)
 println(b)
@@ -42,8 +42,8 @@ println(b)
 
 Multi-precision numbers support arithmetic operations and comparisons and act identically to built-in unsigned integer types:
 ```@jldoctest mpnumber-arithmetic
-a = MPNumber{2, UInt8}(65534)
-b = MPNumber{2, UInt8}(65533)
+a = MLUInt{2, UInt8}(65534)
+b = MLUInt{2, UInt8}(65533)
 println(a + b)
 println(convert(Int, a + b))
 
@@ -55,10 +55,10 @@ println(convert(Int, a + b))
 
 ## Residue ring elements
 
-The next level above multi-precision integers (and built-in unsigned integers) are residue ring elements, that is, unsigned integers with the arithmetic operations performed modulo some number.
+The next level above multi-limb integers (and built-in unsigned integers) are residue ring elements, that is, unsigned integers with the arithmetic operations performed modulo some number.
 The residue ring element type [`RRElem{T, M}`](@ref RRElem) is parametrized by the number type `T` (an unsigned integer) and the modulus `M` (which is a *value* of type `T`).
 
-Similarly to [`MPNumber`](@ref) objects, [`RRElem`](@ref) objects can be constructed out of an integer.
+Similarly to [`MLUInt`](@ref) objects, [`RRElem`](@ref) objects can be constructed out of an integer.
 If the integer is greater than the modulus, it will be truncated (by applying `mod()`):
 ```jldoctest rrelem-basics
 modulus = UInt8(200)
@@ -109,7 +109,7 @@ println(convert(Int, a + 101))
 
 ## Cyclic polynomials
 
-Anything type supporting arithmetic operations (including [`MPNumber`](@ref), [`RRElem`](@ref) and [`RRElemMontgomery`](@ref)) can serve as the coefficient type in the [`Polynomial`](@ref) type.
+Anything type supporting arithmetic operations (including [`MLUInt`](@ref), [`RRElem`](@ref) and [`RRElemMontgomery`](@ref)) can serve as the coefficient type in the [`Polynomial`](@ref) type.
 `DarkIntegers` supports cyclic polynomials (with operations performed modulo `x^n-1`, where `n` is some non-negative integer called the length of the polynomial) and negacyclic ones (with operations performed modulo `x^n+1`).
 
 Polynomials are created out of a coefficient array (where the `i`-th element corresponds to the `(i-1)`-th power of `x`) and the negacyclicity flag:

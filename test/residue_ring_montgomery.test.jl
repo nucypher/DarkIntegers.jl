@@ -36,20 +36,20 @@ end
 
 
 @testcase "conversion" begin
-    mp_tp = MPNumber{2, UInt8}
+    mp_tp = MLUInt{2, UInt8}
     modulus = mp_tp(177)
 
     rr_tp = RRElemMontgomery{mp_tp, modulus}
 
     @test convert(rr_tp, mp_tp(1)) == rr_tp(1)
-    @test convert(rr_tp, MPNumber{3, UInt16}(1)) == rr_tp(1)
+    @test convert(rr_tp, MLUInt{3, UInt16}(1)) == rr_tp(1)
     @test convert(rr_tp, mp_tp(1)) == rr_tp(1)
     @test convert(Int, rr_tp(1)) == 1
 end
 
 
 @testcase "promotion" begin
-    T = MPNumber{2, UInt8}
+    T = MLUInt{2, UInt8}
     modulus = T(177)
     x = RRElemMontgomery{T, modulus}(100)
     y = RRElemMontgomery{T, modulus}(90)
@@ -87,7 +87,7 @@ end
     trial = @benchmark $x_m1 * $y_m1
     @test_result "UInt128: " * benchmark_result(trial)
 
-    mptp1 = MPNumber{2, UInt64}
+    mptp1 = MLUInt{2, UInt64}
     x_mp = mptp1(x)
     y_mp = mptp1(y)
     m_mp = mptp1(modulus)
@@ -96,7 +96,7 @@ end
     trial = @benchmark $x_m2 * $y_m2
     @test_result "2xUInt64: " * benchmark_result(trial)
 
-    mptp2 = MPNumber{3, UInt32}
+    mptp2 = MLUInt{3, UInt32}
     x_mp = mptp2(x)
     y_mp = mptp2(y)
     m_mp = mptp2(modulus)

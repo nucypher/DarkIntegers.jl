@@ -37,12 +37,12 @@ struct RRElem{T, M} <: AbstractRRElem{T, M}
     end
 end
 
-# Needed in cases when convert(RRElem, MPNumber) is requested
+# Needed in cases when convert(RRElem, MLUInt) is requested
 # (including implicitly, e.g. in array element assignment)
-# to prevent convert(::Type{<:Integer}, x::MPNumber) from firing.
-@inline Base.convert(::Type{RRElem{T, M}}, x::V) where {T, M, V <: MPNumber} =
+# to prevent convert(::Type{<:Integer}, x::MLUInt) from firing.
+@inline Base.convert(::Type{RRElem{T, M}}, x::V) where {T, M, V <: MLUInt} =
     RRElem{T, M}(convert(encompassing_type(V), x))
-@inline Base.convert(::Type{RRElem{T, M}}, x::T) where {T <: MPNumber, M} = RRElem{T, M}(x)
+@inline Base.convert(::Type{RRElem{T, M}}, x::T) where {T <: MLUInt, M} = RRElem{T, M}(x)
 
 @inline Base.convert(::Type{RRElem{T, M}}, x::RRElem{T, M}) where {T, M} = x
 @inline Base.convert(::Type{V}, x::RRElem{T, M}) where {V <: Integer, T, M} = convert(V, x.value)
