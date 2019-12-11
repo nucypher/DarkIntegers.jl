@@ -1,7 +1,6 @@
-"""
-Multi-precision unsigned integers.
-"""
-
+#=
+Multi-limb unsigned integers.
+=#
 
 
 """
@@ -17,7 +16,7 @@ Creates an `MPNumber` object. If `x` does not fit into `N` limbs of type `T`,
 the excess bits will be ignored.
 """
 struct MPNumber{N, T <: Unsigned} <: Unsigned
-    value :: NTuple{N, T}
+    limbs :: NTuple{N, T}
 
     MPNumber(x::NTuple{N, T}) where {N, T} = new{N, T}(x)
     MPNumber{N, T}(x::NTuple{N, T}) where {N, T} = new{N, T}(x)
@@ -48,7 +47,7 @@ end
 @inline function Base.convert(::Type{V}, x::MPNumber{N, T}) where {V <: Integer, N, T}
     res = zero(V)
     for i in 1:N
-        res += convert(V, x.value[i]) << (bitsizeof(T) * (i - 1))
+        res += convert(V, x[i]) << (bitsizeof(T) * (i - 1))
     end
     res
 end
@@ -70,7 +69,7 @@ end
 
 
 # Because MPNumber <: Unsigned, show() will be bypassed sometimes in favor of string()
-Base.string(x::MPNumber{N, T}) where {N, T} = "{" * string(x.value) * "}"
+Base.string(x::MPNumber{N, T}) where {N, T} = "{" * string(x.limbs) * "}"
 
 
 Base.show(io::IO, x::MPNumber{N, T}) where {N, T} = print(io, string(x))
@@ -104,11 +103,11 @@ end
 
 
 @inline function Base.setindex(x::MPNumber{N, T}, v::T, i::Integer) where {N, T}
-    MPNumber(setindex(x.value, v, i))
+    MPNumber(setindex(x.limbs, v, i))
 end
 
 
-@inline Base.getindex(x::MPNumber{N, T}, i::Integer) where {N, T} = x.value[i]
+@inline Base.getindex(x::MPNumber{N, T}, i::Integer) where {N, T} = x.limbs[i]
 
 
 
@@ -116,7 +115,7 @@ end
     c = false
     out = zero(MPNumber{N, T})
     for i in 1:N
-        r, new_c = _addc(x.value[i], y.value[i])
+        r, new_c = _addc(x[i], y[i])
         r, new_c2 = _addc(r, T(c))
         out = setindex(out, r, i)
 
@@ -132,7 +131,7 @@ end
     c = false
     out = zero(MPNumber{N, T})
     for i in 1:N
-        r, new_c = _subc(x.value[i], y.value[i])
+        r, new_c = _subc(x[i], y[i])
         r, new_c2 = _subc(r, T(c))
         out = setindex(out, r, i)
 
@@ -149,10 +148,10 @@ end
 
 @inline function Base.:>=(x::MPNumber{N, T}, y::MPNumber{N, T}) where {N, T}
     for i in N:-1:1
-        if x.value[i] == y.value[i]
+        if x[i] == y[i]
             continue
         end
-        return x.value[i] > y.value[i]
+        return x[i] > y[i]
     end
     true
 end
@@ -160,10 +159,10 @@ end
 
 @inline function Base.:>(x::MPNumber{N, T}, y::MPNumber{N, T}) where {N, T}
     for i in N:-1:1
-        if x.value[i] == y.value[i]
+        if x[i] == y[i]
             continue
         end
-        return x.value[i] > y.value[i]
+        return x[i] > y[i]
     end
     false
 end
@@ -171,10 +170,10 @@ end
 
 @inline function Base.:<=(x::MPNumber{N, T}, y::MPNumber{N, T}) where {N, T}
     for i in N:-1:1
-        if x.value[i] == y.value[i]
+        if x[i] == y[i]
             continue
         end
-        return x.value[i] < y.value[i]
+        return x[i] < y[i]
     end
     true
 end
@@ -182,10 +181,10 @@ end
 
 @inline function Base.:<(x::MPNumber{N, T}, y::MPNumber{N, T}) where {N, T}
     for i in N:-1:1
-        if x.value[i] == y.value[i]
+        if x[i] == y[i]
             continue
         end
-        return x.value[i] < y.value[i]
+        return x[i] < y[i]
     end
     false
 end
@@ -193,7 +192,7 @@ end
 
 @inline function _most_significant_limb(x::MPNumber{N, T}) where {N, T}
     for i in N:-1:1
-        if x.value[i] > 0
+        if x[i] > 0
             return i
         end
     end
@@ -211,14 +210,14 @@ end
         c = zero(T)
         hi = zero(T)
         for j in 1:min(n+1, N+1-i) # i + j - 1 <= N -> j <= N + 1 - i
-            hi, lo = mulhilo(x.value[j], y.value[i])
+            hi, lo = mulhilo(x[j], y[i])
             hi, lo = addhilo(hi, lo, c)
-            hi, lo = addhilo(hi, lo, w.value[i + j - 1])
+            hi, lo = addhilo(hi, lo, w[i + j - 1])
             w = setindex(w, lo, i + j - 1)
             c = hi
         end
         if c > 0 && i + n + 1 <= N
-            hi, lo = addhilo(zero(T), c, w.value[i + n + 1])
+            hi, lo = addhilo(zero(T), c, w[i + n + 1])
             w = setindex(w, lo, i + n + 1)
         end
     end
@@ -274,7 +273,7 @@ end
 
 
 @inline function Base.isodd(x::MPNumber{N, T}) where {N, T}
-    isodd(x.value[1])
+    isodd(x[1])
 end
 
 
@@ -531,9 +530,9 @@ function Base.widemul(x::MPNumber{N, T}, y::MPNumber{N, T}) where {N, T}
         c = zero(T)
         hi = zero(T)
         for j in 1:n+1
-            hi, lo = mulhilo(x.value[j], y.value[i])
+            hi, lo = mulhilo(x[j], y[i])
             hi, lo = addhilo(hi, lo, c)
-            hi, lo = addhilo(hi, lo, w.value[i + j - 1])
+            hi, lo = addhilo(hi, lo, w[i + j - 1])
             w = setindex(w, lo, i + j - 1)
             c = hi
         end
