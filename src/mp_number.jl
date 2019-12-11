@@ -471,7 +471,7 @@ end
 end
 
 
-bitsizeof(::Type{MPNumber{N, T}}) where {N, T} = bitsizeof(T) * N
+Base.sizeof(::Type{MPNumber{N, T}}) where {N, T} = sizeof(T) * N
 
 
 # Required for broadcasting
