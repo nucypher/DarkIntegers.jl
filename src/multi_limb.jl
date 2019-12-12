@@ -121,16 +121,6 @@ Base.string(x::MLUInt{N, T}) where {N, T} = "{" * string(x.limbs) * "}"
 Base.show(io::IO, x::MLUInt{N, T}) where {N, T} = print(io, string(x))
 
 
-function num_bits(x::MLUInt{N, T}) where {N, T}
-    if iszero(x)
-        0
-    else
-        msl = _most_significant_limb(x)
-        num_bits(x[msl]) + (msl - 1) * bitsizeof(T)
-    end
-end
-
-
 @inline @generated function Base.zero(::Type{MLUInt{N, T}}) where {N, T}
     exprs = [:(zero(T)) for i in 1:N]
     quote
@@ -318,9 +308,30 @@ end
 end
 
 
-@inline function Base.isodd(x::MLUInt{N, T}) where {N, T}
-    isodd(x[1])
+@inline function Base.leading_zeros(x::MLUInt{N, T}) where {N, T}
+    if iszero(x)
+        bitsizeof(MLUInt{N, T})
+    else
+        msl = _most_significant_limb(x)
+        leading_zeros(x[msl]) + (N - msl) * bitsizeof(T)
+    end
 end
+
+
+@inline function Base.iszero(x::MLUInt{N, T}) where {N, T}
+    @inbounds for i in 1:N
+        if !iszero(x[i])
+            return false
+        end
+    end
+    return true
+end
+
+
+@inline Base.isodd(x::MLUInt{N, T}) where {N, T} = isodd(x[1])
+
+
+@inline Base.iseven(x::MLUInt{N, T}) where {N, T} = iseven(x[1])
 
 
 @inline function divrem_single_limb(x::MLUInt{N, T}, y::T) where {N, T}
