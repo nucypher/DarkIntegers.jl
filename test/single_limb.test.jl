@@ -9,7 +9,7 @@ using DarkIntegers:
 function addhilo_ref(bitsize, x_hi::T, x_lo::T, y::T) where T <: Unsigned
     T2 = widen(T)
     res = (T2(x_lo) + T2(x_hi) << bitsize) + T2(y)
-    T(res >> bitsize), T(res & (one(T) << bitsize - 1))
+    convert(T, res >> bitsize), convert(T, res & (one(T) << bitsize - 1))
 end
 
 
@@ -26,7 +26,7 @@ end
 function mulhilo_ref(bitsize, x::T, y::T) where T <: Unsigned
     T2 = widen(T)
     res = T2(x) * T2(y)
-    T(res >> bitsize), T(res & (one(T) << bitsize - 1))
+    convert(T, res >> bitsize), convert(T, res & (one(T) << bitsize - 1))
 end
 
 
@@ -63,7 +63,7 @@ function divremhilo_ref(bitsize, x_hi::T, x_lo::T, y::T) where T <: Unsigned
     T2 = widen(T)
     x = T2(x_lo) + T2(x_hi) << bitsize
     q, r = divrem(x, y)
-    T(q & typemax(T)), T(r), q >= (one(T2) << bitsize)
+    convert(T, q & typemax(T)), convert(T, r), q >= (one(T2) << bitsize)
 end
 
 

@@ -37,20 +37,20 @@ end
 
 @testcase "conversion" begin
     mp_tp = MLUInt{2, UInt8}
-    modulus = mp_tp(177)
+    modulus = convert(mp_tp, 177)
 
     rr_tp = RRElemMontgomery{mp_tp, modulus}
 
-    @test convert(rr_tp, mp_tp(1)) == rr_tp(1)
-    @test convert(rr_tp, MLUInt{3, UInt16}(1)) == rr_tp(1)
-    @test convert(rr_tp, mp_tp(1)) == rr_tp(1)
+    @test convert(rr_tp, convert(mp_tp, 1)) == rr_tp(1)
+    @test convert(rr_tp, convert(MLUInt{3, UInt16}, 1)) == rr_tp(1)
+    @test convert(rr_tp, convert(mp_tp, 1)) == rr_tp(1)
     @test convert(Int, rr_tp(1)) == 1
 end
 
 
 @testcase "promotion" begin
     T = MLUInt{2, UInt8}
-    modulus = T(177)
+    modulus = convert(T, 177)
     x = RRElemMontgomery{T, modulus}(100)
     y = RRElemMontgomery{T, modulus}(90)
 

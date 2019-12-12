@@ -32,7 +32,7 @@ end
     m = UInt64(1) - UInt64(2)^32 # 2^64 - 2^32 + 1 - a prime number
     a = UInt64.(0:len-1) # rand(UInt64, len) .% m
 
-    m_tp = tp(m)
+    m_tp = convert(tp, m)
 
     a_rr = rr_tp{tp, m_tp}.(a)
     af_ref = reference_dft(a_rr, false)

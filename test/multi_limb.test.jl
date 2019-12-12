@@ -2,7 +2,7 @@ using DarkIntegers
 using DarkIntegers: UInt4, mulmod, mulmod_bitshift, mulmod_widemul
 
 
-@testgroup "multiprecision arithmetic" begin
+@testgroup "multi-limb integers" begin
 
 
 @testcase "+" begin
@@ -70,8 +70,8 @@ end
     tp = MLUInt{2, UInt8}
     modulus = 2^bitsizeof(tp)
 
-    x = MLUInt{2, UInt8}(xi)
-    y = MLUInt{2, UInt8}(yi)
+    x = convert(MLUInt{2, UInt8}, xi)
+    y = convert(MLUInt{2, UInt8}, yi)
 
     @test x + y == mod(xi + yi, modulus)
     @test x + 1 == mod(xi + 1, modulus)
@@ -97,7 +97,7 @@ mulmod_names = ["bitshift", "widemul"]
 
 function mulmod_ref(x::T, y::T, modulus::T) where T <: Unsigned
     T2 = widen(T)
-    T(mod(T2(x) * T2(y), modulus))
+    convert(T, mod(T2(x) * T2(y), modulus))
 end
 
 

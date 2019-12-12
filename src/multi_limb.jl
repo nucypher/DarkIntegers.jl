@@ -20,36 +20,82 @@ struct MLUInt{N, T <: Unsigned} <: Unsigned
 
     MLUInt(x::NTuple{N, T}) where {N, T} = new{N, T}(x)
     MLUInt{N, T}(x::NTuple{N, T}) where {N, T} = new{N, T}(x)
-
-    @inline function MLUInt{N, T}(x::Integer) where {N, T <: Unsigned}
-        res = zero(MLUInt{N, T})
-        for i in 1:N
-            res = setindex(res, T(x & typemax(T)), i)
-            x >>= bitsizeof(T)
-        end
-        res
-    end
-
-    @inline function MLUInt{N, T}(x::MLUInt{M, T}) where {N, M, T <: Unsigned}
-        res = zero(MLUInt{N, T})
-        for i in 1:min(N, M)
-            res = setindex(res, x[i], i)
-        end
-        res
-    end
 end
 
 
-# These are required to prevent the more general conversion to any integer from triggering.
-@inline Base.convert(::Type{MLUInt{N, T}}, x::MLUInt{N, T}) where {N, T} = x
-@inline Base.convert(::Type{MLUInt{N, T}}, x::MLUInt{M, T}) where {N, M, T} = MLUInt{N, T}(x)
+@inline function _most_significant_limb(x::MLUInt{N, T}) where {N, T}
+    for i in N:-1:1
+        if !iszero(x[i])
+            return i
+        end
+    end
+    return 0
+end
 
-@inline function Base.convert(::Type{V}, x::MLUInt{N, T}) where {V <: Integer, N, T}
+
+@inline function _unsafe_convert(::Type{MLUInt{N, T}}, x::MLUInt{M, T}) where {N, M, T}
+    res = zero(MLUInt{N, T})
+    for i in 1:min(N, M)
+        res = setindex(res, x[i], i)
+    end
+    res
+end
+
+@inline function _unsafe_convert(::Type{V}, x::MLUInt{N, T}) where {V <: Integer, N, T}
     res = zero(V)
     for i in 1:N
         res += convert(V, x[i]) << (bitsizeof(T) * (i - 1))
     end
     res
+end
+
+@inline function _unsafe_convert(::Type{MLUInt{N, T}}, x::Integer) where {N, T}
+    res = zero(MLUInt{N, T})
+    for i in 1:N
+        res = setindex(res, convert(T, x & typemax(T)), i)
+        x >>= bitsizeof(T)
+        if iszero(x)
+            break
+        end
+    end
+    res
+end
+
+
+# These are required to prevent the more general conversion to any integer from triggering.
+@inline Base.convert(::Type{MLUInt{N, T}}, x::MLUInt{N, T}) where {N, T} = x
+
+@inline function Base.convert(::Type{MLUInt{N, T}}, x::MLUInt{M, T}) where {N, M, T}
+    if _most_significant_limb(x) > N
+        throw(InexactError(:convert, MLUInt{N, T}, x))
+    end
+    _unsafe_convert(MLUInt{N, T}, x)
+end
+
+@inline function Base.convert(::Type{V}, x::MLUInt{N, T}) where {V <: Signed, N, T}
+    # `>=` since one bit of `V` will be reserved for the sign
+    if V != BigInt && num_bits(x) >= bitsizeof(V)
+        throw(InexactError(:convert, V, x))
+    end
+    _unsafe_convert(V, x)
+end
+
+@inline function Base.convert(::Type{V}, x::MLUInt{N, T}) where {V <: Unsigned, N, T}
+    if num_bits(x) > bitsizeof(V)
+        throw(InexactError(:convert, V, x))
+    end
+    _unsafe_convert(V, x)
+end
+
+@inline function Base.convert(::Type{MLUInt{N, T}}, x::Integer) where {N, T}
+    if signbit(x) || num_bits(x) > bitsizeof(MLUInt{N, T})
+        throw(InexactError(:convert, MLUInt{N, T}, x))
+    end
+    _unsafe_convert(MLUInt{N, T}, x)
+end
+
+@inline function Base.convert(::Type{MLUInt{N, T}}, x::Bool) where {N, T}
+    x ? one(MLUInt{N, T}) : zero(MLUInt{N, T})
 end
 
 
@@ -73,6 +119,16 @@ Base.string(x::MLUInt{N, T}) where {N, T} = "{" * string(x.limbs) * "}"
 
 
 Base.show(io::IO, x::MLUInt{N, T}) where {N, T} = print(io, string(x))
+
+
+function num_bits(x::MLUInt{N, T}) where {N, T}
+    if iszero(x)
+        0
+    else
+        msl = _most_significant_limb(x)
+        num_bits(x[msl]) + (msl - 1) * bitsizeof(T)
+    end
+end
 
 
 @inline @generated function Base.zero(::Type{MLUInt{N, T}}) where {N, T}
@@ -187,16 +243,6 @@ end
         return x[i] < y[i]
     end
     false
-end
-
-
-@inline function _most_significant_limb(x::MLUInt{N, T}) where {N, T}
-    for i in N:-1:1
-        if x[i] > 0
-            return i
-        end
-    end
-    return 0
 end
 
 

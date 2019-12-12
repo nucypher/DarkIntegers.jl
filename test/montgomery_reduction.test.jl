@@ -22,7 +22,7 @@ end
         # in Montgomery representation the modulus needs to be odd
         m = rand(UInt128(0):UInt128(2)^(bitsizeof(tp) - 1)-1) * 2 + 1
 
-        m_tp = tp(m)
+        m_tp = convert(tp, m)
         m_prime_tp = get_montgomery_coeff(m_tp)
 
         expected_tp = eltype(tp)
@@ -124,7 +124,7 @@ function to_montgomery_ref(bitsize, x::T, modulus::T) where T
     x2 = T2(x)
     m2 = T2(modulus)
     R = T2(1) << bitsize
-    T((x2 * R) % m2)
+    convert(T, (x2 * R) % m2)
 end
 
 
@@ -191,7 +191,7 @@ function from_montgomery_ref(bitsize, x::T, modulus::T) where T
     m2 = T2(modulus)
     R = T2(1) << bitsize
     iR = invmod(R, m2)
-    T((x2 * iR) % m2)
+    convert(T, (x2 * iR) % m2)
 end
 
 

@@ -85,7 +85,7 @@ end
     # Works for the types for which `widemul()` is defined in the base library
     # (that is, for which a type with double the bitsize exists)
     r = widemul(x, y)
-    T(r >> bitsizeof(T)), T(r & typemax(T))
+    convert(T, r >> bitsizeof(T)), convert(T, r & typemax(T))
 end
 
 
@@ -114,7 +114,7 @@ Returns the result as a pair `(hi::T, lo::T)`.
     q_w, r_w = divrem(x_w, y_w)
     q_lo = q_w & convert(T2, typemax(T))
     overflow = q_lo != q_w
-    T(q_lo), T(r_w), overflow
+    convert(T, q_lo), convert(T, r_w), overflow
 end
 
 

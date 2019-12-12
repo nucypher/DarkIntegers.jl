@@ -127,7 +127,7 @@ end
 end
 
 @inline function Base.:-(p1::Polynomial{T}, p2::Unsigned) where T
-    Polynomial(p1.coeffs .- T(p2), p1.negacyclic, p1.mul_function)
+    Polynomial(p1.coeffs .- convert(T, p2), p1.negacyclic, p1.mul_function)
 end
 
 @inline function Base.:-(p1::Polynomial{T}) where T

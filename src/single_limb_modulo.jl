@@ -107,7 +107,7 @@ end
 Modulo multiplication using wide multiplication into a single bigger type.
 """
 @inline function mulmod_widemul(x::T, y::T, modulus::T) where T <: Unsigned
-    T(mod(widemul(x, y), convert(widen(T), modulus)))
+    convert(T, mod(widemul(x, y), convert(widen(T), modulus)))
 end
 
 

@@ -9,7 +9,7 @@ function get_generator(::Type{T}) where T <: AbstractRRElem
     factors = keys(factor(modulus - 1))
     for w in 2:modulus-1
         found = true
-        gw = T(w)
+        gw = convert(T, w)
         for q in factors
             if gw^(div(modulus - 1, q)) == one(T)
                 found = false
@@ -51,7 +51,7 @@ Similarly to FFT, it's `1/N`, but in our case we need to take the finite field i
 """
 function get_inverse_coeff(::Type{T}, N::Integer) where T <: AbstractRRElem
     # Can also be calculated as `N^(-1) mod M == (M - (M-1) ÷ N)`
-    inv(T(N))
+    inv(convert(T, N))
 end
 
 

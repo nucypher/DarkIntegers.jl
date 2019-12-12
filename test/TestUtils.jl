@@ -85,6 +85,18 @@ const fixed_rng = @local_fixture begin
 end
 
 
+function truncate_result(::Type{T}, x::V) where {T <: Unsigned, V <: Union{BigInt, Unsigned}}
+    if V == BigInt || bitsizeof(T) < bitsizeof(V)
+        x &= (one(V) << bitsizeof(T)) - one(V)
+    end
+    convert(T, x)
+end
+
+function truncate_result(::Type{T}, x::Bool) where T
+    x
+end
+
+
 function check_function(tp, test_func, ref_func, args, ref_needs_bitsize)
     tp_args = convert.(tp, args)
     if ref_needs_bitsize
@@ -92,8 +104,10 @@ function check_function(tp, test_func, ref_func, args, ref_needs_bitsize)
     else
         ref = ref_func(args...)
     end
+
     tp_test = test_func(tp_args...)
-    tp_ref = convert.(tp, ref)
+    tp_ref = truncate_result.(tp, ref)
+
     if tp_ref != tp_test
         @test_fail "Incorrect result for $(tuple(tp_args...)): got $tp_test, expected $tp_ref"
         return false

@@ -13,7 +13,7 @@ modulo_noverflow_args_filter(x, y, modulus) =
 
 function addmod_ref(x::T, y::T, modulus::T) where T <: Unsigned
     T2 = widen(T)
-    T(mod(T2(x) + T2(y), modulus))
+    convert(T, mod(T2(x) + T2(y), modulus))
 end
 
 
@@ -47,7 +47,7 @@ end
 
 function submod_ref(x::T, y::T, modulus::T) where T <: Unsigned
     T2 = widen(T)
-    T(mod(T2(x) + modulus - y, modulus))
+    convert(T, mod(T2(x) + modulus - y, modulus))
 end
 
 
@@ -71,7 +71,7 @@ mulmod_names = ["bitshift", "remhilo", "widemul", "mulmod"]
 
 function mulmod_ref(x::T, y::T, modulus::T) where T <: Unsigned
     T2 = widen(T)
-    T(mod(T2(x) * T2(y), modulus))
+    convert(T, mod(T2(x) * T2(y), modulus))
 end
 
 
