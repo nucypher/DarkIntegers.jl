@@ -28,6 +28,9 @@ export powmod
 include("multi_limb.jl")
 export MLUInt
 
+include("multi_limb_signed.jl")
+export MLInt
+
 include("residue_ring.jl")
 export RRElem
 export AbstractRRElem

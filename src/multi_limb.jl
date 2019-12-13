@@ -19,7 +19,8 @@ struct MLUInt{N, T <: Unsigned} <: Unsigned
     limbs :: NTuple{N, T}
 
     MLUInt(x::NTuple{N, T}) where {N, T} = new{N, T}(x)
-    MLUInt{N, T}(x::NTuple{N, T}) where {N, T} = new{N, T}(x)
+    MLUInt{N, T}(x::MLUInt{N, T}) where {N, T} = new{N, T}(x.limbs)
+    MLUInt{N, T}(x::NTuple{N, V}) where {N, T, V} = new{N, T}(convert.(T, x))
 end
 
 
@@ -44,7 +45,7 @@ end
 @inline function _unsafe_convert(::Type{V}, x::MLUInt{N, T}) where {V <: Integer, N, T}
     res = zero(V)
     for i in 1:N
-        res += convert(V, x[i]) << (bitsizeof(T) * (i - 1))
+        res |= convert(V, x[i]) << (bitsizeof(T) * (i - 1))
     end
     res
 end
@@ -88,7 +89,11 @@ end
 end
 
 @inline function Base.convert(::Type{MLUInt{N, T}}, x::Integer) where {N, T}
-    if signbit(x) || num_bits(x) > bitsizeof(MLUInt{N, T})
+    # Similar behaviour to built-in Julia types - can't convert negative numbers to unsigned.
+    if signbit(x)
+        throw(InexactError(:convert, MLUInt{N, T}, x))
+    # Check if `x` fits in the target type
+    elseif num_bits(x) > bitsizeof(MLUInt{N, T})
         throw(InexactError(:convert, MLUInt{N, T}, x))
     end
     _unsafe_convert(MLUInt{N, T}, x)
@@ -99,19 +104,23 @@ end
 end
 
 
-@inline Base.promote_type(::Type{MLUInt{N, T}}, ::Type{<:Integer}) where {N, T} = MLUInt{N, T}
-@inline Base.promote_type(::Type{<:Integer}, ::Type{MLUInt{N, T}}) where {N, T} = MLUInt{N, T}
+@inline Base.promote_type(::Type{MLUInt{N, T}}, ::Type{<:Unsigned}) where {N, T} = MLUInt{N, T}
+@inline Base.promote_type(::Type{MLUInt{N, T}}, ::Type{<:Signed}) where {N, T} = MLUInt{N, T}
+@inline Base.promote_type(::Type{<:Unsigned}, ::Type{MLUInt{N, T}}) where {N, T} = MLUInt{N, T}
+@inline Base.promote_type(::Type{<:Signed}, ::Type{MLUInt{N, T}}) where {N, T} = MLUInt{N, T}
 @inline Base.promote_type(::Type{MLUInt{N, T}}, ::Type{MLUInt{M, T}}) where {N, M, T} =
     MLUInt{max(M, N), T}
 @inline Base.promote_type(::Type{MLUInt{N, T}}, ::Type{MLUInt{N, T}}) where {N, T} =
     MLUInt{N, T}
 
 
-# We need this to correctly process arithmetic operations on MLUInt and Int
-# (which is signed and the default in Julia for number literals)
-# without defining specific methods for each operator.
-@inline Base.signed(x::MLUInt{N, T}) where {N, T} = x
+@inline Base.signed(x::MLUInt{N, T}) where {N, T} = MLInt{N, T}(x.limbs)
+
+
 @inline Base.unsigned(x::MLUInt{N, T}) where {N, T} = x
+
+
+@inline Base.signbit(::MLUInt{N, T}) where {N, T} = false
 
 
 # Because MLUInt <: Unsigned, show() will be bypassed sometimes in favor of string()
@@ -623,3 +632,34 @@ end
 
 
 Base.eltype(::Type{MLUInt{N, T}}) where {N, T} = T
+
+
+function Base.:~(x::MLUInt{N, T}) where {N, T}
+    for i in 1:N
+        x = setindex(x, ~x[i], i)
+    end
+    x
+end
+
+
+function Base.:<<(x::MLUInt{N, T}, shift::Int) where {N, T}
+
+    if shift == 0
+        return x
+    end
+
+    res = zero(MLUInt{N, T})
+
+    lb = log_bitsizeof(T)
+    full_shifts = shift >> lb
+    shift = xor(shift, full_shifts << lb)
+    c_shift = bitsizeof(T) - shift
+
+    for i in full_shifts+1:N
+        hi = x[i-full_shifts] << shift
+        lo = i == full_shifts+1 ? zero(T) : (x[i-full_shifts-1] >> c_shift)
+        res = setindex(res, hi | lo, i)
+    end
+
+    res
+end

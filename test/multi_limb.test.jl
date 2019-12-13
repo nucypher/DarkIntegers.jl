@@ -1,8 +1,78 @@
 using DarkIntegers
-using DarkIntegers: UInt4, mulmod, mulmod_bitshift, mulmod_widemul
+using DarkIntegers: UInt4, mulmod_bitshift, mulmod_widemul, _unsafe_convert
 
 
 @testgroup "multi-limb integers" begin
+
+
+function check_convert(target, value, unsafe::Bool)
+    if unsafe
+        _unsafe_convert(target, value)
+    else
+        convert(target, value)
+    end
+end
+
+
+unsafe_fx = [true, false] => ["checked", "unchecked"]
+
+
+@testcase "conversion, MLUInt to MLUInt" for unsafe in unsafe_fx
+    @test check_convert(MLUInt{2, UInt64}, MLUInt{2, UInt64}((123, 456)), unsafe) ==
+        MLUInt{2, UInt64}((123, 456))
+    @test check_convert(MLUInt{3, UInt64}, MLUInt{2, UInt64}((123, 456)), unsafe) ==
+        MLUInt{3, UInt64}((123, 456, 0))
+    @test check_convert(MLUInt{1, UInt64}, MLUInt{2, UInt64}((123, 0)), unsafe) ==
+        MLUInt{1, UInt64}((123,))
+
+    if !unsafe
+        @test_throws InexactError convert(MLUInt{1, UInt64}, MLUInt{2, UInt64}((123, 456)))
+    end
+end
+
+
+@testcase "conversion, MLUInt to Signed" for unsafe in unsafe_fx
+    @test check_convert(BigInt, MLUInt{2, UInt64}((123, 456)), unsafe) ==
+        big(123) + big(456) << 64
+    @test check_convert(Int64, MLUInt{2, UInt16}((123, 456)), unsafe) == 123 + 456 << 16
+    @test check_convert(Int64, MLUInt{2, UInt32}((0, 0)), unsafe) == 0
+    @test check_convert(Int64, MLUInt{2, UInt32}((0xffffffff, 0x7fffffff)), unsafe) ==
+        typemax(Int64)
+
+    if !unsafe
+        @test_throws InexactError convert(Int64, MLUInt{2, UInt32}((0xffffffff, 0xffffffff)))
+        @test_throws InexactError convert(Int32, MLUInt{3, UInt16}((0xffff, 0xffff, 0x0001)))
+    end
+end
+
+
+@testcase "conversion, MLUInt to Unsigned" for unsafe in unsafe_fx
+    @test check_convert(UInt64, MLUInt{2, UInt16}((123, 456)), unsafe) == 123 + 456 << 16
+    @test check_convert(UInt64, MLUInt{2, UInt32}((0, 0)), unsafe) == 0
+    @test check_convert(UInt64, MLUInt{2, UInt32}((0xffffffff, 0xffffffff)), unsafe) == typemax(UInt64)
+
+    if !unsafe
+        @test_throws InexactError convert(UInt32, MLUInt{3, UInt16}((0xffff, 0xffff, 0x0001)))
+    end
+end
+
+
+@testcase "conversion, Integer to MLUInt" for unsafe in unsafe_fx
+    @test check_convert(MLUInt{2, UInt32}, 0, unsafe) == MLUInt{2, UInt32}((0, 0))
+    @test check_convert(MLUInt{2, UInt32}, typemax(UInt64), unsafe) ==
+        MLUInt{2, UInt32}((0xffffffff, 0xffffffff))
+
+    if !unsafe
+        @test_throws InexactError convert(MLUInt{2, UInt64}, -1)
+        @test_throws InexactError convert(MLUInt{2, UInt16}, typemax(UInt64))
+    end
+end
+
+
+@testcase "conversion, Bool to MLUInt" begin
+    @test convert(MLUInt{2, UInt32}, false) == zero(MLUInt{2, UInt32})
+    @test convert(MLUInt{2, UInt32}, true) == one(MLUInt{2, UInt32})
+end
 
 
 @testcase "+" begin
@@ -63,15 +133,15 @@ end
 end
 
 
-@testcase "creation/conversion/promotion" begin
+@testcase "promotion" begin
     xi = 12345
     yi = 400
 
     tp = MLUInt{2, UInt8}
     modulus = 2^bitsizeof(tp)
 
-    x = convert(MLUInt{2, UInt8}, xi)
-    y = convert(MLUInt{2, UInt8}, yi)
+    x = convert(tp, xi)
+    y = convert(tp, yi)
 
     @test x + y == mod(xi + yi, modulus)
     @test x + 1 == mod(xi + 1, modulus)
