@@ -6,6 +6,7 @@ using Primes: factor, isprime
 
 include("utils.jl")
 export bitsizeof
+export log_bitsizeof
 export num_bits
 export encompassing_type
 

@@ -38,6 +38,18 @@ bitsizeof(::T) where T = bitsizeof(T)
 
 
 """
+    log_bitsizeof(::Type{T}) where T
+    log_bitsizeof(x)
+
+`log2()` of the value returned by [`bitsizeof`](@ref) for that argument.
+"""
+@generated function log_bitsizeof(::Type{T}) where T
+    :( $(trailing_zeros(bitsizeof(T))) )
+end
+log_bitsizeof(::T) where T = log_bitsizeof(T)
+
+
+"""
     num_bits(x)
 
 Returns the number of bits in the representation of the absolute value of an integer.

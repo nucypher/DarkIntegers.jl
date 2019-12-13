@@ -8,6 +8,7 @@ CurrentModule = DarkIntegers
 
 ```@docs
 bitsizeof
+log_bitsizeof
 num_bits
 encompassing_type
 ```
