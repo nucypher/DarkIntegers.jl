@@ -40,6 +40,9 @@ Base.widen(::Type{UInt4}) = UInt8
 Base.leading_zeros(x::UInt4) = leading_zeros(x.value) - 4
 
 
+Base.trailing_zeros(x::UInt4) = trailing_zeros(x.value)
+
+
 Base.:+(x::UInt4, y::UInt4) = UInt4(x.value + y.value)
 
 
