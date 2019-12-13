@@ -75,6 +75,41 @@ end
 end
 
 
+@testcase "utility functions" begin
+    @test MLUInt{2, UInt64}((2, 3)) == MLUInt{2, UInt64}((2, 3))
+    @test MLUInt{2, UInt64}((2, 3)) != MLUInt{2, UInt64}((2, 4))
+    @test MLUInt{2, UInt64}((2, 3)) < MLUInt{2, UInt64}((3, 3))
+    @test MLUInt{2, UInt64}((2, 3)) <= MLUInt{2, UInt64}((2, 3))
+    @test MLUInt{2, UInt64}((3, 3)) > MLUInt{2, UInt64}((2, 3))
+    @test MLUInt{2, UInt64}((3, 3)) >= MLUInt{2, UInt64}((3, 3))
+
+    @test zero(MLUInt{2, UInt64}) == MLUInt{2, UInt64}((0, 0))
+    @test one(MLUInt{2, UInt64}) == MLUInt{2, UInt64}((1, 0))
+    @test oneunit(MLUInt{2, UInt64}) == MLUInt{2, UInt64}((1, 0))
+
+    @test iseven(MLUInt{2, UInt64}((2, 1)))
+    @test !iseven(MLUInt{2, UInt64}((1, 1)))
+    @test !isodd(MLUInt{2, UInt64}((2, 1)))
+    @test isodd(MLUInt{2, UInt64}((1, 1)))
+    @test iszero(zero(MLUInt{2, UInt64}))
+    @test !iszero(one(MLUInt{2, UInt64}))
+
+    @test typemin(MLUInt{2, UInt64}) == MLUInt{2, UInt64}((0, 0))
+    @test typemax(MLUInt{2, UInt64}) == MLUInt{2, UInt64}((typemax(UInt64), typemax(UInt64)))
+
+    @test leading_zeros(MLUInt{3, UInt64}((0, 1234, 0))) == leading_zeros(UInt64(1234)) + 64
+    @test trailing_zeros(MLUInt{3, UInt64}((0, 1234, 0))) == trailing_zeros(UInt64(1234)) + 64
+
+    @test eltype(MLUInt{3, UInt64}) == UInt64
+    @test eltype(one(MLUInt{3, UInt64})) == UInt64
+
+    @test sizeof(MLUInt{3, UInt64}) == 3 * 8
+    @test bitsizeof(MLUInt{3, UInt64}) == 3 * 64
+    @test sizeof(MLUInt{3, UInt4}) == 3
+    @test bitsizeof(MLUInt{3, UInt4}) == 3 * 4
+end
+
+
 @testcase "+" begin
     check_function_random(MLUInt{4, UInt64}, +, +, 2)
 end
@@ -102,6 +137,12 @@ end
 
 @testcase tags=[:exhaustive] "*, exhaustive" begin
     check_function_exhaustive(MLUInt{3, UInt4}, *, *, 2)
+end
+
+
+@testcase "^" for power in [0, 1, 2, 3, 4, 5]
+    func(x) = x^power
+    check_function_random(MLUInt{3, UInt8}, func, func, 1)
 end
 
 
@@ -234,18 +275,20 @@ end
 end
 
 
-@testcase "lshift" for rng in fixed_rng
+@testcase "shift" for rng in fixed_rng, shift_dir in ["left", "right"]
+    op = shift_dir == "left" ? (<<) : (>>)
     for limbs in 1:8
         for msl in 1:limbs
             for shift in [0:8:64; 2:8:72]
                 tp = MLUInt{limbs, UInt8}
                 x = rand(rng, UInt64) & ((UInt64(1) << (msl * 8)) - 1)
                 x_mp = convert(tp, x)
-                res_mp = x_mp >> shift
+                res_mp = op(x_mp, shift)
                 res = convert(UInt64, res_mp)
-                ref = x >> shift
+                ref = op(x, shift) & ((one(UInt64) << (limbs * 8)) - 1)
                 if res != ref
-                    @test_fail "Incorrect result for x=$x_mp and shift=$shift"
+                    @test_fail "Incorrect result for x=$x_mp and shift=$shift: expected $ref, got $res"
+                    return
                 end
             end
         end

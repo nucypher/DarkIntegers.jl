@@ -7,8 +7,13 @@ Multi-limb unsigned integers.
 Multi-precision unsigned integer type, with `N` limbs of type `T`
 (which must be an unsigned integer type).
 
-Supports `+`, `-`, `*`, `divrem`, `div`, `rem`, `^`, `<`, `<=`, `>`, `>=`,
-`zero`, `one` and `isodd`.
+Supports `+`, `-`, `*`, `divrem`, `div`, `rem`, `mod`, `^`,
+`==`, `!=`, `<`, `<=`, `>`, `>=`,
+`zero`, `one`, `oneunit`, `iseven`, `isodd`, `typemin`, `typemax`, `iszero`,
+`sizeof` (can be off if limbs have the type `UInt4`),
+`bitsizeof`, `leading_zeros`, `trailing_zeros`, `eltype`.
+
+Also supports `num_bits`, `halve`, `double`, `encompassing_type`.
 
     MLUInt{N, T}(x::Integer) where {N, T <: Unsigned}
 
@@ -270,33 +275,71 @@ end
 end
 
 
-@inline function Base.:>>(x::MLUInt{N, T}, y::Int) where {N, T}
+@inline function Base.:>>(x::MLUInt{N, T}, shift::Int) where {N, T}
+
+    if shift == 0 || iszero(x)
+        return x
+    end
+
+    if signbit(shift)
+        return x << (-shift)
+    end
+
     res = zero(MLUInt{N, T})
 
-    if y >= N * bitsizeof(T)
+    if shift >= bitsizeof(MLUInt{N, T})
         return res
     end
+
+    lb = log_bitsizeof(T)
+    full_shifts = shift >> lb
+    shift = xor(shift, full_shifts << lb)
 
     msl = _most_significant_limb(x)
-    if msl == 0
-        return res
-    end
 
-    full_limbs = y ÷ bitsizeof(T)
-    remainder = y % bitsizeof(T)
-
-    if remainder == 0
-        @inbounds for i in 1:(msl - full_limbs)
-            res = setindex(res, x[i + full_limbs], i)
+    if shift == 0
+        @inbounds for i in 1:(msl - full_shifts)
+            res = setindex(res, x[i + full_shifts], i)
         end
     else
-        @inbounds for i in 1:(msl - full_limbs)
-            lo = x[i + full_limbs] >> remainder
-            if i < msl - full_limbs
-                lo |= x[i + full_limbs + 1] << (bitsizeof(T) - remainder)
+        @inbounds for i in 1:(msl - full_shifts)
+            lo = x[i + full_shifts] >> shift
+            if i < msl - full_shifts
+                lo |= x[i + full_shifts + 1] << (bitsizeof(T) - shift)
             end
             res = setindex(res, lo, i)
         end
+    end
+
+    res
+end
+
+
+function Base.:<<(x::MLUInt{N, T}, shift::Int) where {N, T}
+
+    if shift == 0 || iszero(x)
+        return x
+    end
+
+    if signbit(shift)
+        return x >> (-shift)
+    end
+
+    res = zero(MLUInt{N, T})
+
+    if shift >= bitsizeof(MLUInt{N, T})
+        return res
+    end
+
+    lb = log_bitsizeof(T)
+    full_shifts = shift >> lb
+    shift = xor(shift, full_shifts << lb)
+    c_shift = bitsizeof(T) - shift
+
+    for i in full_shifts+1:N
+        hi = x[i-full_shifts] << shift
+        lo = i == full_shifts+1 ? zero(T) : (x[i-full_shifts-1] >> c_shift)
+        res = setindex(res, hi | lo, i)
     end
 
     res
@@ -540,6 +583,10 @@ end
 Base.sizeof(::Type{MLUInt{N, T}}) where {N, T} = sizeof(T) * N
 
 
+# Accounting for limb bitsizes < 8
+bitsizeof(::Type{MLUInt{N, T}}) where {N, T} = bitsizeof(T) * N
+
+
 # Required for broadcasting
 
 
@@ -639,27 +686,4 @@ function Base.:~(x::MLUInt{N, T}) where {N, T}
         x = setindex(x, ~x[i], i)
     end
     x
-end
-
-
-function Base.:<<(x::MLUInt{N, T}, shift::Int) where {N, T}
-
-    if shift == 0
-        return x
-    end
-
-    res = zero(MLUInt{N, T})
-
-    lb = log_bitsizeof(T)
-    full_shifts = shift >> lb
-    shift = xor(shift, full_shifts << lb)
-    c_shift = bitsizeof(T) - shift
-
-    for i in full_shifts+1:N
-        hi = x[i-full_shifts] << shift
-        lo = i == full_shifts+1 ? zero(T) : (x[i-full_shifts-1] >> c_shift)
-        res = setindex(res, hi | lo, i)
-    end
-
-    res
 end
