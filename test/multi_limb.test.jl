@@ -75,17 +75,28 @@ end
 end
 
 
-@testcase "utility functions" begin
-    @test MLUInt{2, UInt64}((2, 3)) == MLUInt{2, UInt64}((2, 3))
-    @test MLUInt{2, UInt64}((2, 3)) != MLUInt{2, UInt64}((2, 4))
-    @test MLUInt{2, UInt64}((2, 3)) < MLUInt{2, UInt64}((3, 3))
-    @test MLUInt{2, UInt64}((2, 3)) <= MLUInt{2, UInt64}((2, 3))
-    @test MLUInt{2, UInt64}((3, 3)) > MLUInt{2, UInt64}((2, 3))
-    @test MLUInt{2, UInt64}((3, 3)) >= MLUInt{2, UInt64}((3, 3))
+@testcase "comparisons" for op in [<, >, <=, >=]
+    check_function_random(MLUInt{3, UInt8}, op, op, 2)
+end
 
+
+@testcase tags=[:exhaustive] "comparisons, exhaustive" for op in [<, >, <=, >=]
+    check_function_exhaustive(MLUInt{2, UInt4}, op, op, 2)
+end
+
+
+@testcase "utility functions" begin
     @test zero(MLUInt{2, UInt64}) == MLUInt{2, UInt64}((0, 0))
     @test one(MLUInt{2, UInt64}) == MLUInt{2, UInt64}((1, 0))
     @test oneunit(MLUInt{2, UInt64}) == MLUInt{2, UInt64}((1, 0))
+    @test typemin(MLUInt{2, UInt64}) == MLUInt{2, UInt64}((0, 0))
+    @test typemax(MLUInt{2, UInt64}) == MLUInt{2, UInt64}((typemax(UInt64), typemax(UInt64)))
+
+    @test zero(MLUInt{2, UInt4}) == MLUInt{2, UInt4}((0, 0))
+    @test one(MLUInt{2, UInt4}) == MLUInt{2, UInt4}((1, 0))
+    @test oneunit(MLUInt{2, UInt4}) == MLUInt{2, UInt4}((1, 0))
+    @test typemin(MLUInt{2, UInt4}) == MLUInt{2, UInt4}((0, 0))
+    @test typemax(MLUInt{2, UInt4}) == MLUInt{2, UInt4}((typemax(UInt4), typemax(UInt4)))
 
     @test iseven(MLUInt{2, UInt64}((2, 1)))
     @test !iseven(MLUInt{2, UInt64}((1, 1)))
@@ -93,9 +104,6 @@ end
     @test isodd(MLUInt{2, UInt64}((1, 1)))
     @test iszero(zero(MLUInt{2, UInt64}))
     @test !iszero(one(MLUInt{2, UInt64}))
-
-    @test typemin(MLUInt{2, UInt64}) == MLUInt{2, UInt64}((0, 0))
-    @test typemax(MLUInt{2, UInt64}) == MLUInt{2, UInt64}((typemax(UInt64), typemax(UInt64)))
 
     @test leading_zeros(MLUInt{3, UInt64}((0, 1234, 0))) == leading_zeros(UInt64(1234)) + 64
     @test trailing_zeros(MLUInt{3, UInt64}((0, 1234, 0))) == trailing_zeros(UInt64(1234)) + 64
@@ -107,6 +115,8 @@ end
     @test bitsizeof(MLUInt{3, UInt64}) == 3 * 64
     @test sizeof(MLUInt{3, UInt4}) == 3
     @test bitsizeof(MLUInt{3, UInt4}) == 3 * 4
+
+    @test abs(MLUInt{2, UInt64}((2, 1))) == MLUInt{2, UInt64}((2, 1))
 end
 
 

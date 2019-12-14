@@ -115,6 +115,23 @@ end
 
 
 Base.signed(x::UInt4) = Int4(x.value)
+Base.signed(x::Int4) = x
+
+
+Base.unsigned(x::Int4) = UInt4(x.value)
+Base.unsigned(x::UInt4) = x
 
 
 Base.signbit(x::Int4) = !iszero(x.value & 0x8)
+
+
+Base.zero(::Type{Int4}) = Int4(zero(UInt8))
+
+
+Base.one(::Type{Int4}) = Int4(one(UInt8))
+
+
+Base.typemin(::Type{Int4}) = Int4(8)
+
+
+Base.typemax(::Type{Int4}) = Int4(7)

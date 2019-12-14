@@ -11,7 +11,7 @@ Supports `+`, `-`, `*`, `divrem`, `div`, `rem`, `mod`, `^`,
 `==`, `!=`, `<`, `<=`, `>`, `>=`,
 `zero`, `one`, `oneunit`, `iseven`, `isodd`, `typemin`, `typemax`, `iszero`,
 `sizeof` (can be off if limbs have the type `UInt4`),
-`bitsizeof`, `leading_zeros`, `trailing_zeros`, `eltype`.
+`bitsizeof`, `leading_zeros`, `trailing_zeros`, `eltype`, `abs`.
 
 Also supports `num_bits`, `halve`, `double`, `encompassing_type`.
 

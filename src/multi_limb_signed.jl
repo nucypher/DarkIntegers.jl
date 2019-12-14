@@ -146,7 +146,7 @@ end
 
 @inline @generated function Base.typemin(::Type{MLInt{N, T}}) where {N, T}
     x = one(T) << (bitsizeof(T) - 1)
-    exprs = vcat([:(zero(T)) for i in 1:N-1], [:($x)])
+    exprs = vcat([:($(zero(T))) for i in 1:N-1], [:($x)])
     quote
         MLInt(tuple($(exprs...)))
     end
@@ -155,7 +155,7 @@ end
 
 @inline @generated function Base.typemax(::Type{MLInt{N, T}}) where {N, T}
     x = (one(T) << (bitsizeof(T) - 1)) - one(T)
-    exprs = vcat([:(typemax(T)) for i in 1:N-1], [:($x)])
+    exprs = vcat([:($(typemax(T))) for i in 1:N-1], [:($x)])
     quote
         MLInt(tuple($(exprs...)))
     end
@@ -163,6 +163,12 @@ end
 
 
 Base.trailing_zeros(x::MLInt{N, T}) where {N, T} = trailing_zeros(unsigned(x))
+
+
+Base.leading_zeros(x::MLInt{N, T}) where {N, T} = leading_zeros(unsigned(x))
+
+
+Base.eltype(::Type{MLInt{N, T}}) where {N, T} = T
 
 
 @inline function Base.setindex(x::MLInt{N, T}, v::T, i::Integer) where {N, T}
@@ -191,3 +197,88 @@ Base.:~(x::MLInt{N, T}) where {N, T} = signed(~unsigned(x))
 Base.:flipsign(x::T, y::T) where T <: Union{MLInt, MLUInt} = signbit(x) ? -x : x
 
 
+@inline function Base.:>=(x::MLInt{N, T}, y::MLInt{N, T}) where {N, T}
+    sx = signbit(x)
+    sy = signbit(y)
+    if sx && !sy
+        return false
+    elseif !sx && sy
+        return true
+    else
+        return unsigned(x) >= unsigned(y)
+    end
+end
+
+
+@inline function Base.:>(x::MLInt{N, T}, y::MLInt{N, T}) where {N, T}
+    sx = signbit(x)
+    sy = signbit(y)
+    if sx && !sy
+        return false
+    elseif !sx && sy
+        return true
+    else
+        return unsigned(x) > unsigned(y)
+    end
+end
+
+
+@inline function Base.:<=(x::MLInt{N, T}, y::MLInt{N, T}) where {N, T}
+    sx = signbit(x)
+    sy = signbit(y)
+    if sx && !sy
+        return true
+    elseif !sx && sy
+        return false
+    else
+        return unsigned(x) <= unsigned(y)
+    end
+end
+
+
+@inline function Base.:<(x::MLInt{N, T}, y::MLInt{N, T}) where {N, T}
+    sx = signbit(x)
+    sy = signbit(y)
+    if sx && !sy
+        return true
+    elseif !sx && sy
+        return false
+    else
+        return unsigned(x) < unsigned(y)
+    end
+end
+
+
+function encompassing_type(tp::Type{MLInt{N, T}}) where {N, T}
+    total_size = cld(N * bitsizeof(T), 8)
+
+    if total_size <= 1
+        return Int8
+    elseif total_size <= 2
+        return Int16
+    elseif total_size <= 4
+        return Int32
+    elseif total_size <= 8
+        return Int64
+    elseif total_size <= 16
+        return Int128
+    else
+        return BigInt
+    end
+end
+
+
+Base.sizeof(::Type{MLInt{N, T}}) where {N, T} = sizeof(T) * N
+
+
+# Accounting for limb bitsizes < 8
+bitsizeof(::Type{MLInt{N, T}}) where {N, T} = bitsizeof(T) * N
+
+
+@inline Base.isodd(x::MLInt{N, T}) where {N, T} = isodd(unsigned(x))
+
+
+@inline Base.iseven(x::MLInt{N, T}) where {N, T} = iseven(unsigned(x))
+
+
+@inline Base.iszero(x::MLInt{N, T}) where {N, T} = iszero(unsigned(x))
