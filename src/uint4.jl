@@ -103,3 +103,18 @@ _low_shift(tp::Type{UInt4}) = 2
 
 
 encompassing_type(::Type{UInt4}) = UInt8
+
+
+# Currently only serves testing purposes, to be used with UInt4 and signed()/unsigned()/signbit()
+
+struct Int4 <: Signed
+    value :: UInt8
+
+    Int4(x::Integer) = new(x & 0xf)
+end
+
+
+Base.signed(x::UInt4) = Int4(x.value)
+
+
+Base.signbit(x::Int4) = !iszero(x.value & 0x8)
