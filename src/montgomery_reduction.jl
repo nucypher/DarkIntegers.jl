@@ -168,6 +168,38 @@ end
 
 
 """
+An optimized version of `mulmod_montgomery` for the cases when one of the factors
+has only one limb.
+"""
+@Base.propagate_inbounds @inline function mulmod_montgomery(
+        x::MLUInt{N, T}, y::T, m::MLUInt{N, T}, m_prime::T) where {N, T}
+
+    p1_lo, p1 = _mul_by_single(x, y)
+    t = p1_lo
+
+    a = p1
+
+    u = t * m_prime
+    _, p2 = _mul_by_single(m, u)
+
+    # TODO: can `a` be greater than `m` at this point?
+    a = submod(a, p2, m)
+
+    for i in 2:N
+        a_lo, a = shift_by_one(a)
+
+        u = a_lo * m_prime
+        _, p2 = _mul_by_single(m, u)
+
+        # TODO: can `a` be greater than `m` at this point?
+        a = submod(a, p2, m)
+    end
+
+    a
+end
+
+
+"""
 An implementation of Montgomery reduction for simple types.
 Treats them as `MLUInt`s of length 1.
 """

@@ -81,6 +81,35 @@ end
 end
 
 
+@testcase "mulmod_montgomery(), single limb" for rng in fixed_rng
+    # Not using check_function_random() here because it assumes the same types for all arguments
+    tp = MLUInt{4, UInt32}
+    for i in 1:100
+        y = rand(rng, big(1):big(typemax(UInt32)))
+        m = rand(rng, y+1:big(1)<<128-1)
+        # We need an odd modulus for invmod() to work
+        if iseven(m)
+            m -= 1
+        end
+        x = rand(rng, big(1):m-1)
+
+        ref = mulmod_montgomery_ref(bitsizeof(tp), x, y, m)
+
+        x_ml = convert(tp, x)
+        y_ml = convert(UInt32, y)
+        m_ml = convert(tp, m)
+        m_prime = get_montgomery_coeff(m_ml)
+
+        res = mulmod_montgomery(x_ml, y_ml, m_ml, m_prime)
+
+        if convert(BigInt, res) != ref
+            @test_fail "Multiplying $x by $y, got $res, expected $ref"
+            return
+        end
+    end
+end
+
+
 @testcase tags=[:performance] "mulmod_montgomery(), performance" for rng in fixed_rng
 
     # Test batched performance to check how well the operations will be vectorized
