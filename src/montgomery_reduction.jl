@@ -81,6 +81,27 @@ end
 
 
 """
+Given a MLUInt {x1, x2, ..., xN-1, xN} returns a tuple (x1, {x2, x3, ..., xN, 0}).
+"""
+@Base.propagate_inbounds @inline @generated function shift_by_one(x::MLUInt{N, T}) where {N, T}
+    new_x = [:(x[$j]) for j in 2:N]
+    quote
+        x_lo = x[1]
+
+        # This could be replaced by the following line:
+        #     x = MPNumber{N, T}(($(new_x...), zero(T)))
+        # But, paradoxically, the loop is faster.
+        for j in 2:$N
+            x = setindex(x, x[j], j-1)
+        end
+        x = setindex(x, zero(T), $N)
+
+        x_lo, x
+    end
+end
+
+
+"""
 Montgomery multiplication (or Montgomery reduction algorithm).
 For `x = x' * R mod m` and `y = y' * R mod m`
 calculates `x' * y' * R mod m`, where `R = typemax(MLUInt{N, T}) + 1`.
@@ -134,10 +155,8 @@ calculates `x' * y' * R mod m`, where `R = typemax(MLUInt{N, T}) + 1`.
                 a
             end)
         else
-            new_a = [:(a[$j]) for j in 2:N]
             push!(body, quote
-                a_lo = a[1]
-                a = MLUInt{N, T}(($(new_a...), zero(T)))
+                a_lo, a = shift_by_one(a)
             end)
         end
     end
