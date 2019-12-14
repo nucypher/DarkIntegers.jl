@@ -324,3 +324,53 @@ Assumes the polynomials have the same length and the same value of the `negacycl
     end
     Polynomial(res, p1.negacyclic, p1.mul_function)
 end
+
+
+"""
+Multiplies two polynomials using arbitrary-degree Karatsuba (ADK) algorithm.
+See:
+1. "Missing a trick: Karatsuba variations" by M. Scott
+   (https://miracl.com/assets/pdf-downloads/sk-1.pdf)
+2. "Generalizations of the Karatsuba Algorithm for Efficient Implementations"
+   by A. Weimerskirch and C. Paar
+   (https://eprint.iacr.org/2006/224.pdf)
+
+Note that despite the name it has N^2 complexity, but works faster than Karatsuba for small N
+(and, as follows from the name, does not require N to be a power of 2).
+"""
+@inline function adk_mul(p1::Polynomial{T}, p2::Polynomial{T}) where T
+
+    n = length(p1.coeffs)
+
+    x = p1.coeffs
+    y = p2.coeffs
+    d = x .* y
+
+    res = similar(p1.coeffs)
+
+    s = d[1]
+    res[1] = s
+    @inbounds @simd for k in 1:n-1
+        s = s + d[k+1]
+        t = s
+        @simd for i in (1+k>>1):k
+            t = t + (x[i+1] - x[k-i+1]) * (y[k-i+1] - y[i+1])
+        end
+        res[k+1] = t
+    end
+
+    @inbounds @simd for k = n:(2n-2)
+        s = s - d[k-n+1]
+        t = s
+        @simd for i = (1+k>>1):(n-1)
+            t = t + (x[i+1] - x[k-i+1]) * (y[k-i+1] - y[i+1])
+        end
+        if p1.negacyclic
+            res[k+1-n] -= t
+        else
+            res[k+1-n] += t
+        end
+    end
+
+    Polynomial(res, p1.negacyclic, p1.mul_function)
+end
