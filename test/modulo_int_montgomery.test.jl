@@ -13,24 +13,24 @@ using DarkIntegers: _verbatim, rr_value
     # Check that even a value greater than the modulus is not modified
     # when no conversion is requested.
 
-    x = RRElemMontgomery(val, modulus, _verbatim)
+    x = MgModUInt(val, modulus, _verbatim)
     @test rr_value(x) == val
 
-    x = RRElemMontgomery{T, modulus}(val, _verbatim)
+    x = MgModUInt{T, modulus}(val, _verbatim)
     @test rr_value(x) == val
 
     # Check that a value greater than the modulus is converted correctly
 
-    x = RRElemMontgomery{T, modulus}(val)
+    x = MgModUInt{T, modulus}(val)
     @test rr_value(x) != val
     @test convert(T, x) == mod(val, modulus)
 
     big_val = Int64(2^50)
-    x = RRElemMontgomery{T, modulus}(big_val)
+    x = MgModUInt{T, modulus}(big_val)
     @test convert(T, x) == mod(big_val, modulus)
 
     big_val = Int64(-2^50)
-    x = RRElemMontgomery{T, modulus}(big_val)
+    x = MgModUInt{T, modulus}(big_val)
     @test convert(T, x) == mod(big_val, modulus)
 end
 
@@ -39,7 +39,7 @@ end
     mp_tp = MLUInt{2, UInt8}
     modulus = convert(mp_tp, 177)
 
-    rr_tp = RRElemMontgomery{mp_tp, modulus}
+    rr_tp = MgModUInt{mp_tp, modulus}
 
     @test convert(rr_tp, convert(mp_tp, 1)) == rr_tp(1)
     @test convert(rr_tp, convert(MLUInt{3, UInt16}, 1)) == rr_tp(1)
@@ -51,8 +51,8 @@ end
 @testcase "promotion" begin
     T = MLUInt{2, UInt8}
     modulus = convert(T, 177)
-    x = RRElemMontgomery{T, modulus}(100)
-    y = RRElemMontgomery{T, modulus}(90)
+    x = MgModUInt{T, modulus}(100)
+    y = MgModUInt{T, modulus}(90)
 
     @test x + y == 13
     @test x + 1 == 101
@@ -72,7 +72,7 @@ end
 
     # check that big integers are processed correctly:
     # first the modulus is taken, and only then they are converted to the target unsigned type.
-    @test RRElemMontgomery{T, modulus}(187) == 10
+    @test MgModUInt{T, modulus}(187) == 10
 end
 
 
@@ -82,8 +82,8 @@ end
     x = rand(rng, UInt128(1):modulus-1)
     y = rand(rng, UInt128(1):modulus-1)
 
-    x_m1 = RRElemMontgomery{UInt128, modulus}(x)
-    y_m1 = RRElemMontgomery{UInt128, modulus}(y)
+    x_m1 = MgModUInt{UInt128, modulus}(x)
+    y_m1 = MgModUInt{UInt128, modulus}(y)
     trial = @benchmark $x_m1 * $y_m1
     @test_result "UInt128: " * benchmark_result(trial)
 
@@ -91,8 +91,8 @@ end
     x_mp = mptp1(x)
     y_mp = mptp1(y)
     m_mp = mptp1(modulus)
-    x_m2 = RRElemMontgomery{mptp1, m_mp}(x_mp)
-    y_m2 = RRElemMontgomery{mptp1, m_mp}(y_mp)
+    x_m2 = MgModUInt{mptp1, m_mp}(x_mp)
+    y_m2 = MgModUInt{mptp1, m_mp}(y_mp)
     trial = @benchmark $x_m2 * $y_m2
     @test_result "2xUInt64: " * benchmark_result(trial)
 
@@ -100,8 +100,8 @@ end
     x_mp = mptp2(x)
     y_mp = mptp2(y)
     m_mp = mptp2(modulus)
-    x_m3 = RRElemMontgomery{mptp2, m_mp}(x_mp)
-    y_m3 = RRElemMontgomery{mptp2, m_mp}(y_mp)
+    x_m3 = MgModUInt{mptp2, m_mp}(x_mp)
+    y_m3 = MgModUInt{mptp2, m_mp}(y_mp)
     trial = @benchmark $x_m3 * $y_m3
     @test_result "3xUInt32: " * benchmark_result(trial)
 
@@ -110,7 +110,7 @@ end
 
 @testcase "inv" for rng in fixed_rng
     modulus = UInt64(251)
-    tp = RRElemMontgomery{UInt64, modulus}
+    tp = MgModUInt{UInt64, modulus}
 
     for i in 1:100
         x = rand(rng, 1:250)

@@ -13,7 +13,7 @@ cyclicity = ([false, true] => ["cyclic", "negacyclic"])
     modulus = 21
     rtp = UInt8 # MLUInt{2, UInt8}
     mr = rtp(modulus)
-    mtp = RRElemMontgomery{rtp, mr}
+    mtp = MgModUInt{rtp, mr}
 
     p = Polynomial(mtp.(coeffs), negacyclic)
     s = negacyclic ? -1 : 1
@@ -40,7 +40,7 @@ end
 
     rtp = MLUInt{2, UInt64}
     mr = rtp(modulus)
-    mtp = RRElemMontgomery{rtp, mr}
+    mtp = MgModUInt{rtp, mr}
 
     p1 = Polynomial(mtp.(p1_ref), true)
 
@@ -68,7 +68,7 @@ end
 
     rtp = MLUInt{2, UInt64}
     mr = convert(rtp, modulus)
-    mtp = RRElemMontgomery{rtp, mr}
+    mtp = MgModUInt{rtp, mr}
 
     p1 = Polynomial(mtp.(p1_ref), negacyclic)
     p2 = Polynomial(mtp.(p2_ref), negacyclic)
@@ -88,17 +88,17 @@ choice_types = [
     # regular multiplication
     UInt16,
     # modulus is not prime - Karatsuba multiplication
-    RRElemMontgomery{UInt8, UInt8(95)},
+    MgModUInt{UInt8, UInt8(95)},
     # modulus is prime, but modulus-1 is not a multiple of 2*32 - use Karatsuba
-    RRElemMontgomery{UInt8, UInt8(97)},
+    MgModUInt{UInt8, UInt8(97)},
     # modulus is prime, modulus-1 is a multiple of 2*32 - can use NTT for polynomials of size 64
-    RRElem{UInt8, UInt8(193)}
+    ModUInt{UInt8, UInt8(193)}
 ]
 
 
 @testcase "multiplication choice" for tp in choice_types, negacyclic in cyclicity
 
-    if tp <: AbstractRRElem
+    if tp <: AbstractModUInt
         max_val = Int(DarkIntegers.rr_modulus(tp))
     else
         max_val = 256
@@ -126,7 +126,7 @@ end
 
     rtp = UInt64
     mr = convert(rtp, modulus)
-    mtp = RRElemMontgomery{rtp, mr}
+    mtp = MgModUInt{rtp, mr}
 
     p1 = Polynomial(mtp.(p1_ref), negacyclic)
     p2 = Polynomial(mtp.(p2_ref), negacyclic)

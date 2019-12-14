@@ -4,7 +4,7 @@ based on the element type an polynomial length.
 """
 @inline @generated function _get_polynomial_mul_function(
         ::Type{T}, ::Val{N}, ::Val{NC}) where {T, N, NC}
-    if T <: AbstractRRElem
+    if T <: AbstractModUInt
         m = rr_modulus_simple(T)
         # Regular NTT needs (m - 1) to be a multiple of N,
         # tangent NTT (for negacyclic polynomials) needs it to be a multiple of 2N.
@@ -23,7 +23,7 @@ end
 """
 Polynomials modulo `x^n-1` (cyclic) or `x^n+1` (negacyclic).
 Supports any type that has arithmetic operators defined for it,
-including [`RRElem`](@ref) and [`RRElemMontgomery`](@ref).
+including [`ModUInt`](@ref) and [`MgModUInt`](@ref).
 
     Polynomial(coeffs::AbstractArray{T, 1}, negacyclic::Bool) where T
 

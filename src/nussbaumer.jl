@@ -23,7 +23,7 @@ struct NussbaumerScale{T <: Integer}
 
     function NussbaumerScale(tp::Type{<:Integer}, log_scale::Int)
         scale = 1 << log_scale
-        if tp <: AbstractRRElem
+        if tp <: AbstractModUInt
             # Assuming here that gcd(scale, modulus) == 1
             # Since scale is a power of 2, it is enough for the modulus to be odd.
             scale = invmod(scale, rr_modulus_simple(tp))

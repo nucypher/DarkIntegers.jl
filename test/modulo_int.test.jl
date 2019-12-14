@@ -13,23 +13,23 @@ using DarkIntegers: _verbatim, mulmod, mulmod_bitshift, mulmod_remhilo, mulmod_w
     # Check that even a value greater than the modulus is not modified
     # when no conversion is requested.
 
-    x = RRElem(val, modulus, _verbatim)
+    x = ModUInt(val, modulus, _verbatim)
     @test rr_value(x) == val
 
-    x = RRElem{T, modulus}(val, _verbatim)
+    x = ModUInt{T, modulus}(val, _verbatim)
     @test rr_value(x) == val
 
     # Check that a value greater than the modulus is converted correctly
 
-    x = RRElem{T, modulus}(val)
+    x = ModUInt{T, modulus}(val)
     @test rr_value(x) == mod(val, modulus)
 
     big_val = Int64(2^50)
-    x = RRElem{T, modulus}(big_val)
+    x = ModUInt{T, modulus}(big_val)
     @test rr_value(x) == convert(T, mod(big_val, modulus))
 
     big_val = Int64(-2^50)
-    x = RRElem{T, modulus}(big_val)
+    x = ModUInt{T, modulus}(big_val)
     @test rr_value(x) == convert(T, mod(big_val, modulus))
 
 end
@@ -39,7 +39,7 @@ end
     mp_tp = MLUInt{2, UInt8}
     modulus = convert(mp_tp, 177)
 
-    rr_tp = RRElem{mp_tp, modulus}
+    rr_tp = ModUInt{mp_tp, modulus}
 
     @test convert(rr_tp, convert(mp_tp, 1)) == rr_tp(1)
     @test convert(rr_tp, convert(MLUInt{3, UInt16}, 1)) == rr_tp(1)
@@ -51,8 +51,8 @@ end
 @testcase "promotion" begin
     T = MLUInt{2, UInt8}
     modulus = convert(T, 177)
-    x = RRElem{T, modulus}(convert(T, 100))
-    y = RRElem{T, modulus}(convert(T, 90))
+    x = ModUInt{T, modulus}(convert(T, 100))
+    y = ModUInt{T, modulus}(convert(T, 90))
 
     @test x + y == 13
     @test x + 1 == 101
@@ -72,7 +72,7 @@ end
 
     # check that big integers are processed correctly:
     # first the modulus is taken, and only then they are converted to the target unsigned type.
-    @test RRElem{T, modulus}(187) == 10
+    @test ModUInt{T, modulus}(187) == 10
 end
 
 
@@ -100,7 +100,7 @@ end
 
 @testcase "inv" for rng in fixed_rng
     modulus = UInt64(251)
-    tp = RRElem{UInt64, modulus}
+    tp = ModUInt{UInt64, modulus}
 
     for i in 1:100
         x = rand(rng, 1:250)

@@ -31,14 +31,14 @@ export MLUInt
 include("multi_limb_signed.jl")
 export MLInt
 
-include("residue_ring.jl")
-export RRElem
-export AbstractRRElem
+include("modulo_int.jl")
+export ModUInt
+export AbstractModUInt
 
 include("montgomery_reduction.jl")
 
-include("residue_ring_montgomery.jl")
-export RRElemMontgomery
+include("modulo_int_montgomery.jl")
+export MgModUInt
 
 include("polynomial.jl")
 export Polynomial

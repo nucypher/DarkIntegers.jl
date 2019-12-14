@@ -44,14 +44,14 @@ MLUint
 ## Residue ring elements
 
 ```@docs
-RRElem
+ModUInt
 ```
 
 
 ## Residue ring elements (Montgomery representation)
 
 ```@docs
-RRElemMontgomery
+MgModUInt
 ```
 
 

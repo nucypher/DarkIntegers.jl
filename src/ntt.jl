@@ -4,7 +4,7 @@ Finds a generator element for a finite field defined by type `T`
 This means that every power of the returned `g` from `1` to `M-1` produces
 all the elements of the field (integers from `1` to `M-1`), and `g^(M-1) = 1`.
 """
-function get_generator(::Type{T}) where T <: AbstractRRElem
+function get_generator(::Type{T}) where T <: AbstractModUInt
     modulus = rr_modulus_simple(T)
     factors = keys(factor(modulus - 1))
     for w in 2:modulus-1
@@ -30,7 +30,7 @@ Returns the root of one for NTT
 the returned value also has the property `w^N = 1`).
 `(M-1)` must be divisible by `N`, where `M` is the modulus of the type `T`.
 """
-function get_root_of_one(::Type{T}, N::Integer, inverse::Bool) where T <: AbstractRRElem
+function get_root_of_one(::Type{T}, N::Integer, inverse::Bool) where T <: AbstractModUInt
     m = rr_modulus_simple(T)
     if mod(m - 1, N) != 0
         error("(modulus - 1) must be divisible by the NTT length")
@@ -49,7 +49,7 @@ end
 Returns the scaling coefficient for the inverse NTT.
 Similarly to FFT, it's `1/N`, but in our case we need to take the finite field inverse.
 """
-function get_inverse_coeff(::Type{T}, N::Integer) where T <: AbstractRRElem
+function get_inverse_coeff(::Type{T}, N::Integer) where T <: AbstractModUInt
     # Can also be calculated as `N^(-1) mod M == (M - (M-1) ÷ N)`
     inv(convert(T, N))
 end
@@ -76,20 +76,20 @@ If `tangent` is `false`, the NTT can be used to multiply polynomials modulo `X^l
 if it is `true`, it can be used to multiply polynomials modulo `X^len+1` (negacyclic).
 """
 struct NTTPlan{T <: Unsigned, M}
-    inverse_coeff :: RRElemMontgomery{T, M}
-    forward_twiddle_coeffs :: Array{RRElemMontgomery{T, M}, 1}
-    inverse_twiddle_coeffs :: Array{RRElemMontgomery{T, M}, 1}
+    inverse_coeff :: MgModUInt{T, M}
+    forward_twiddle_coeffs :: Array{MgModUInt{T, M}, 1}
+    inverse_twiddle_coeffs :: Array{MgModUInt{T, M}, 1}
 
     function NTTPlan(::Type{T}, modulus::T, len::Int, tangent::Bool) where T
 
         #=
         We store coefficients in Montgomery representation regardless of the actual array type.
         Since Montgomery multiplication for `x` and `y` gives `x * y * R^(-1) mod M`,
-        it works both when `x` is an `RRElem` and `y` is an `RRElemMontgomery`,
-        and when `x` and `y` are `RRElemMontgomery`.
+        it works both when `x` is an `ModUInt` and `y` is an `MgModUInt`,
+        and when `x` and `y` are `MgModUInt`.
         This makes multiplication by coefficients faster.
         =#
-        coeffs_tp = RRElemMontgomery{T, modulus}
+        coeffs_tp = MgModUInt{T, modulus}
 
         if len < 2 || len & (len - 1) != 0
             error("len must be >=2 and a power of 2")
@@ -152,9 +152,9 @@ function _get_ntt_plan(::Type{T}, modulus::T, len::Int, tangent::Bool) where T
 end
 
 
-get_ntt_plan(::Type{RRElem{T, M}}, len::Int, tangent::Bool) where {T, M} =
+get_ntt_plan(::Type{ModUInt{T, M}}, len::Int, tangent::Bool) where {T, M} =
     _get_ntt_plan(T, M, len, tangent)
-get_ntt_plan(::Type{RRElemMontgomery{T, M}}, len::Int, tangent::Bool) where {T, M} =
+get_ntt_plan(::Type{MgModUInt{T, M}}, len::Int, tangent::Bool) where {T, M} =
     _get_ntt_plan(T, M, len, tangent)
 
 
@@ -168,7 +168,7 @@ the order of the elements in the result is not important, so we skip the rearran
 
 
 @Base.propagate_inbounds function ntt!(
-        plan::NTTPlan{T, M}, output::Array{V, 1}, res::Array{V, 1}) where {T, M, V <: AbstractRRElem{T, M}}
+        plan::NTTPlan{T, M}, output::Array{V, 1}, res::Array{V, 1}) where {T, M, V <: AbstractModUInt{T, M}}
 
     len = length(res)
     log_len = trailing_zeros(len)
@@ -195,7 +195,7 @@ end
 
 
 @Base.propagate_inbounds function intt!(
-        plan::NTTPlan{T, M}, output::Array{V, 1}, res::Array{V, 1}) where {T, M, V <: AbstractRRElem{T, M}}
+        plan::NTTPlan{T, M}, output::Array{V, 1}, res::Array{V, 1}) where {T, M, V <: AbstractModUInt{T, M}}
 
     len = length(res)
     log_len = trailing_zeros(len)
@@ -223,7 +223,7 @@ end
 end
 
 
-function ntt(data::Array{T, 1}; inverse::Bool=false, negacyclic::Bool=false) where T <: AbstractRRElem
+function ntt(data::Array{T, 1}; inverse::Bool=false, negacyclic::Bool=false) where T <: AbstractModUInt
     plan = get_ntt_plan(T, length(data), negacyclic)
     output = similar(data)
     if inverse

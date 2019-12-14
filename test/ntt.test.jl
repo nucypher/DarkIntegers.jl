@@ -1,10 +1,10 @@
-using DarkIntegers: AbstractRRElem, get_root_of_one, get_inverse_coeff, ntt
+using DarkIntegers: AbstractModUInt, get_root_of_one, get_inverse_coeff, ntt
 
 
 @testgroup "NTT" begin
 
 
-function reference_dft(a::Array{T}, inverse) where T <: AbstractRRElem
+function reference_dft(a::Array{T}, inverse) where T <: AbstractModUInt
     d = length(a)
     r = get_root_of_one(T, d, inverse)
 
@@ -25,7 +25,7 @@ function reference_dft(a::Array{T}, inverse) where T <: AbstractRRElem
 end
 
 
-@testcase "correctness" for tp in (UInt64, MLUInt{2, UInt32}), rr_tp in (RRElem, RRElemMontgomery)
+@testcase "correctness" for tp in (UInt64, MLUInt{2, UInt32}), rr_tp in (ModUInt, MgModUInt)
 
     len = 8
 
