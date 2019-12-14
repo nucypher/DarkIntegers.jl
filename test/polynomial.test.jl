@@ -99,7 +99,7 @@ choice_types = [
 @testcase "multiplication choice" for tp in choice_types, negacyclic in cyclicity
 
     if tp <: AbstractModUInt
-        max_val = Int(DarkIntegers.rr_modulus(tp))
+        max_val = convert(Int, modulus(tp))
     else
         max_val = 256
     end

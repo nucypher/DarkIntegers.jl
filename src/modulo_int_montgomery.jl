@@ -212,8 +212,7 @@ end
 end
 
 
-Base.string(x::MgModUInt{T, M}) where {T, M} =
-    string(rr_value(change_representation(ModUInt, x))) * "RRM"
+Base.string(x::MgModUInt{T, M}) where {T, M} = string(convert(T, x)) * "RRM"
 
 
 Base.show(io::IO, x::MgModUInt{T, M}) where {T, M} = print(io, string(x))

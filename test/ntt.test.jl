@@ -25,7 +25,7 @@ function reference_dft(a::Array{T}, inverse) where T <: AbstractModUInt
 end
 
 
-@testcase "correctness" for tp in (UInt64, MLUInt{2, UInt32}), rr_tp in (ModUInt, MgModUInt)
+@testcase "correctness" for tp in (UInt64, MLUInt{2, UInt32}), mod_tp in (ModUInt, MgModUInt)
 
     len = 8
 
@@ -34,7 +34,7 @@ end
 
     m_tp = convert(tp, m)
 
-    a_rr = rr_tp{tp, m_tp}.(a)
+    a_rr = mod_tp{tp, m_tp}.(a)
     af_ref = reference_dft(a_rr, false)
     a_back_ref = reference_dft(af_ref, true)
 

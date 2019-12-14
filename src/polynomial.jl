@@ -2,18 +2,19 @@
 Select the best available polynomial multiplication function
 based on the element type an polynomial length.
 """
-@inline @generated function _get_polynomial_mul_function(
+@inline function _get_polynomial_mul_function(
         ::Type{T}, ::Val{N}, ::Val{NC}) where {T, N, NC}
-    if T <: AbstractModUInt
-        m = rr_modulus_simple(T)
-        # Regular NTT needs (m - 1) to be a multiple of N,
-        # tangent NTT (for negacyclic polynomials) needs it to be a multiple of 2N.
-        factor = NC ? 2 * N : N
-        if rem(m - 1, factor) == 0 && isprime(m)
-            :( ntt_mul )
-        else
-            :( karatsuba_mul )
-        end
+    karatsuba_mul
+end
+
+@inline @generated function _get_polynomial_mul_function(
+        ::Type{T}, ::Val{N}, ::Val{NC}) where {T <: AbstractModUInt, N, NC}
+    m = modulus_as_builtin(T)
+    # Regular NTT needs (m - 1) to be a multiple of N,
+    # tangent NTT (for negacyclic polynomials) needs it to be a multiple of 2N.
+    factor = NC ? 2 * N : N
+    if rem(m - 1, factor) == 0 && isprime(m)
+        :( ntt_mul )
     else
         :( karatsuba_mul )
     end

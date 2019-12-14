@@ -1,28 +1,26 @@
-rr_value(x::ModUInt) = x.value
-rr_value(x::MgModUInt) = x.value
-
-rr_representation(::Type{ModUInt{T, M}}) where {T, M} = ModUInt
-rr_representation(::Type{MgModUInt{T, M}}) where {T, M} = MgModUInt
-
-rr_base_type(::Type{ModUInt{T, M}}) where {T, M} = T
-rr_base_type(::Type{MgModUInt{T, M}}) where {T, M} = T
-
-rr_modulus(::ModUInt{T, M}) where {T, M} = M
-rr_modulus(::MgModUInt{T, M}) where {T, M} = M
-rr_modulus(::Type{ModUInt{T, M}}) where {T, M} = M
-rr_modulus(::Type{MgModUInt{T, M}}) where {T, M} = M
+raw_value(x::ModUInt) = x.value
+raw_value(x::MgModUInt) = x.value
 
 
-function rr_value_simple(val::AbstractModUInt)
-    v = rr_value(val)
-    convert(encompassing_type(typeof(v)), v)
-end
+Base.eltype(::Type{ModUInt{T, M}}) where {T, M} = T
+Base.eltype(::Type{MgModUInt{T, M}}) where {T, M} = T
+Base.eltype(::T) where T <: AbstractModUInt = eltype(T)
 
 
-function rr_modulus_simple(tp::Type{<:AbstractModUInt})
-    m = rr_modulus(tp)
-    convert(encompassing_type(typeof(m)), m)
-end
+modulus(::Type{ModUInt{T, M}}) where {T, M} = M
+modulus(::Type{MgModUInt{T, M}}) where {T, M} = M
+modulus(::T) where T <: AbstractModUInt = modulus(T)
+
+
+raw_value_as_builtin(x::AbstractModUInt) = convert(encompassing_type(eltype(x)), raw_value(x))
+
+
+value_as_builtin(x::AbstractModUInt) = convert(encompassing_type(eltype(x)), convert(eltype(x), x))
+
+
+modulus_as_builtin(::Type{T}) where T <: AbstractModUInt =
+    convert(encompassing_type(eltype(T)), modulus(T))
+modulus_as_builtin(x::T) where T <: AbstractModUInt = modulus_as_builtin(T)
 
 
 """
@@ -48,7 +46,7 @@ Apply `change_modulus()` to every coefficient of the polynomial.
 @inline function change_modulus(
         new_modulus::Unsigned, p::Polynomial{T}) where T <: AbstractModUInt
     # Convert the modulus in advance so that it is not converted for each element separately
-    nm = convert(rr_base_type(T), new_modulus)
+    nm = convert(eltype(T), new_modulus)
     Polynomial(change_modulus.(nm, p.coeffs), p.negacyclic)
 end
 

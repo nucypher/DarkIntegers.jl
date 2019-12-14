@@ -1,5 +1,4 @@
 using DarkIntegers
-using DarkIntegers: _verbatim, rr_value
 
 
 @testgroup "residue ring elements, Montgomery representation" begin
@@ -14,15 +13,15 @@ using DarkIntegers: _verbatim, rr_value
     # when no conversion is requested.
 
     x = MgModUInt(val, modulus, _verbatim)
-    @test rr_value(x) == val
+    @test raw_value(x) == val
 
     x = MgModUInt{T, modulus}(val, _verbatim)
-    @test rr_value(x) == val
+    @test raw_value(x) == val
 
     # Check that a value greater than the modulus is converted correctly
 
     x = MgModUInt{T, modulus}(val)
-    @test rr_value(x) != val
+    @test convert(T, x) != val
     @test convert(T, x) == mod(val, modulus)
 
     big_val = Int64(2^50)
@@ -37,14 +36,14 @@ end
 
 @testcase "conversion" begin
     mp_tp = MLUInt{2, UInt8}
-    modulus = convert(mp_tp, 177)
+    m = convert(mp_tp, 177)
 
-    rr_tp = MgModUInt{mp_tp, modulus}
+    mod_tp = MgModUInt{mp_tp, m}
 
-    @test convert(rr_tp, convert(mp_tp, 1)) == rr_tp(1)
-    @test convert(rr_tp, convert(MLUInt{3, UInt16}, 1)) == rr_tp(1)
-    @test convert(rr_tp, convert(mp_tp, 1)) == rr_tp(1)
-    @test convert(Int, rr_tp(1)) == 1
+    @test convert(mod_tp, convert(mp_tp, 1)) == mod_tp(1)
+    @test convert(mod_tp, convert(MLUInt{3, UInt16}, 1)) == mod_tp(1)
+    @test convert(mod_tp, convert(mp_tp, 1)) == mod_tp(1)
+    @test convert(Int, mod_tp(1)) == 1
 end
 
 

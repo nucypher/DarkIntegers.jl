@@ -44,7 +44,13 @@ include("polynomial.jl")
 export Polynomial
 export shift_polynomial
 
-include("modification.jl")
+include("modulo_int_helpers.jl")
+export raw_value
+export raw_value_as_builtin
+export value_as_builtin
+export modulus
+export modulus_as_builtin
+
 export change_modulus
 export change_representation
 export change_base_type

@@ -5,13 +5,13 @@ This means that every power of the returned `g` from `1` to `M-1` produces
 all the elements of the field (integers from `1` to `M-1`), and `g^(M-1) = 1`.
 """
 function get_generator(::Type{T}) where T <: AbstractModUInt
-    modulus = rr_modulus_simple(T)
-    factors = keys(factor(modulus - 1))
-    for w in 2:modulus-1
+    m = modulus_as_builtin(T)
+    factors = keys(factor(m - 1))
+    for w in 2:m-1
         found = true
         gw = convert(T, w)
         for q in factors
-            if gw^(div(modulus - 1, q)) == one(T)
+            if gw^(div(m - 1, q)) == one(T)
                 found = false
                 break
             end
@@ -31,7 +31,7 @@ the returned value also has the property `w^N = 1`).
 `(M-1)` must be divisible by `N`, where `M` is the modulus of the type `T`.
 """
 function get_root_of_one(::Type{T}, N::Integer, inverse::Bool) where T <: AbstractModUInt
-    m = rr_modulus_simple(T)
+    m = modulus_as_builtin(T)
     if mod(m - 1, N) != 0
         error("(modulus - 1) must be divisible by the NTT length")
     end
