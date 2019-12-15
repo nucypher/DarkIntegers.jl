@@ -59,7 +59,7 @@ MgModUInt
 
 ```@docs
 Polynomial
-shift_polynomial
+mul_by_monomial
 ```
 
 ## Partial modification of residue ring elements and polynomials

@@ -161,31 +161,33 @@ end
 
 
 """
-    shift_polynomial(p::Polynomial, shift::Integer)
+    mul_by_monomial(p::Polynomial, power::Integer)
 
-Multiply the polynomial by `x^shift`. `shift` can be negative.
+Multiply the polynomial by `x^power`.
+If `power` lies outside `[0, 2 * N)` where `N-1` is the maximum degree of the polynomial,
+a modulo `2 * N` will be taken.
 """
-@Base.propagate_inbounds @inline function shift_polynomial(p::Polynomial, shift::Integer)
+@Base.propagate_inbounds @inline function mul_by_monomial(p::Polynomial, power::Integer)
 
     @assert isa(p.modulus, AbstractCyclicModulus)
 
-    if shift == 0
+    if power == 0
         p
     else
         n = length(p.coeffs)
-        cycle = isodd(fld(shift, n))
-        shift = mod(shift, n)
+        cycle = isodd(fld(power, n))
+        power = mod(power, n)
 
         shift_first = p.modulus == negacyclic_modulus && (!cycle)
         shift_last = p.modulus == negacyclic_modulus && cycle
 
         new_coeffs = similar(p.coeffs)
         coeffs = p.coeffs
-        for j in 1:shift
-            new_coeffs[j] = shift_first ? -coeffs[n-shift+j] : coeffs[n-shift+j]
+        for j in 1:power
+            new_coeffs[j] = shift_first ? -coeffs[n-power+j] : coeffs[n-power+j]
         end
-        for j in shift+1:n
-            new_coeffs[j] = shift_last ? -coeffs[j-shift] : coeffs[j-shift]
+        for j in power+1:n
+            new_coeffs[j] = shift_last ? -coeffs[j-power] : coeffs[j-power]
         end
 
         Polynomial(new_coeffs, p.modulus, p.mul_function)

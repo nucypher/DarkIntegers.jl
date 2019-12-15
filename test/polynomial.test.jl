@@ -7,7 +7,7 @@ using DarkIntegers: karatsuba_mul, ntt_mul, nussbaumer_mul
 cyclicity = ([false, true] => ["cyclic", "negacyclic"])
 
 
-@testcase "shift_polynomial()" for negacyclic in cyclicity
+@testcase "mul_by_monomial()" for negacyclic in cyclicity
 
     coeffs = 0:9
     m = 21
@@ -20,22 +20,22 @@ cyclicity = ([false, true] => ["cyclic", "negacyclic"])
     p = Polynomial(mtp.(coeffs), pm)
     s = negacyclic ? -1 : 1
 
-    @test shift_polynomial(p, 4) == Polynomial(mtp.([s .* (6:9); 0:5]), pm)
-    @test shift_polynomial(p, 10) == Polynomial(mtp.([s .* (0:9);]), pm)
-    @test shift_polynomial(p, 14) == Polynomial(mtp.([6:9; s .* (0:5)]), pm)
-    @test shift_polynomial(p, 20) == Polynomial(mtp.([0:9;]), pm)
-    @test shift_polynomial(p, 24) == Polynomial(mtp.([s .* (6:9); 0:5]), pm)
+    @test mul_by_monomial(p, 4) == Polynomial(mtp.([s .* (6:9); 0:5]), pm)
+    @test mul_by_monomial(p, 10) == Polynomial(mtp.([s .* (0:9);]), pm)
+    @test mul_by_monomial(p, 14) == Polynomial(mtp.([6:9; s .* (0:5)]), pm)
+    @test mul_by_monomial(p, 20) == Polynomial(mtp.([0:9;]), pm)
+    @test mul_by_monomial(p, 24) == Polynomial(mtp.([s .* (6:9); 0:5]), pm)
 
-    @test shift_polynomial(p, -4) == Polynomial(mtp.([4:9; s .* (0:3)]), pm)
-    @test shift_polynomial(p, -10) == Polynomial(mtp.([s .* (0:9);]), pm)
-    @test shift_polynomial(p, -14) == Polynomial(mtp.([s .* (4:9); 0:3]), pm)
-    @test shift_polynomial(p, -20) == Polynomial(mtp.([0:9;]), pm)
-    @test shift_polynomial(p, -24) == Polynomial(mtp.([4:9; s .* (0:3)]), pm)
+    @test mul_by_monomial(p, -4) == Polynomial(mtp.([4:9; s .* (0:3)]), pm)
+    @test mul_by_monomial(p, -10) == Polynomial(mtp.([s .* (0:9);]), pm)
+    @test mul_by_monomial(p, -14) == Polynomial(mtp.([s .* (4:9); 0:3]), pm)
+    @test mul_by_monomial(p, -20) == Polynomial(mtp.([0:9;]), pm)
+    @test mul_by_monomial(p, -24) == Polynomial(mtp.([4:9; s .* (0:3)]), pm)
 
 end
 
 
-@testcase tags=[:performance] "shift_polynomial(), performance" begin
+@testcase tags=[:performance] "mul_by_monomial(), performance" begin
 
     m = BigInt(1) << 80 + 1
     p1_ref = BigInt.(rand(UInt128, 64)) .% m
@@ -46,7 +46,7 @@ end
 
     p1 = Polynomial(mtp.(p1_ref), true)
 
-    trial = @benchmark shift_polynomial($p1, 123)
+    trial = @benchmark mul_by_monomial($p1, 123)
     @test_result benchmark_result(trial)
 
 end
@@ -55,7 +55,7 @@ end
 function reference_mul(p1::Polynomial{T, N}, p2::Polynomial{T, N}) where {T, N}
     res = Polynomial(zeros(T, length(p1)), p1.modulus, p1.mul_function)
     for (j, c) in enumerate(p1.coeffs)
-        res = res + shift_polynomial(p2, j - 1) * c
+        res = res + mul_by_monomial(p2, j - 1) * c
     end
     res
 end

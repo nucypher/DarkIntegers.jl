@@ -125,10 +125,10 @@ Polynomial{Int64}([2, 2, 3, 4], true, DarkIntegers.karatsuba_mul)
 Polynomial{Int64}([2, 4, 6, 8], true, DarkIntegers.karatsuba_mul)
 ```
 
-The polynomial can be multiplied by a power of `x` using [`shift_polynomial`](@ref).
+The polynomial can be multiplied by a power of `x` using [`mul_by_monomial`](@ref).
 Since the polynomial we created is cyclic, the coefficients with the powers greater or equal to `n` will reappear from the other side with the opposite sign (one can work it out by applying the `x^n+1` modulus manually):
 ```jldoctest polynomial-basics
-println(shift_polynomial(p, 2))
+println(mul_by_monomial(p, 2))
 
 # output
 Polynomial{Int64}([-3, -4, 1, 2], true, DarkIntegers.karatsuba_mul)

@@ -43,7 +43,7 @@ export MgModUInt
 include("polynomial.jl")
 export Polynomial
 export ZeroPolynomial
-export shift_polynomial
+export mul_by_monomial
 export cyclic_modulus
 export negacyclic_modulus
 
