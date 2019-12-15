@@ -50,7 +50,7 @@ end
 end
 
 
-function reference_mul(p1::Polynomial{T}, p2::Polynomial{T}) where T
+function reference_mul(p1::Polynomial{T, N}, p2::Polynomial{T, N}) where {T, N}
     res = Polynomial(zeros(T, length(p1)), p1.negacyclic, p1.mul_function)
     for (j, c) in enumerate(p1.coeffs)
         res = res + shift_polynomial(p2, j - 1) * c

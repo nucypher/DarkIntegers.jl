@@ -31,23 +31,19 @@ including [`ModUInt`](@ref) and [`MgModUInt`](@ref).
 Create a polynomial given the array of coefficients
 (the `i`-th coefficient corresponds to the `(i-1)`-th power).
 """
-struct Polynomial{T}
+struct Polynomial{T, N}
     coeffs :: Array{T, 1}
     negacyclic :: Bool
     mul_function :: Function
 
+    @inline function Polynomial(coeffs::Array{T, 1}, negacyclic::Bool, mul_function) where T
+        new{T, length(coeffs)}(coeffs, negacyclic, mul_function)
+    end
+
     @inline function Polynomial(coeffs::Array{T, 1}, negacyclic::Bool) where T
         len = length(coeffs)
         mul_function = _get_polynomial_mul_function(T, Val(len), Val(negacyclic))
-        new{T}(coeffs, negacyclic, mul_function)
-    end
-
-    @inline function Polynomial{T}(coeffs::Array{V, 1}, negacyclic::Bool) where {T, V}
-        Polynomial(convert.(T, coeffs), negacyclic)
-    end
-
-    @inline function Polynomial(coeffs::Array{T, 1}, negacyclic::Bool, mul_function) where T
-        new{T}(coeffs, negacyclic, mul_function)
+        Polynomial(coeffs, negacyclic, mul_function)
     end
 end
 
@@ -55,45 +51,47 @@ end
 # Required for broadcasting
 
 
-Base.length(x::Polynomial{T}) where T = 1
+Base.length(x::Polynomial) = 1
 
 
-Base.iterate(x::Polynomial{T}) where T = (x, nothing)
-Base.iterate(x::Polynomial{T}, state) where T = nothing
+Base.iterate(x::Polynomial) = (x, nothing)
+Base.iterate(x::Polynomial, state) = nothing
 
 
 # It has to match a polynomial with any size and modulus,
 # So it can't be a `Polynomial` object.
-struct ZeroPolynomial
+struct ZeroPolynomial{T, N}
 end
 
 
-@inline Base.zero(::Polynomial{T}) where T = ZeroPolynomial()
+@inline Base.zero(::Polynomial{T, N}) where {T, N} = ZeroPolynomial{T, N}()
 
 
-@inline function Base.:(==)(p1::Polynomial{T}, p2::Polynomial{T}) where T
+@inline function Base.:(==)(p1::Polynomial{T, N}, p2::Polynomial{T, N}) where {T, N}
     p1.negacyclic == p2.negacyclic && p1.coeffs == p2.coeffs
 end
 
 
-@inline function Base.:*(p1::Polynomial{T}, p2::Polynomial{T}) where T
+@inline function Base.:*(p1::Polynomial{T, N}, p2::Polynomial{T, N}) where {T, N}
     @assert p1.negacyclic == p2.negacyclic && length(p1.coeffs) == length(p2.coeffs)
     p1.mul_function(p1, p2)
 end
 
-@inline Base.:*(p1::Polynomial, p2::ZeroPolynomial) = ZeroPolynomial()
-@inline Base.:*(p1::ZeroPolynomial, p2::Polynomial) = ZeroPolynomial()
+@inline Base.:*(p1::Polynomial{T, N}, p2::ZeroPolynomial{T, N}) where {T, N} =
+    ZeroPolynomial{T, N}()
+@inline Base.:*(p1::ZeroPolynomial{T, N}, p2::Polynomial{T, N}) where {T, N} =
+    ZeroPolynomial{T, N}()
 
 
-@inline Base.:+(p1::Polynomial, p2::ZeroPolynomial) = p1
-@inline Base.:+(p1::ZeroPolynomial, p2::Polynomial) = p2
+@inline Base.:+(p1::Polynomial{T, N}, p2::ZeroPolynomial{T, N}) where {T, N} = p1
+@inline Base.:+(p1::ZeroPolynomial{T, N}, p2::Polynomial{T, N}) where {T, N} = p2
 
 
-@inline function Base.:*(p1::Polynomial{T}, p2::Integer) where T
+@inline function Base.:*(p1::Polynomial{T, N}, p2::Integer) where {T, N}
     Polynomial(p1.coeffs .* convert(T, p2), p1.negacyclic, p1.mul_function)
 end
 
-@inline function Base.:*(p1::Polynomial{T}, p2::V) where T where V
+@inline function Base.:*(p1::Polynomial{T, N}, p2::V) where {T, N, V}
     Polynomial(p1.coeffs .* convert(T, p2), p1.negacyclic, p1.mul_function)
 end
 
@@ -102,49 +100,50 @@ end
     p2 * p1
 end
 
-@inline function Base.:*(p1::Polynomial{T}, p2::T) where T
+@inline function Base.:*(p1::Polynomial{T, N}, p2::T) where {T, N}
     Polynomial(p1.coeffs .* p2, p1.negacyclic, p1.mul_function)
 end
 
 
-@inline function Base.div(p1::Polynomial{T}, p2::Integer) where T
+@inline function Base.div(p1::Polynomial{T, N}, p2::Integer) where {T, N}
    Polynomial(div.(p1.coeffs, p2), p1.negacyclic, p1.mul_function)
 end
 
 
-@inline function Base.:+(p1::Polynomial{T}, p2::Polynomial{T}) where T
+@inline function Base.:+(p1::Polynomial{T, N}, p2::Polynomial{T}) where {T, N}
     Polynomial(p1.coeffs .+ p2.coeffs, p1.negacyclic, p1.mul_function)
 end
 
-@inline function Base.:+(p1::Polynomial{T}, p2::T) where T
+@inline function Base.:+(p1::Polynomial{T, N}, p2::T) where {T, N}
     coeffs = copy(p1.coeffs)
     coeffs[1] += p2
     Polynomial(coeffs, p1.negacyclic, p1.mul_function)
 end
 
 
-@inline function Base.:-(p1::Polynomial{T}, p2::Polynomial{T}) where T
+@inline function Base.:-(p1::Polynomial{T, N}, p2::Polynomial{T, N}) where {T, N}
     Polynomial(p1.coeffs .- p2.coeffs, p1.negacyclic, p1.mul_function)
 end
 
-@inline function Base.:-(p1::Polynomial{T}, p2::Unsigned) where T
+@inline function Base.:-(p1::Polynomial{T, N}, p2::Unsigned) where {T, N}
     Polynomial(p1.coeffs .- convert(T, p2), p1.negacyclic, p1.mul_function)
 end
 
-@inline function Base.:-(p1::Polynomial{T}) where T
+@inline function Base.:-(p1::Polynomial{T, N}) where {T, N}
     Polynomial(.-p1.coeffs, p1.negacyclic, p1.mul_function)
 end
 
-@inline Base.:-(p1::Polynomial, p2::ZeroPolynomial) = p1
+@inline Base.:-(p1::Polynomial{T, N}, p2::ZeroPolynomial{T, N}) where {T, N} = p1
+
+@inline Base.:-(p1::ZeroPolynomial{T, N}, p2::Polynomial{T, N}) where {T, N} = -p2
 
 
 """
-    shift_polynomial(p::Polynomial{T}, shift::Integer) where T
+    shift_polynomial(p::Polynomial, shift::Integer)
 
 Multiply the polynomial by `x^shift`. `shift` can be negative.
 """
-@Base.propagate_inbounds @inline function shift_polynomial(
-        p::Polynomial{T}, shift::Integer) where T
+@Base.propagate_inbounds @inline function shift_polynomial(p::Polynomial, shift::Integer)
 
     if shift == 0
         p
@@ -245,10 +244,10 @@ Multiplies two polynomials using Karatsuba algorithm.
 Assumes the polynomials have the same length and the same value of the `negacyclic` field.
 """
 @Base.propagate_inbounds @inline function karatsuba_mul(
-        p1::Polynomial{T}, p2::Polynomial{T}) where T
+        p1::Polynomial{T, N}, p2::Polynomial{T, N}) where {T, N}
 
-    full_len = length(p1.coeffs)
-    half_len = div(length(p1.coeffs), 2)
+    full_len = N
+    half_len = N ÷ 2
 
     z = zero(T)
     r0 = similar(p1.coeffs)
@@ -300,8 +299,8 @@ end
 Multiplies two polynomials using NTT.
 Assumes the polynomials have the same length and the same value of the `negacyclic` field.
 """
-@inline function ntt_mul(p1::Polynomial{T}, p2::Polynomial{T}) where T
-    plan = get_ntt_plan(T, length(p1.coeffs), p1.negacyclic)
+@inline function ntt_mul(p1::Polynomial{T, N}, p2::Polynomial{T, N}) where {T, N}
+    plan = get_ntt_plan(T, N, p1.negacyclic)
     c1 = similar(p1.coeffs)
     ntt!(plan, c1, p1.coeffs)
     c2 = similar(p2.coeffs)
@@ -317,7 +316,7 @@ Multiplies two polynomials using Nussbaumer convolution algorithm.
 Assumes the polynomials have the same length and the same value of the `negacyclic` field.
 """
 @Base.propagate_inbounds @inline function nussbaumer_mul(
-        p1::Polynomial{T}, p2::Polynomial{T}) where T
+        p1::Polynomial{T, N}, p2::Polynomial{T, N}) where {T, N}
     if p1.negacyclic
         res = nussbaumer_mul_negacyclic(p1.coeffs, p2.coeffs, true)
     else
