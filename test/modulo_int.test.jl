@@ -7,30 +7,30 @@ using DarkIntegers: _verbatim, mulmod, mulmod_bitshift, mulmod_remhilo, mulmod_w
 
 @testcase "construction" begin
     T = UInt16
-    modulus = convert(T, 177)
+    m = convert(T, 177)
     val = convert(T, 200)
 
     # Check that even a value greater than the modulus is not modified
     # when no conversion is requested.
 
-    x = ModUInt(val, modulus, _verbatim)
+    x = ModUInt(val, m, _verbatim)
     @test convert(T, x) == val
 
-    x = ModUInt{T, modulus}(val, _verbatim)
+    x = ModUInt{T, m}(val, _verbatim)
     @test convert(T, x) == val
 
     # Check that a value greater than the modulus is converted correctly
 
-    x = ModUInt{T, modulus}(val)
-    @test convert(T, x) == mod(val, modulus)
+    x = ModUInt{T, m}(val)
+    @test convert(T, x) == mod(val, m)
 
     big_val = Int64(2^50)
-    x = ModUInt{T, modulus}(big_val)
-    @test convert(T, x) == convert(T, mod(big_val, modulus))
+    x = ModUInt{T, m}(big_val)
+    @test convert(T, x) == convert(T, mod(big_val, m))
 
     big_val = Int64(-2^50)
-    x = ModUInt{T, modulus}(big_val)
-    @test convert(T, x) == convert(T, mod(big_val, modulus))
+    x = ModUInt{T, m}(big_val)
+    @test convert(T, x) == convert(T, mod(big_val, m))
 
 end
 

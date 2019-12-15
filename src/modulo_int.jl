@@ -19,21 +19,21 @@ Note that the division is a regular division, not multiplication by the inverse
 
 Creates an `ModUInt` object. `M` must have the type `T`.
 """
-struct ModUInt{T, M} <: AbstractModUInt{T, M}
+struct ModUInt{T <: Unsigned, M} <: AbstractModUInt{T, M}
     value :: T
 
     # This is the only method using `new` to ensure `M` has the type `T`
     # (since we cannot enforce it with Julia syntax)
-    @inline function ModUInt(x::T, m::T, ::_Verbatim) where T <: Unsigned
+    @inline function ModUInt(x::T, m::T, ::_Verbatim) where T
         new{T, m}(x)
     end
 
-    @inline function ModUInt{T, M}(x::T, ::_Verbatim) where {T <: Unsigned, M}
-        new{T, M}(x)
+    @inline function ModUInt{T, M}(x::T, ::_Verbatim) where {T, M}
+        ModUInt(x, M, _verbatim)
     end
 
-    @inline function ModUInt{T, M}(x::Integer) where {T <: Unsigned, M}
-        ModUInt{T, M}(convert(T, mod(x, M)), _verbatim)
+    @inline function ModUInt{T, M}(x::Integer) where {T, M}
+        ModUInt(convert(T, mod(x, M)), M, _verbatim)
     end
 end
 

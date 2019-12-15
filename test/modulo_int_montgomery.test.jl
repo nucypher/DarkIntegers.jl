@@ -6,31 +6,31 @@ using DarkIntegers
 
 @testcase "construction" begin
     T = UInt16
-    modulus = T(177)
+    m = T(177)
     val = T(200)
 
     # Check that even a value greater than the modulus is not modified
     # when no conversion is requested.
 
-    x = MgModUInt(val, modulus, _verbatim)
+    x = MgModUInt(val, m, _verbatim)
     @test raw_value(x) == val
 
-    x = MgModUInt{T, modulus}(val, _verbatim)
+    x = MgModUInt{T, m}(val, _verbatim)
     @test raw_value(x) == val
 
     # Check that a value greater than the modulus is converted correctly
 
-    x = MgModUInt{T, modulus}(val)
+    x = MgModUInt{T, m}(val)
     @test convert(T, x) != val
-    @test convert(T, x) == mod(val, modulus)
+    @test convert(T, x) == mod(val, m)
 
     big_val = Int64(2^50)
-    x = MgModUInt{T, modulus}(big_val)
-    @test convert(T, x) == mod(big_val, modulus)
+    x = MgModUInt{T, m}(big_val)
+    @test convert(T, x) == mod(big_val, m)
 
     big_val = Int64(-2^50)
-    x = MgModUInt{T, modulus}(big_val)
-    @test convert(T, x) == mod(big_val, modulus)
+    x = MgModUInt{T, m}(big_val)
+    @test convert(T, x) == mod(big_val, m)
 end
 
 

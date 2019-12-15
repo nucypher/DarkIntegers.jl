@@ -18,25 +18,25 @@ Note that the division is a regular division, not multiplication by the inverse
 
 Creates an `MgModUInt` object. `M` must have the type `T` and be an odd number.
 """
-struct MgModUInt{T, M} <: AbstractModUInt{T, M}
+struct MgModUInt{T <: Unsigned, M} <: AbstractModUInt{T, M}
 
     value :: T
 
     # This is the only method using `new` to ensure `M` has the type `T`
     # (since we cannot enforce it with Julia syntax)
-    @inline function MgModUInt(x::T, m::T, ::_Verbatim) where T <: Unsigned
+    @inline function MgModUInt(x::T, m::T, ::_Verbatim) where T
         new{T, m}(x)
     end
 
-    @inline function MgModUInt{T, M}(x::T, ::_Verbatim) where {T <: Unsigned, M}
-        new{T, M}(x)
+    @inline function MgModUInt{T, M}(x::T, ::_Verbatim) where {T, M}
+        MgModUInt(x, M, _verbatim)
     end
 
-    @inline function MgModUInt{T, M}(x::T, ::_NoModulo) where {T <: Unsigned, M}
-        MgModUInt{T, M}(to_montgomery(MgModUInt{T, M}, x), _verbatim)
+    @inline function MgModUInt{T, M}(x::T, ::_NoModulo) where {T, M}
+        MgModUInt(to_montgomery(MgModUInt{T, M}, x), M, _verbatim)
     end
 
-    @inline function MgModUInt{T, M}(x::Integer) where {T <: Unsigned, M}
+    @inline function MgModUInt{T, M}(x::Integer) where {T, M}
         # Need to take the modulus before converting `x` to `T`,
         # in case `x` does not fit in `T`.
         MgModUInt{T, M}(convert(T, mod(x, M)), _no_modulo)
