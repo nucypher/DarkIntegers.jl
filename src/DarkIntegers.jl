@@ -42,7 +42,10 @@ export MgModUInt
 
 include("polynomial.jl")
 export Polynomial
+export ZeroPolynomial
 export shift_polynomial
+export cyclic_modulus
+export negacyclic_modulus
 
 include("modulo_int_helpers.jl")
 export raw_value

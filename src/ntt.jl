@@ -33,7 +33,7 @@ the returned value also has the property `w^N = 1`).
 function get_root_of_one(::Type{T}, N::Integer, inverse::Bool) where T <: AbstractModUInt
     m = modulus_as_builtin(T)
     if mod(m - 1, N) != 0
-        error("(modulus - 1) must be divisible by the NTT length")
+        error("(modulus - 1)=$(m-1) must be divisible by the NTT length ($N)")
     end
     g = get_generator(T) # g^(modulus(T) - 1) = 1
     w = g^div(m - 1, N)

@@ -1,4 +1,4 @@
-using DarkIntegers: shift_polynomial, karatsuba_mul, ntt_mul, nussbaumer_mul
+using DarkIntegers: karatsuba_mul, ntt_mul, nussbaumer_mul
 
 
 @testgroup "polynomials" begin
@@ -10,36 +10,38 @@ cyclicity = ([false, true] => ["cyclic", "negacyclic"])
 @testcase "shift_polynomial()" for negacyclic in cyclicity
 
     coeffs = 0:9
-    modulus = 21
+    m = 21
     rtp = UInt8 # MLUInt{2, UInt8}
-    mr = rtp(modulus)
+    mr = rtp(m)
     mtp = MgModUInt{rtp, mr}
 
-    p = Polynomial(mtp.(coeffs), negacyclic)
+    pm = negacyclic ? negacyclic_modulus : cyclic_modulus
+
+    p = Polynomial(mtp.(coeffs), pm)
     s = negacyclic ? -1 : 1
 
-    @test shift_polynomial(p, 4) == Polynomial(mtp.([s .* (6:9); 0:5]), negacyclic)
-    @test shift_polynomial(p, 10) == Polynomial(mtp.([s .* (0:9);]), negacyclic)
-    @test shift_polynomial(p, 14) == Polynomial(mtp.([6:9; s .* (0:5)]), negacyclic)
-    @test shift_polynomial(p, 20) == Polynomial(mtp.([0:9;]), negacyclic)
-    @test shift_polynomial(p, 24) == Polynomial(mtp.([s .* (6:9); 0:5]), negacyclic)
+    @test shift_polynomial(p, 4) == Polynomial(mtp.([s .* (6:9); 0:5]), pm)
+    @test shift_polynomial(p, 10) == Polynomial(mtp.([s .* (0:9);]), pm)
+    @test shift_polynomial(p, 14) == Polynomial(mtp.([6:9; s .* (0:5)]), pm)
+    @test shift_polynomial(p, 20) == Polynomial(mtp.([0:9;]), pm)
+    @test shift_polynomial(p, 24) == Polynomial(mtp.([s .* (6:9); 0:5]), pm)
 
-    @test shift_polynomial(p, -4) == Polynomial(mtp.([4:9; s .* (0:3)]), negacyclic)
-    @test shift_polynomial(p, -10) == Polynomial(mtp.([s .* (0:9);]), negacyclic)
-    @test shift_polynomial(p, -14) == Polynomial(mtp.([s .* (4:9); 0:3]), negacyclic)
-    @test shift_polynomial(p, -20) == Polynomial(mtp.([0:9;]), negacyclic)
-    @test shift_polynomial(p, -24) == Polynomial(mtp.([4:9; s .* (0:3)]), negacyclic)
+    @test shift_polynomial(p, -4) == Polynomial(mtp.([4:9; s .* (0:3)]), pm)
+    @test shift_polynomial(p, -10) == Polynomial(mtp.([s .* (0:9);]), pm)
+    @test shift_polynomial(p, -14) == Polynomial(mtp.([s .* (4:9); 0:3]), pm)
+    @test shift_polynomial(p, -20) == Polynomial(mtp.([0:9;]), pm)
+    @test shift_polynomial(p, -24) == Polynomial(mtp.([4:9; s .* (0:3)]), pm)
 
 end
 
 
 @testcase tags=[:performance] "shift_polynomial(), performance" begin
 
-    modulus = BigInt(1) << 80 + 1
-    p1_ref = BigInt.(rand(UInt128, 64)) .% modulus
+    m = BigInt(1) << 80 + 1
+    p1_ref = BigInt.(rand(UInt128, 64)) .% m
 
     rtp = MLUInt{2, UInt64}
-    mr = rtp(modulus)
+    mr = rtp(m)
     mtp = MgModUInt{rtp, mr}
 
     p1 = Polynomial(mtp.(p1_ref), true)
@@ -51,7 +53,7 @@ end
 
 
 function reference_mul(p1::Polynomial{T, N}, p2::Polynomial{T, N}) where {T, N}
-    res = Polynomial(zeros(T, length(p1)), p1.negacyclic, p1.mul_function)
+    res = Polynomial(zeros(T, length(p1)), p1.modulus, p1.mul_function)
     for (j, c) in enumerate(p1.coeffs)
         res = res + shift_polynomial(p2, j - 1) * c
     end
@@ -62,16 +64,17 @@ end
 @testcase "multiplication" for negacyclic in cyclicity
 
     # A prime slightly greater than 2^80, and (modulus - 1) is a multiple of 64 (required for NTT)
-    modulus = BigInt(1440321777275241790996481)
-    p1_ref = BigInt.(rand(UInt128, 64)) .% modulus
-    p2_ref = BigInt.(rand(UInt128, 64)) .% modulus
+    m = BigInt(1440321777275241790996481)
+    p1_ref = BigInt.(rand(UInt128, 64)) .% m
+    p2_ref = BigInt.(rand(UInt128, 64)) .% m
 
     rtp = MLUInt{2, UInt64}
-    mr = convert(rtp, modulus)
+    mr = convert(rtp, m)
     mtp = MgModUInt{rtp, mr}
 
-    p1 = Polynomial(mtp.(p1_ref), negacyclic)
-    p2 = Polynomial(mtp.(p2_ref), negacyclic)
+    pm = negacyclic ? negacyclic_modulus : cyclic_modulus
+    p1 = Polynomial(mtp.(p1_ref), pm)
+    p2 = Polynomial(mtp.(p2_ref), pm)
 
     ref = reference_mul(p1, p2)
     test1 = karatsuba_mul(p1, p2)
@@ -105,8 +108,9 @@ choice_types = [
     end
 
     len = 32
-    p1 = Polynomial(tp.(mod.(rand(Int, len), max_val)), negacyclic)
-    p2 = Polynomial(tp.(mod.(rand(Int, len), max_val)), negacyclic)
+    pm = negacyclic ? negacyclic_modulus : cyclic_modulus
+    p1 = Polynomial(tp.(mod.(rand(Int, len), max_val)), pm)
+    p2 = Polynomial(tp.(mod.(rand(Int, len), max_val)), pm)
 
     p = p1 * p2
     ref = reference_mul(p1, p2)
@@ -117,19 +121,20 @@ end
 
 @testcase tags=[:performance] "multiplication, performance" begin
 
-    negacyclic = true
+    pm = negacyclic_modulus
+
     # A prime slightly greater than 2^59, and (modulus - 1) is a multiple of 2^17
     # (required for NTT with sizes up to 2^16 to work)
-    modulus = BigInt(576460752308273153)
-    p1_ref = BigInt.(rand(UInt64, 512)) .% modulus
-    p2_ref = BigInt.(rand(UInt64, 512)) .% modulus
+    m = BigInt(576460752308273153)
+    p1_ref = BigInt.(rand(UInt64, 512)) .% m
+    p2_ref = BigInt.(rand(UInt64, 512)) .% m
 
     rtp = UInt64
-    mr = convert(rtp, modulus)
+    mr = convert(rtp, m)
     mtp = MgModUInt{rtp, mr}
 
-    p1 = Polynomial(mtp.(p1_ref), negacyclic)
-    p2 = Polynomial(mtp.(p2_ref), negacyclic)
+    p1 = Polynomial(mtp.(p1_ref), pm)
+    p2 = Polynomial(mtp.(p2_ref), pm)
 
     trial = @benchmark karatsuba_mul($p1, $p2)
     @test_result "Karatsuba: " * benchmark_result(trial)
