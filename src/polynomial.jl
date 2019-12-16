@@ -18,6 +18,9 @@ struct CyclicModulus <: AbstractCyclicModulus end
 const cyclic_modulus = CyclicModulus()
 
 
+known_isprime(::Val{X}) where X = isprime(convert(encompassing_type(X), X))
+
+
 """
 Select the best available polynomial multiplication function
 based on the element type an polynomial length.
@@ -27,16 +30,29 @@ based on the element type an polynomial length.
     karatsuba_mul
 end
 
-@inline @generated function _get_polynomial_mul_function(
+# Ideally it should have been a @generated function,
+# but in this case it does not pick up user-defined `known_isprime()` methods.
+@inline function _get_polynomial_mul_function(
         ::Type{T}, ::Val{N}, pm::AbstractCyclicModulus) where {T <: AbstractModUInt, N}
-    m = modulus_as_builtin(T)
+    m = modulus(T)
+    tp = eltype(T)
     # Regular NTT needs (m - 1) to be a multiple of N,
     # tangent NTT (for negacyclic polynomials) needs it to be a multiple of 2N.
-    factor = pm == NegacyclicModulus ? 2 * N : N
-    if rem(m - 1, factor) == 0 && isprime(m)
-        :( ntt_mul )
+    factor = pm == NegacyclicModulus() ? double(N) : N
+
+    # Often `factor` will be a power of 2, in which case we can make the remainder check faster
+    log2_factor = trailing_zeros(factor)
+    m_minus_one = m - one(tp)
+    if factor == 1 << log2_factor
+        no_rem = iszero(m_minus_one & ((one(tp) << log2_factor) - one(tp)))
     else
-        :( karatsuba_mul )
+        no_rem = iszero(rem(m_minus_one, factor))
+    end
+
+    if no_rem && known_isprime(Val(m))
+        ntt_mul
+    else
+        karatsuba_mul
     end
 end
 

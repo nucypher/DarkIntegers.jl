@@ -1,6 +1,16 @@
 using DarkIntegers: karatsuba_mul, ntt_mul, nussbaumer_mul
 
 
+_known_isprime_called = 0
+
+
+function DarkIntegers.known_isprime(::Val{UInt64(257)})
+    global _known_isprime_called
+    _known_isprime_called += 1
+    true
+end
+
+
 @testgroup "polynomials" begin
 
 
@@ -181,6 +191,17 @@ end
     p2 .= p3
     @test eltype(p2) == Int
     @test p2.mul_function == DarkIntegers.karatsuba_mul
+end
+
+
+@testcase "known_isprime()" begin
+    tp = ModUInt{UInt64, UInt64(257)}
+    coeffs = tp[1, 0, 0, 0]
+    c1 = _known_isprime_called
+    p = Polynomial(coeffs, negacyclic_modulus)
+    c2 = _known_isprime_called
+    @test c2 - c1 == 1
+    @test p.mul_function == DarkIntegers.ntt_mul
 end
 
 

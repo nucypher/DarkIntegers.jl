@@ -46,6 +46,7 @@ export ZeroPolynomial
 export mul_by_monomial
 export cyclic_modulus
 export negacyclic_modulus
+export known_isprime
 
 include("modulo_int_helpers.jl")
 export raw_value
