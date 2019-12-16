@@ -70,7 +70,7 @@ struct Polynomial{T, N} <: AbstractArray{T, 1}
 end
 
 
-# It has to match a polynomial with any size and modulus,
+# It has to match a polynomial with any modulus,
 # So it can't be a `Polynomial` object.
 struct ZeroPolynomial{T, N}
 end
@@ -91,13 +91,9 @@ end
 
 @inline Base.:*(p1::Polynomial{T, N}, p2::ZeroPolynomial{T, N}) where {T, N} =
     ZeroPolynomial{T, N}()
+
 @inline Base.:*(p1::ZeroPolynomial{T, N}, p2::Polynomial{T, N}) where {T, N} =
     ZeroPolynomial{T, N}()
-
-
-@inline Base.:+(p1::Polynomial{T, N}, p2::ZeroPolynomial{T, N}) where {T, N} = p1
-@inline Base.:+(p1::ZeroPolynomial{T, N}, p2::Polynomial{T, N}) where {T, N} = p2
-
 
 @inline function Base.:*(p1::Polynomial{T, N}, p2::Integer) where {T, N}
     Polynomial(p1.coeffs .* convert(T, p2), p1.modulus, p1.mul_function)
@@ -106,7 +102,6 @@ end
 @inline function Base.:*(p1::Polynomial{T, N}, p2::V) where {T, N, V}
     Polynomial(p1.coeffs .* convert(T, p2), p1.modulus, p1.mul_function)
 end
-
 
 @inline function Base.:*(p1::Integer, p2::Polynomial)
     p2 * p1
@@ -131,6 +126,10 @@ end
     coeffs[1] += p2
     Polynomial(coeffs, p1.modulus, p1.mul_function)
 end
+
+@inline Base.:+(p1::Polynomial{T, N}, p2::ZeroPolynomial{T, N}) where {T, N} = p1
+
+@inline Base.:+(p1::ZeroPolynomial{T, N}, p2::Polynomial{T, N}) where {T, N} = p2
 
 
 @inline function Base.:-(p1::Polynomial{T, N}, p2::Polynomial{T, N}) where {T, N}
