@@ -1,7 +1,7 @@
 using DarkIntegers
 
 
-@testgroup "residue ring elements, Montgomery representation" begin
+@testgroup "modulo integers, Montgomery representation" begin
 
 
 @testcase "construction" begin

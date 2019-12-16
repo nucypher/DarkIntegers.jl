@@ -2,7 +2,7 @@ using DarkIntegers
 using DarkIntegers: _verbatim, mulmod, mulmod_bitshift, mulmod_remhilo, mulmod_widemul
 
 
-@testgroup "residue ring elements" begin
+@testgroup "modulo integers" begin
 
 
 @testcase "construction" begin
