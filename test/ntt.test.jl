@@ -1,6 +1,19 @@
 using DarkIntegers: AbstractModUInt, get_root_of_one, get_inverse_coeff, ntt
 
 
+_known_generator_called = 0
+
+
+const _known_generator_test_val = convert(MLUInt{2, UInt8}, 257)
+
+
+function DarkIntegers.known_generator(::Val{_known_generator_test_val})
+    global _known_generator_called
+    _known_generator_called += 1
+    convert(MLUInt{2, UInt8}, 3)
+end
+
+
 @testgroup "NTT" begin
 
 
@@ -49,6 +62,15 @@ end
 
     @test a_back == a_back_ref
     @test a_back == a
+end
+
+
+@testcase "known_generator()" begin
+    c1 = _known_generator_called
+    g = DarkIntegers.known_generator(Val(_known_generator_test_val))
+    c2 = _known_generator_called
+    @test c2 - c1 == 1
+    @test convert(encompassing_type(g), g) == 3
 end
 
 

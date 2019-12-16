@@ -63,6 +63,7 @@ export rescale
 
 include("ntt.jl")
 export ntt
+export known_generator
 
 include("convolution_kernels.jl")
 include("nussbaumer.jl")

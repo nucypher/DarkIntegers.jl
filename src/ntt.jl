@@ -1,23 +1,31 @@
+@generated function known_generator(::Val{X}) where X
+    res = find_generator(X)
+    :( $res )
+end
+
+
 """
 Finds a generator element for a finite field defined by type `T`
 (that is, we assume that the modulus in `T` is prime).
 This means that every power of the returned `g` from `1` to `M-1` produces
 all the elements of the field (integers from `1` to `M-1`), and `g^(M-1) = 1`.
 """
-function get_generator(::Type{T}) where T <: AbstractModUInt
-    m = modulus_as_builtin(T)
-    factors = keys(factor(m - 1))
-    for w in 2:m-1
+function find_generator(x::T) where T
+    @assert T <: Unsigned
+    tp = ModUInt{T, x}
+    x_bi = convert(encompassing_type(x), x)
+    factors = keys(factor(x_bi - 1))
+    for w in 2:x_bi-1
         found = true
-        gw = convert(T, w)
+        gw = convert(tp, w)
         for q in factors
-            if gw^(div(m - 1, q)) == one(T)
+            if gw^((x_bi - 1) ÷ q) == one(tp)
                 found = false
                 break
             end
         end
         if found
-            return gw
+            return raw_value(gw)
         end
     end
     zero(T)
@@ -35,7 +43,7 @@ function get_root_of_one(::Type{T}, N::Integer, inverse::Bool) where T <: Abstra
     if mod(m - 1, N) != 0
         error("(modulus - 1)=$(m-1) must be divisible by the NTT length ($N)")
     end
-    g = get_generator(T) # g^(modulus(T) - 1) = 1
+    g = convert(T, known_generator(Val(modulus(T)))) # g^(modulus(T) - 1) = 1
     w = g^div(m - 1, N)
     if inverse
         inv(w)
