@@ -18,7 +18,10 @@ struct CyclicModulus <: AbstractCyclicModulus end
 const cyclic_modulus = CyclicModulus()
 
 
-known_isprime(::Val{X}) where X = isprime(convert(encompassing_type(X), X))
+@generated function known_isprime(::Val{X}) where X
+    res = isprime(convert(encompassing_type(X), X))
+    :( $res )
+end
 
 
 """
