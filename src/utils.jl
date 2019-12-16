@@ -93,4 +93,5 @@ end
 Returns the built-in type that covers all the range of `tp`
 (not necessarily unsigned).
 """
-encompassing_type(tp::Type{<:Unsigned}) = tp
+encompassing_type(tp::Type{T}) where T = T
+encompassing_type(::T) where T = encompassing_type(T)
