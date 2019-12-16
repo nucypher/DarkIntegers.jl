@@ -687,3 +687,12 @@ function Base.:~(x::MLUInt{N, T}) where {N, T}
     end
     x
 end
+
+
+@inline function Base.:&(x::MLUInt{N, T}, y::MLUInt{N, T}) where {N, T}
+    res = zero(MLUInt{N, T})
+    for i in 1:N
+        res = setindex(res, x[i] & y[i], i)
+    end
+    res
+end

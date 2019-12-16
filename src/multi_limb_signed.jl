@@ -282,3 +282,6 @@ bitsizeof(::Type{MLInt{N, T}}) where {N, T} = bitsizeof(T) * N
 
 
 @inline Base.iszero(x::MLInt{N, T}) where {N, T} = iszero(unsigned(x))
+
+
+@inline Base.:&(x::MLInt{N, T}, y::MLInt{N, T}) where {N, T} = unsigned(x) & unsigned(y)
