@@ -374,7 +374,6 @@ function Base.similar(
         bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{Polynomial}},
         ::Type{ElType}) where ElType
     x = _find_polynomial(bc)
-    println(bc.args)
     @assert length(axes(bc)) == 1
     Polynomial(similar(Array{ElType}, axes(bc)), x.modulus)
 end
