@@ -61,6 +61,7 @@ export change_length
 export rescale
 
 include("ntt.jl")
+export ntt
 
 include("convolution_kernels.jl")
 include("nussbaumer.jl")

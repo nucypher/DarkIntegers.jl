@@ -38,8 +38,8 @@ end
     af_ref = reference_dft(a_rr, false)
     a_back_ref = reference_dft(af_ref, true)
 
-    af = ntt(a_rr, inverse=false, negacyclic=false)
-    a_back = ntt(af, inverse=true, negacyclic=false)
+    af = ntt(a_rr, inverse=false, tangent=false)
+    a_back = ntt(af, inverse=true, tangent=false)
 
     # The results will be in a different order, which is irrelevant for the NTT's main purpose
     # (multiplying polynomials). So we just check that all the elements are the same.

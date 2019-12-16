@@ -223,8 +223,14 @@ end
 end
 
 
-function ntt(data::Array{T, 1}; inverse::Bool=false, negacyclic::Bool=false) where T <: AbstractModUInt
-    plan = get_ntt_plan(T, length(data), negacyclic)
+"""
+    ntt(data::Array{T, 1}; inverse::Bool=false, tangent::Bool=false) where T <: AbstractModUInt
+
+Perform an NTT on `data`.
+If `tangent` is `true`, use the tangent NTT (for multiplying tangent polynomials).
+"""
+function ntt(data::Array{T, 1}; inverse::Bool=false, tangent::Bool=false) where T <: AbstractModUInt
+    plan = get_ntt_plan(T, length(data), tangent)
     output = similar(data)
     if inverse
         intt!(plan, output, data)
