@@ -41,7 +41,7 @@ end
 # (including implicitly, e.g. in array element assignment)
 # to prevent convert(::Type{<:Integer}, x::MLUInt) from firing.
 @inline Base.convert(::Type{ModUInt{T, M}}, x::V) where {T, M, V <: MLUInt} =
-    ModUInt{T, M}(convert(encompassing_type(V), x))
+    ModUInt{T, M}(convert(T, x))
 @inline Base.convert(::Type{ModUInt{T, M}}, x::T) where {T <: MLUInt, M} = ModUInt{T, M}(x)
 
 @inline Base.convert(::Type{ModUInt{T, M}}, x::ModUInt{T, M}) where {T, M} = x

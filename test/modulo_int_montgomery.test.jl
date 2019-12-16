@@ -41,7 +41,7 @@ end
     mod_tp = MgModUInt{mp_tp, m}
 
     @test convert(mod_tp, convert(mp_tp, 1)) == mod_tp(1)
-    @test convert(mod_tp, convert(MLUInt{3, UInt16}, 1)) == mod_tp(1)
+    @test convert(mod_tp, convert(MLUInt{3, UInt8}, 1)) == mod_tp(1)
     @test convert(mod_tp, convert(mp_tp, 1)) == mod_tp(1)
     @test convert(Int, mod_tp(1)) == 1
 end
