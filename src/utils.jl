@@ -95,3 +95,6 @@ Returns the built-in type that covers all the range of `tp`
 """
 encompassing_type(tp::Type{T}) where T = T
 encompassing_type(::T) where T = encompassing_type(T)
+
+
+as_builtin(x) = convert(encompassing_type(x), x)

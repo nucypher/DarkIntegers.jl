@@ -12,14 +12,13 @@ modulus(::Type{MgModUInt{T, M}}) where {T, M} = M
 modulus(::T) where T <: AbstractModUInt = modulus(T)
 
 
-raw_value_as_builtin(x::AbstractModUInt) = convert(encompassing_type(eltype(x)), raw_value(x))
+raw_value_as_builtin(x::AbstractModUInt) = as_builtin(raw_value(x))
 
 
-value_as_builtin(x::AbstractModUInt) = convert(encompassing_type(eltype(x)), convert(eltype(x), x))
+value_as_builtin(x::AbstractModUInt) = as_builtin(convert(eltype(x), x))
 
 
-modulus_as_builtin(::Type{T}) where T <: AbstractModUInt =
-    convert(encompassing_type(eltype(T)), modulus(T))
+modulus_as_builtin(::Type{T}) where T <: AbstractModUInt = as_builtin(modulus(T))
 modulus_as_builtin(x::T) where T <: AbstractModUInt = modulus_as_builtin(T)
 
 

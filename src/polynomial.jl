@@ -19,7 +19,7 @@ const cyclic_modulus = CyclicModulus()
 
 
 @generated function known_isprime(::Val{X}) where X
-    res = isprime(convert(encompassing_type(X), X))
+    res = isprime(as_builtin(X))
     :( $res )
 end
 

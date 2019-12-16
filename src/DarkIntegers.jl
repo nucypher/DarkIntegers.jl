@@ -9,6 +9,7 @@ export bitsizeof
 export log_bitsizeof
 export num_bits
 export encompassing_type
+export as_builtin
 
 include("uint4.jl")
 

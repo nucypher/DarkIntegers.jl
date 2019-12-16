@@ -13,7 +13,7 @@ all the elements of the field (integers from `1` to `M-1`), and `g^(M-1) = 1`.
 function find_generator(x::T) where T
     @assert T <: Unsigned
     tp = ModUInt{T, x}
-    x_bi = convert(encompassing_type(x), x)
+    x_bi = as_builtin(x)
     factors = keys(factor(x_bi - 1))
     for w in 2:x_bi-1
         found = true

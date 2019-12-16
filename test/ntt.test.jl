@@ -70,7 +70,7 @@ end
     g = DarkIntegers.known_generator(Val(_known_generator_test_val))
     c2 = _known_generator_called
     @test c2 - c1 == 1
-    @test convert(encompassing_type(g), g) == 3
+    @test as_builtin(g) == 3
 end
 
 
