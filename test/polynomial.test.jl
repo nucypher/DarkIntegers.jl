@@ -151,4 +151,37 @@ end
 end
 
 
+@testcase "broadcasting" begin
+    coeffs1 = [1, 0, 0, 0]
+    coeffs2 = [1, 2, 3, 4]
+
+    p1 = Polynomial(coeffs1, negacyclic_modulus)
+    p2 = Polynomial(coeffs2, negacyclic_modulus)
+
+    @test (p1 + 1).coeffs == [2, 0, 0, 0] # check that simple addition works as expected
+    @test [p1, p2] .+ 1 == [p1 + 1, p2 + 1] # broadcasting an array of polynomials
+    @test (p1 .+ 1).coeffs == [2, 1, 1, 1] # broadcasted addition
+
+    # broadcasted assignment
+    p2 .= p1 .+ 1
+    @test p2.coeffs == [2, 1, 1, 1]
+
+    # Check that the multiplication function is replaced when the coefficient type changes
+    @test p1.mul_function == DarkIntegers.karatsuba_mul
+    tp = ModUInt{UInt64, UInt64(17)}
+    func(x) = convert(tp, x)
+
+    # Broadcast and create a new container
+    p3 = func.(p1)
+    @test eltype(p3) == tp
+    @test p3.mul_function == DarkIntegers.ntt_mul
+
+    # Broadcast into the old container
+    # Converts the values back into the type of `p2`
+    p2 .= p3
+    @test eltype(p2) == Int
+    @test p2.mul_function == DarkIntegers.karatsuba_mul
+end
+
+
 end

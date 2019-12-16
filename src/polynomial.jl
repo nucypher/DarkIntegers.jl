@@ -52,7 +52,7 @@ including [`ModUInt`](@ref) and [`MgModUInt`](@ref).
 Create a polynomial given the array of coefficients
 (the `i`-th coefficient corresponds to the `(i-1)`-th power).
 """
-struct Polynomial{T, N}
+struct Polynomial{T, N} <: AbstractArray{T, 1}
     coeffs :: Array{T, 1}
     modulus :: AbstractPolynomialModulus
     mul_function :: Function
@@ -68,16 +68,6 @@ struct Polynomial{T, N}
         Polynomial(coeffs, modulus, mul_function)
     end
 end
-
-
-# Required for broadcasting
-
-
-Base.length(x::Polynomial) = 1
-
-
-Base.iterate(x::Polynomial) = (x, nothing)
-Base.iterate(x::Polynomial, state) = nothing
 
 
 # It has to match a polynomial with any size and modulus,
@@ -361,3 +351,45 @@ Assumes the polynomials have the same length and the same value of the `modulus`
     end
     Polynomial(res, p1.modulus, p1.mul_function)
 end
+
+
+# Broadcasting machinery
+# Is this really the simplest way to do it?
+
+Base.length(x::Polynomial) = length(x.coeffs)
+
+
+Base.size(x::Polynomial) = size(x.coeffs)
+
+
+Base.getindex(x::Polynomial, inds::Vararg{Int, N}) where N = x.coeffs[inds...]
+
+
+Base.setindex!(x::Polynomial, val, inds::Vararg{Int, N}) where N = x.coeffs[inds...] = val
+
+
+Base.BroadcastStyle(::Type{<:Polynomial}) = Broadcast.ArrayStyle{Polynomial}()
+
+
+function Base.similar(
+        bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{Polynomial}},
+        ::Type{ElType}) where ElType
+    x = _find_polynomial(bc)
+    println(bc.args)
+    @assert length(axes(bc)) == 1
+    Polynomial(similar(Array{ElType}, axes(bc)), x.modulus)
+end
+
+
+_find_polynomial(bc::Base.Broadcast.Broadcasted) = _find_polynomial(bc.args)
+_find_polynomial(args::Tuple) = _find_polynomial(_find_polynomial(args[1]), Base.tail(args))
+_find_polynomial(x) = x
+_find_polynomial(x::Base.Broadcast.Extruded) = x.x
+_find_polynomial(::Tuple{}) = nothing
+_find_polynomial(a::Polynomial, rest) = a
+_find_polynomial(::Any, rest) = _find_polynomial(rest)
+
+
+Base.iterate(x::Polynomial) = iterate(x.coeffs)
+
+Base.iterate(x::Polynomial, state) = iterate(x.coeffs, state)
