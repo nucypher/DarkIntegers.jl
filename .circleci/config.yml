@@ -57,19 +57,7 @@ workflows:
   version: 2
   test:
     jobs:
-      - test-julia10:
-          filters:
-            branches:
-              ignore: /^gh-pages$/
-      - test-julia12:
-          filters:
-            branches:
-              ignore: /^gh-pages$/
-      - test-julia13:
-          filters:
-            branches:
-              ignore: /^gh-pages$/
-      - docs:
-          filters:
-            branches:
-              ignore: /^gh-pages$/
+      - test-julia10
+      - test-julia12
+      - test-julia13
+      - docs
