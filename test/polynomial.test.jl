@@ -170,27 +170,32 @@ end
 
     @test (p1 + 1).coeffs == [2, 0, 0, 0] # check that simple addition works as expected
     @test [p1, p2] .+ 1 == [p1 + 1, p2 + 1] # broadcasting an array of polynomials
-    @test (p1 .+ 1).coeffs == [2, 1, 1, 1] # broadcasted addition
+    @test broadcast_into_polynomial(+, p1, 1).coeffs == [2, 1, 1, 1] # broadcasted addition
 
-    # broadcasted assignment
-    p2 .= p1 .+ 1
-    @test p2.coeffs == [2, 1, 1, 1]
+    # Broadcasting of non-polynomials creates a new polynomial with default modulus
+    p3 = broadcast_into_polynomial(+, [4, 5, 6, 7], 1)
+    @test p3.coeffs == [5, 6, 7, 8]
+    @test p3.modulus == cyclic_modulus
+
+    # Modulus mismatch is not allowed
+    @test_throws Exception broadcast_into_polynomial(+, p1, p3)
 
     # Check that the multiplication function is replaced when the coefficient type changes
     @test p1.mul_function == DarkIntegers.karatsuba_mul
     tp = ModUInt{UInt64, UInt64(17)}
     func(x) = convert(tp, x)
-
-    # Broadcast and create a new container
-    p3 = func.(p1)
-    @test eltype(p3) == tp
-    @test p3.mul_function == DarkIntegers.ntt_mul
+    p4 = broadcast_into_polynomial(func, p1)
+    @test eltype(p4) == tp
+    @test p4.mul_function == DarkIntegers.ntt_mul
 
     # Broadcast into the old container
-    # Converts the values back into the type of `p2`
-    p2 .= value.(p3)
-    @test eltype(p2) == Int
-    @test p2.mul_function == DarkIntegers.karatsuba_mul
+    # Converts the values back into the type of `p1`
+    broadcast_into_polynomial!(value, p1, p4)
+    @test eltype(p1) == Int
+    @test p1.mul_function == DarkIntegers.karatsuba_mul
+
+    # Modulus mismatch with the destination is not allowed
+    @test_throws Exception broadcast_into_polynomial!(value, p1, p3)
 end
 
 

@@ -48,6 +48,8 @@ export mul_by_monomial
 export cyclic_modulus
 export negacyclic_modulus
 export known_isprime
+export broadcast_into_polynomial
+export broadcast_into_polynomial!
 
 include("modulo_int_helpers.jl")
 export value

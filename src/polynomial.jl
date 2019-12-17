@@ -71,7 +71,7 @@ including [`ModUInt`](@ref) and [`MgModUInt`](@ref).
 Create a polynomial given the array of coefficients
 (the `i`-th coefficient corresponds to the `(i-1)`-th power).
 """
-struct Polynomial{T, N} <: AbstractArray{T, 1}
+struct Polynomial{T, N} <: Number
     coeffs :: Array{T, 1}
     modulus :: AbstractPolynomialModulus
     mul_function :: Function
@@ -89,6 +89,16 @@ struct Polynomial{T, N} <: AbstractArray{T, 1}
 end
 
 
+function Base.convert(::Type{Polynomial{T, N}}, x::Polynomial{V, M}) where {T, N, V, M}
+    @assert N >= M
+    Polynomial(convert.(T, x.coeffs), x.modulus)
+end
+
+
+Base.promote_type(::Type{Polynomial{T, N}}, ::Type{Polynomial{V, M}}) where {T, N, V, M} =
+    Polynomial{promote_type(T, V), max(N, M)}
+
+
 # It has to match a polynomial with any modulus,
 # So it can't be a `Polynomial` object.
 struct ZeroPolynomial{T, N}
@@ -104,7 +114,7 @@ end
 
 
 @inline function Base.:*(p1::Polynomial{T, N}, p2::Polynomial{T, N}) where {T, N}
-    @assert p1.modulus == p2.modulus && length(p1.coeffs) == length(p2.coeffs)
+    @assert p1.modulus == p2.modulus
     p1.mul_function(p1, p2)
 end
 
@@ -114,20 +124,12 @@ end
 @inline Base.:*(p1::ZeroPolynomial{T, N}, p2::Polynomial{T, N}) where {T, N} =
     ZeroPolynomial{T, N}()
 
-@inline function Base.:*(p1::Polynomial{T, N}, p2::Integer) where {T, N}
+@inline function Base.:*(p1::Polynomial{T, N}, p2::Number) where {T, N}
     Polynomial(p1.coeffs .* convert(T, p2), p1.modulus, p1.mul_function)
 end
 
-@inline function Base.:*(p1::Polynomial{T, N}, p2::V) where {T, N, V}
-    Polynomial(p1.coeffs .* convert(T, p2), p1.modulus, p1.mul_function)
-end
-
-@inline function Base.:*(p1::Integer, p2::Polynomial)
+@inline function Base.:*(p1::Number, p2::Polynomial)
     p2 * p1
-end
-
-@inline function Base.:*(p1::Polynomial{T, N}, p2::T) where {T, N}
-    Polynomial(p1.coeffs .* p2, p1.modulus, p1.mul_function)
 end
 
 
@@ -137,12 +139,13 @@ end
 
 
 @inline function Base.:+(p1::Polynomial{T, N}, p2::Polynomial{T}) where {T, N}
+    @assert p1.modulus == p2.modulus
     Polynomial(p1.coeffs .+ p2.coeffs, p1.modulus, p1.mul_function)
 end
 
-@inline function Base.:+(p1::Polynomial{T, N}, p2::T) where {T, N}
+@inline function Base.:+(p1::Polynomial{T, N}, p2::Integer) where {T, N}
     coeffs = copy(p1.coeffs)
-    coeffs[1] += p2
+    coeffs[1] += convert(T, p2)
     Polynomial(coeffs, p1.modulus, p1.mul_function)
 end
 
@@ -152,11 +155,14 @@ end
 
 
 @inline function Base.:-(p1::Polynomial{T, N}, p2::Polynomial{T, N}) where {T, N}
+    @assert p1.modulus == p2.modulus
     Polynomial(p1.coeffs .- p2.coeffs, p1.modulus, p1.mul_function)
 end
 
-@inline function Base.:-(p1::Polynomial{T, N}, p2::Unsigned) where {T, N}
-    Polynomial(p1.coeffs .- convert(T, p2), p1.modulus, p1.mul_function)
+@inline function Base.:-(p1::Polynomial{T, N}, p2::Integer) where {T, N}
+    coeffs = copy(p1.coeffs)
+    coeffs[1] -= convert(T, p2)
+    Polynomial(coeffs, p1.modulus, p1.mul_function)
 end
 
 @inline function Base.:-(p1::Polynomial{T, N}) where {T, N}
@@ -371,42 +377,75 @@ Assumes the polynomials have the same length and the same value of the `modulus`
 end
 
 
-# Broadcasting machinery
-# Is this really the simplest way to do it?
+#=
+Broadcasting machinery.
 
-Base.length(x::Polynomial) = length(x.coeffs)
+We want to allow bot expressions like
+    p1 .+ [p2, p3, p4, p5] # add a polynomial to an array of polynomials
+and
+    p1 .+ [1, 2, 3, 4] # add an array to polynomial coefficients
+    p2 = func.(p1, some_arg)
+(that is both polynomial objects acting as scalars, and as broadcastables).
+
+It seems that the current state of broadcasting in Julia does not allow to resolve this ambiguity.
+Therefore, we're marking `Polynomial` as a scalar so that the standard API is invoked
+for the former, and adding some custom broadcasting functions
+that can be used for the latter.
+=#
 
 
-Base.size(x::Polynomial) = size(x.coeffs)
-
-
-Base.getindex(x::Polynomial, inds::Vararg{Int, N}) where N = x.coeffs[inds...]
-
-
-Base.setindex!(x::Polynomial, val, inds::Vararg{Int, N}) where N = x.coeffs[inds...] = val
-
-
-Base.BroadcastStyle(::Type{<:Polynomial}) = Broadcast.ArrayStyle{Polynomial}()
-
-
-function Base.similar(
-        bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{Polynomial}},
-        ::Type{ElType}) where ElType
-    x = _find_polynomial(bc)
-    @assert length(axes(bc)) == 1
-    Polynomial(similar(Array{ElType}, axes(bc)), x.modulus)
+function broadcast_into_polynomial(func, args...)
+    processed_args = _extract_coeffs.(args)
+    new_modulus = _process_polynomials(args)
+    if new_modulus === nothing
+        new_modulus = cyclic_modulus
+    end
+    Polynomial(func.(processed_args...), new_modulus)
 end
 
 
-_find_polynomial(bc::Base.Broadcast.Broadcasted) = _find_polynomial(bc.args)
-_find_polynomial(args::Tuple) = _find_polynomial(_find_polynomial(args[1]), Base.tail(args))
-_find_polynomial(x) = x
-_find_polynomial(x::Base.Broadcast.Extruded) = x.x
-_find_polynomial(::Tuple{}) = nothing
-_find_polynomial(a::Polynomial, rest) = a
-_find_polynomial(::Any, rest) = _find_polynomial(rest)
+function broadcast_into_polynomial!(func, p::Polynomial, args...)
+    processed_args = _extract_coeffs.(args)
+    new_modulus = _process_polynomials(args)
+    if !(new_modulus === nothing) && new_modulus != p.modulus
+        throw(Exception(
+            "Modulus mismatch in polynomial broadcasting: " *
+            "target has $(p.modulus), derived $new_modulus"))
+    end
+    @assert new_modulus == p.modulus
+    p.coeffs .= func.(processed_args...)
+end
 
 
-Base.iterate(x::Polynomial) = iterate(x.coeffs)
+_extract_coeffs(x) = x
+_extract_coeffs(x::Polynomial) = x.coeffs
 
-Base.iterate(x::Polynomial, state) = iterate(x.coeffs, state)
+
+_process_polynomials(args::Tuple) = _join_modulus(
+    _extract_modulus(args[1]), _process_polynomials(Base.tail(args)))
+_process_polynomials(::Tuple{}) = nothing
+
+
+_extract_modulus(x::Polynomial) = x.modulus
+_extract_modulus(x) = nothing
+
+
+_join_modulus(x::AbstractPolynomialModulus, y::AbstractPolynomialModulus) =
+    if x == y
+        x
+    else
+        throw(Exception("Modulus mismatch in polynomial broadcasting: $x and $y"))
+    end
+_join_modulus(x::AbstractPolynomialModulus, y) = x
+_join_modulus(x, y::AbstractPolynomialModulus) = y
+_join_modulus(x, y) = nothing
+
+
+Base.length(x::Polynomial) = 1
+
+
+Base.iterate(x::Polynomial) = (x, nothing)
+Base.iterate(x::Polynomial, state) = nothing
+
+
+Base.eltype(x::Polynomial{T, N}) where {T, N} = T
