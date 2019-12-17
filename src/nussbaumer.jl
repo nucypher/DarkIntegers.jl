@@ -26,7 +26,7 @@ struct NussbaumerScale{T <: Integer}
         if tp <: AbstractModUInt
             # Assuming here that gcd(scale, modulus) == 1
             # Since scale is a power of 2, it is enough for the modulus to be odd.
-            scale = invmod(scale, modulus_as_builtin(tp))
+            scale = invmod(scale, as_builtin(modulus(tp)))
             inverse = true
         else
             inverse = false

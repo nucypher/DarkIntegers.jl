@@ -50,11 +50,9 @@ export negacyclic_modulus
 export known_isprime
 
 include("modulo_int_helpers.jl")
+export value
 export raw_value
-export raw_value_as_builtin
-export value_as_builtin
 export modulus
-export modulus_as_builtin
 
 export change_modulus
 export change_representation

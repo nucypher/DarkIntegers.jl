@@ -37,15 +37,9 @@ struct ModUInt{T <: Unsigned, M} <: AbstractModUInt{T, M}
     end
 end
 
-# Needed in cases when convert(ModUInt, MLUInt) is requested
-# (including implicitly, e.g. in array element assignment)
-# to prevent convert(::Type{<:Integer}, x::MLUInt) from firing.
-@inline Base.convert(::Type{ModUInt{T, M}}, x::V) where {T, M, V <: MLUInt} =
-    ModUInt{T, M}(convert(T, x))
-@inline Base.convert(::Type{ModUInt{T, M}}, x::T) where {T <: MLUInt, M} = ModUInt{T, M}(x)
 
+@inline Base.convert(::Type{ModUInt{T, M}}, x::T) where {T <: MLUInt, M} = ModUInt{T, M}(x)
 @inline Base.convert(::Type{ModUInt{T, M}}, x::ModUInt{T, M}) where {T, M} = x
-@inline Base.convert(::Type{V}, x::ModUInt{T, M}) where {V <: Integer, T, M} = convert(V, x.value)
 
 
 @inline Base.promote_type(::Type{ModUInt{T, M}}, ::Type{ModUInt{T, M}}) where {T, M} = ModUInt{T, M}
@@ -148,7 +142,7 @@ end
 @inline Base.:>=(x::ModUInt{T, M}, y::ModUInt{T, M}) where {T, M} = x.value >= y.value
 
 
-Base.string(x::ModUInt{T, M}) where {T, M} = string(x.value) * "RR"
+Base.string(x::ModUInt{T, M}) where {T, M} = string(value(x)) * "RR"
 
 
 Base.show(io::IO, x::ModUInt{T, M}) where {T, M} = print(io, string(x))

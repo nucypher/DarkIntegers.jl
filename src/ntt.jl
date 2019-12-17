@@ -39,7 +39,7 @@ the returned value also has the property `w^N = 1`).
 `(M-1)` must be divisible by `N`, where `M` is the modulus of the type `T`.
 """
 function get_root_of_one(::Type{T}, N::Integer, inverse::Bool) where T <: AbstractModUInt
-    m = modulus_as_builtin(T)
+    m = as_builtin(modulus(T))
     if mod(m - 1, N) != 0
         error("(modulus - 1)=$(m-1) must be divisible by the NTT length ($N)")
     end

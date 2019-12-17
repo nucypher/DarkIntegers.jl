@@ -188,7 +188,7 @@ end
 
     # Broadcast into the old container
     # Converts the values back into the type of `p2`
-    p2 .= p3
+    p2 .= value.(p3)
     @test eltype(p2) == Int
     @test p2.mul_function == DarkIntegers.karatsuba_mul
 end

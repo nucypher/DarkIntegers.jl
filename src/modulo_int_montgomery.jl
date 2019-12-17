@@ -75,11 +75,8 @@ end
 end
 
 
-# Needed in cases when convert(MgModUInt, MLUInt) is requested
-# (including implicitly, e.g. in array element assignment)
-# to prevent convert(::Type{<:Integer}, x::MLUInt) from firing.
-@inline Base.convert(::Type{MgModUInt{T, M}}, x::V) where {T, M, V <: MLUInt} =
-    MgModUInt{T, M}(convert(T, x))
+@inline Base.convert(::Type{MgModUInt{T, M}}, x::MgModUInt{T, M}) where {T, M} = x
+
 @inline Base.convert(::Type{MgModUInt{T, M}}, x::T) where {T <: MLUInt, M} =
     MgModUInt{T, M}(x)
 
@@ -89,12 +86,6 @@ end
 
 @inline function Base.convert(::Type{MgModUInt{T, M}}, x::ModUInt{T, M}) where {T, M}
     MgModUInt{T, M}(x.value, M, _no_modulo)
-end
-
-@inline Base.convert(::Type{MgModUInt{T, M}}, x::MgModUInt{T, M}) where {T, M} = x
-
-@inline function Base.convert(::Type{V}, x::MgModUInt{T, M}) where V <: Integer where {T, M}
-    convert(V, from_montgomery(x))
 end
 
 
@@ -212,7 +203,7 @@ end
 end
 
 
-Base.string(x::MgModUInt{T, M}) where {T, M} = string(convert(T, x)) * "RRM"
+Base.string(x::MgModUInt{T, M}) where {T, M} = string(value(x)) * "RRM"
 
 
 Base.show(io::IO, x::MgModUInt{T, M}) where {T, M} = print(io, string(x))

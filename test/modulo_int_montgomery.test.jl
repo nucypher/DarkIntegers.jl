@@ -21,29 +21,25 @@ using DarkIntegers
     # Check that a value greater than the modulus is converted correctly
 
     x = MgModUInt{T, m}(val)
-    @test convert(T, x) != val
-    @test convert(T, x) == mod(val, m)
+    @test value(x) != val
+    @test value(x) == mod(val, m)
 
     big_val = Int64(2^50)
     x = MgModUInt{T, m}(big_val)
-    @test convert(T, x) == mod(big_val, m)
+    @test value(x) == mod(big_val, m)
 
     big_val = Int64(-2^50)
     x = MgModUInt{T, m}(big_val)
-    @test convert(T, x) == mod(big_val, m)
-end
+    @test value(x) == mod(big_val, m)
 
 
-@testcase "conversion" begin
     mp_tp = MLUInt{2, UInt8}
     m = convert(mp_tp, 177)
 
     mod_tp = MgModUInt{mp_tp, m}
 
-    @test convert(mod_tp, convert(mp_tp, 1)) == mod_tp(1)
-    @test convert(mod_tp, convert(MLUInt{3, UInt8}, 1)) == mod_tp(1)
-    @test convert(mod_tp, convert(mp_tp, 1)) == mod_tp(1)
-    @test convert(Int, mod_tp(1)) == 1
+    @test as_builtin(value(mod_tp(convert(mp_tp, 1)))) == 1
+    @test as_builtin(value(mod_tp(convert(MLUInt{3, UInt8}, 1)))) == 1
 end
 
 

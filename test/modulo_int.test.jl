@@ -14,37 +14,32 @@ using DarkIntegers: _verbatim, mulmod, mulmod_bitshift, mulmod_remhilo, mulmod_w
     # when no conversion is requested.
 
     x = ModUInt(val, m, _verbatim)
-    @test convert(T, x) == val
+    @test raw_value(x) == val
 
     x = ModUInt{T, m}(val, _verbatim)
-    @test convert(T, x) == val
+    @test raw_value(x) == val
 
     # Check that a value greater than the modulus is converted correctly
 
     x = ModUInt{T, m}(val)
-    @test convert(T, x) == mod(val, m)
+    @test value(x) == mod(val, m)
 
     big_val = Int64(2^50)
     x = ModUInt{T, m}(big_val)
-    @test convert(T, x) == convert(T, mod(big_val, m))
+    @test value(x) == convert(T, mod(big_val, m))
 
     big_val = Int64(-2^50)
     x = ModUInt{T, m}(big_val)
-    @test convert(T, x) == convert(T, mod(big_val, m))
-
-end
+    @test value(x) == convert(T, mod(big_val, m))
 
 
-@testcase "conversion" begin
     mp_tp = MLUInt{2, UInt8}
     m = convert(mp_tp, 177)
 
     mod_tp = ModUInt{mp_tp, m}
 
-    @test convert(mod_tp, convert(mp_tp, 1)) == mod_tp(1)
-    @test convert(mod_tp, convert(MLUInt{3, UInt8}, 1)) == mod_tp(1)
-    @test convert(mod_tp, convert(mp_tp, 1)) == mod_tp(1)
-    @test convert(Int, mod_tp(1)) == 1
+    @test as_builtin(value(mod_tp(convert(mp_tp, 1)))) == 1
+    @test as_builtin(value(mod_tp(convert(MLUInt{3, UInt8}, 1)))) == 1
 end
 
 
