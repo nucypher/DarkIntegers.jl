@@ -40,7 +40,7 @@ Apply `change_modulus()` to every coefficient of the polynomial.
         new_modulus::Unsigned, p::Polynomial{T}) where T <: AbstractModUInt
     # Convert the modulus in advance so that it is not converted for each element separately
     nm = convert(eltype(T), new_modulus)
-    Polynomial(change_modulus.(nm, p.coeffs), p.negacyclic)
+    Polynomial(change_modulus.(nm, p.coeffs), p.modulus)
 end
 
 
@@ -67,7 +67,7 @@ Change the representation of the given residue ring element to one of
 Apply `change_representation()` to every coefficient of the polynomial.
 """
 @inline change_representation(new_repr, p::Polynomial{T}) where T <: AbstractModUInt =
-    Polynomial(change_representation.(new_repr, p.coeffs), p.negacyclic)
+    Polynomial(change_representation.(new_repr, p.coeffs), p.modulus)
 
 
 @doc """
@@ -94,7 +94,7 @@ Apply `change_base_type()` to every coefficient of the polynomial.
 """
 @inline function change_base_type(
         tp::Type{V}, p::Polynomial{T}) where {T <: AbstractModUInt, V <: Unsigned}
-    Polynomial(change_base_type.(tp, p.coeffs), p.negacyclic)
+    Polynomial(change_base_type.(tp, p.coeffs), p.modulus)
 end
 
 
@@ -135,7 +135,7 @@ Apply `rescale()` to every coefficient of the polynomial.
 """
 @inline function rescale(
         new_max::Unsigned, p::Polynomial{T}, round_result::Bool) where T <: ModUInt
-    Polynomial(rescale.(new_max, p.coeffs, round_result), p.negacyclic)
+    Polynomial(rescale.(new_max, p.coeffs, round_result), p.modulus)
 end
 
 
@@ -148,9 +148,9 @@ The new length must be greater or equal to the current length.
 @inline function change_length(new_length::Integer, p::Polynomial{T}) where T
     old_length = length(p.coeffs)
     if new_length > old_length
-        Polynomial([p.coeffs; zeros(T, new_length - length(p.coeffs))], p.negacyclic)
+        Polynomial([p.coeffs; zeros(T, new_length - length(p.coeffs))], p.modulus)
     elseif new_length < old_length
-        Polynomial(p.coeffs[1:new_length], p.negacyclic)
+        Polynomial(p.coeffs[1:new_length], p.modulus)
     else
         p
     end
