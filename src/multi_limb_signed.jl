@@ -185,10 +185,14 @@ Base.string(x::MLInt{N, T}) where {N, T} = "{S" * string(x.limbs) * "}"
 Base.show(io::IO, x::MLInt{N, T}) where {N, T} = print(io, string(x))
 
 
+Base.:+(x::MLInt{N, T}, y::MLInt{N, T}) where {N, T} = signed(unsigned(x) + unsigned(y))
+
+
+Base.:-(x::MLInt{N, T}, y::MLInt{N, T}) where {N, T} = signed(unsigned(x) - unsigned(y))
 Base.:-(x::MLInt{N, T}) where {N, T} = ~x + one(MLInt{N, T})
 
 
-Base.:+(x::MLInt{N, T}, y::MLInt{N, T}) where {N, T} = signed(unsigned(x) + unsigned(y))
+Base.:*(x::MLInt{N, T}, y::MLInt{N, T}) where {N, T} = signed(unsigned(x) * unsigned(y))
 
 
 Base.:~(x::MLInt{N, T}) where {N, T} = signed(~unsigned(x))
