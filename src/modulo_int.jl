@@ -40,6 +40,8 @@ end
 
 @inline Base.convert(::Type{ModUInt{T, M}}, x::T) where {T <: MLUInt, M} = ModUInt{T, M}(x)
 @inline Base.convert(::Type{ModUInt{T, M}}, x::ModUInt{T, M}) where {T, M} = x
+@inline Base.convert(::Type{ModUInt{T, M}}, x::Bool) where {T, M} =
+    x ? one(ModUInt{T, M}) : zero(ModUInt{T, M})
 
 
 @inline Base.promote_type(::Type{ModUInt{T, M}}, ::Type{ModUInt{T, M}}) where {T, M} = ModUInt{T, M}

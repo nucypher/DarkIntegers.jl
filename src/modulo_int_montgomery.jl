@@ -88,6 +88,9 @@ end
     MgModUInt{T, M}(x.value, M, _no_modulo)
 end
 
+@inline Base.convert(::Type{MgModUInt{T, M}}, x::Bool) where {T, M} =
+    x ? one(MgModUInt{T, M}) : zero(MgModUInt{T, M})
+
 
 @inline Base.promote_type(
     ::Type{MgModUInt{T, M}}, ::Type{MgModUInt{T, M}}) where {T, M} =
