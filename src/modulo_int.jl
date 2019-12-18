@@ -61,6 +61,10 @@ end
 
 
 @inline Base.one(::Type{ModUInt{T, M}}) where {T, M} = ModUInt(one(T), M, _verbatim)
+@inline Base.one(::ModUInt{T, M}) where {T, M} = one(ModUInt{T, M})
+
+@inline Base.oneunit(::Type{ModUInt{T, M}}) where {T, M} = one(ModUInt{T, M})
+@inline Base.oneunit(x::ModUInt{T, M}) where {T, M} = oneunit(ModUInt{T, M})
 
 
 @inline @generated function Base.:+(x::ModUInt{T, M}, y::ModUInt{T, M}) where {T, M}

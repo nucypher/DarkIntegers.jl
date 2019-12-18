@@ -107,14 +107,16 @@ end
 
 # Unlike `one(x)`, `zero(x)` does not have a fallback `= zero(typeof(x))` in the standard library
 # and uses conversion instead. So we are defining our own.
-@inline Base.zero(::Type{MgModUInt{T, M}}) where {T, M} =
-    MgModUInt(zero(T), M, _verbatim)
-@inline Base.zero(::MgModUInt{T, M}) where {T, M} =
-    zero(MgModUInt{T, M})
+@inline Base.zero(::Type{MgModUInt{T, M}}) where {T, M} = MgModUInt(zero(T), M, _verbatim)
+@inline Base.zero(::MgModUInt{T, M}) where {T, M} = zero(MgModUInt{T, M})
 
 
-@inline Base.one(::Type{MgModUInt{T, M}}) where {T, M} =
-    MgModUInt{T, M}(one(T))
+@inline Base.one(::Type{MgModUInt{T, M}}) where {T, M} = MgModUInt{T, M}(one(T))
+@inline Base.one(::MgModUInt{T, M}) where {T, M} = one(MgModUInt{T, M})
+
+
+@inline Base.oneunit(::Type{MgModUInt{T, M}}) where {T, M} = one(MgModUInt{T, M})
+@inline Base.oneunit(::MgModUInt{T, M}) where {T, M} = oneunit(MgModUInt{T, M})
 
 
 @inline @generated function Base.:+(x::MgModUInt{T, M}, y::MgModUInt{T, M}) where {T, M}
