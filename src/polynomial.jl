@@ -1,6 +1,12 @@
 abstract type AbstractPolynomialModulus end
 
 
+struct _UndefinedModulus <: AbstractPolynomialModulus end
+
+
+const _undefined_modulus = _UndefinedModulus()
+
+
 abstract type AbstractCyclicModulus <: AbstractPolynomialModulus end
 
 
@@ -30,6 +36,11 @@ based on the element type an polynomial length.
 """
 @inline function _get_polynomial_mul_function(
         ::Type{T}, ::Val{N}, ::AbstractPolynomialModulus) where {T, N}
+    nothing
+end
+
+@inline function _get_polynomial_mul_function(
+        ::Type{T}, ::Val{N}, ::AbstractCyclicModulus) where {T, N}
     karatsuba_mul
 end
 
@@ -74,24 +85,41 @@ Create a polynomial given the array of coefficients
 struct Polynomial{T, N} <: Number
     coeffs :: Array{T, 1}
     modulus :: AbstractPolynomialModulus
-    mul_function :: Function
+    mul_function :: Union{Function, Nothing}
+    is_zero :: Bool
 
-    @inline function Polynomial(
-            coeffs::Array{T, 1}, modulus::AbstractCyclicModulus, mul_function) where T
-        new{T, length(coeffs)}(coeffs, modulus, mul_function)
+    @inline function Polynomial{T, N}(
+            coeffs::Array{T, 1}, modulus::AbstractPolynomialModulus,
+            mul_function, is_zero::Bool=false) where {T, N}
+        @assert is_zero || modulus != _undefined_modulus
+        @assert length(coeffs) == N
+        new{T, N}(coeffs, modulus, mul_function, is_zero)
     end
 
-    @inline function Polynomial(coeffs::Array{T, 1}, modulus::AbstractCyclicModulus) where T
+    @inline function Polynomial{T, N}(
+            coeffs::Array{T, 1}, modulus::AbstractPolynomialModulus,
+            is_zero::Bool=false) where {T, N}
         len = length(coeffs)
         mul_function = _get_polynomial_mul_function(T, Val(len), modulus)
-        Polynomial(coeffs, modulus, mul_function)
+        Polynomial{T, N}(coeffs, modulus, mul_function, is_zero)
+    end
+
+    @inline function Polynomial(
+            coeffs::Array{T, 1}, modulus::AbstractPolynomialModulus,
+            is_zero::Bool=false) where T
+        len = length(coeffs)
+        Polynomial{T, len}(coeffs, modulus, is_zero)
     end
 end
 
 
 function Base.convert(::Type{Polynomial{T, N}}, x::Polynomial{V, M}) where {T, N, V, M}
-    @assert N >= M
-    Polynomial(convert.(T, x.coeffs), x.modulus)
+    if x.is_zero
+        zero(Polynomial{T, N})
+    else
+        @assert N >= M
+        Polynomial{T, N}(convert.(T, x.coeffs), x.modulus)
+    end
 end
 
 
@@ -99,79 +127,123 @@ Base.promote_type(::Type{Polynomial{T, N}}, ::Type{Polynomial{V, M}}) where {T, 
     Polynomial{promote_type(T, V), max(N, M)}
 
 
-# It has to match a polynomial with any modulus,
-# So it can't be a `Polynomial` object.
-struct ZeroPolynomial{T, N}
+@inline Base.zero(::Type{Polynomial{T, N}}) where {T, N} =
+    Polynomial{T, N}(Array{T}(undef, N), _undefined_modulus, true)
+
+Base.zero(::Polynomial{T, N}) where {T, N} = zero(Polynomial{T, N})
+
+
+function with_modulus(p::Polynomial{T, N}, m::Union{CyclicModulus, NegacyclicModulus}) where {T, N}
+    if p.is_zero
+        coeffs = zeros(T, N)
+    else
+        coeffs = p.coeffs
+    end
+    Polynomial{T, N}(coeffs, m)
 end
 
 
-@inline Base.zero(::Polynomial{T, N}) where {T, N} = ZeroPolynomial{T, N}()
-
-
 @inline function Base.:(==)(p1::Polynomial{T, N}, p2::Polynomial{T, N}) where {T, N}
-    p1.modulus == p2.modulus && p1.coeffs == p2.coeffs
+    if p1.is_zero
+        iszero(p2.coeffs)
+    elseif p2.is_zero
+        iszero(p1.coeffs)
+    else
+        p1.modulus == p2.modulus && p1.coeffs == p2.coeffs
+    end
 end
 
 
 @inline function Base.:*(p1::Polynomial{T, N}, p2::Polynomial{T, N}) where {T, N}
-    @assert p1.modulus == p2.modulus
-    p1.mul_function(p1, p2)
+    if p1.is_zero || p2.is_zero
+        p1
+    else
+        @assert p1.modulus == p2.modulus
+        if p1.modulus == _undefined_modulus
+            throw(Exception("Cannot multiply polynomials with undefined modulus"))
+        end
+        # Making sure `Base.promote_op()` can figure out what the return type is.
+        res = p1.mul_function(p1, p2)
+        Polynomial{T, N}(res.coeffs, p1.modulus, p1.mul_function)
+    end
 end
 
-@inline Base.:*(p1::Polynomial{T, N}, p2::ZeroPolynomial{T, N}) where {T, N} =
-    ZeroPolynomial{T, N}()
-
-@inline Base.:*(p1::ZeroPolynomial{T, N}, p2::Polynomial{T, N}) where {T, N} =
-    ZeroPolynomial{T, N}()
-
-@inline function Base.:*(p1::Polynomial{T, N}, p2::Number) where {T, N}
-    Polynomial(p1.coeffs .* convert(T, p2), p1.modulus, p1.mul_function)
+@inline function Base.:*(p1::Polynomial{T, N}, p2::Integer) where {T, N}
+    if p1.is_zero
+        p1
+    else
+        Polynomial{T, N}(p1.coeffs .* convert(T, p2), p1.modulus, p1.mul_function)
+    end
 end
 
-@inline function Base.:*(p1::Number, p2::Polynomial)
+@inline function Base.:*(p1::Integer, p2::Polynomial)
     p2 * p1
 end
 
 
 @inline function Base.div(p1::Polynomial{T, N}, p2::Integer) where {T, N}
-   Polynomial(div.(p1.coeffs, p2), p1.modulus, p1.mul_function)
+    if p1.is_zero
+        p1
+    else
+        Polynomial{T, N}(div.(p1.coeffs, p2), p1.modulus, p1.mul_function)
+    end
 end
 
 
-@inline function Base.:+(p1::Polynomial{T, N}, p2::Polynomial{T}) where {T, N}
-    @assert p1.modulus == p2.modulus
-    Polynomial(p1.coeffs .+ p2.coeffs, p1.modulus, p1.mul_function)
+@inline function Base.:+(p1::Polynomial{T, N}, p2::Polynomial{T, N}) where {T, N}
+    if p1.is_zero && p2.is_zero
+        p1
+    elseif p1.is_zero
+        p2
+    elseif p2.is_zero
+        p1
+    else
+        @assert p1.modulus == p2.modulus
+        Polynomial{T, N}(p1.coeffs .+ p2.coeffs, p1.modulus, p1.mul_function)
+    end
 end
 
 @inline function Base.:+(p1::Polynomial{T, N}, p2::Integer) where {T, N}
-    coeffs = copy(p1.coeffs)
+    if p1.is_zero
+        coeffs = zeros(T, N)
+    else
+        coeffs = copy(p1.coeffs)
+    end
     coeffs[1] += convert(T, p2)
-    Polynomial(coeffs, p1.modulus, p1.mul_function)
+    Polynomial{T, N}(coeffs, p1.modulus, p1.mul_function)
 end
-
-@inline Base.:+(p1::Polynomial{T, N}, p2::ZeroPolynomial{T, N}) where {T, N} = p1
-
-@inline Base.:+(p1::ZeroPolynomial{T, N}, p2::Polynomial{T, N}) where {T, N} = p2
 
 
 @inline function Base.:-(p1::Polynomial{T, N}, p2::Polynomial{T, N}) where {T, N}
-    @assert p1.modulus == p2.modulus
-    Polynomial(p1.coeffs .- p2.coeffs, p1.modulus, p1.mul_function)
+    if p1.is_zero && p2.is_zero
+        p1
+    elseif p1.is_zero
+        -p2
+    elseif p2.is_zero
+        p1
+    else
+        @assert p1.modulus == p2.modulus
+        Polynomial{T, N}(p1.coeffs .- p2.coeffs, p1.modulus, p1.mul_function)
+    end
 end
 
 @inline function Base.:-(p1::Polynomial{T, N}, p2::Integer) where {T, N}
-    coeffs = copy(p1.coeffs)
+    if p1.is_zero
+        coeffs = zeros(T, N)
+    else
+        coeffs = copy(p1.coeffs)
+    end
     coeffs[1] -= convert(T, p2)
-    Polynomial(coeffs, p1.modulus, p1.mul_function)
+    Polynomial{T, N}(coeffs, p1.modulus, p1.mul_function)
 end
 
 @inline function Base.:-(p1::Polynomial{T, N}) where {T, N}
-    Polynomial(.-p1.coeffs, p1.modulus, p1.mul_function)
+    if p1.is_zero
+        p1
+    else
+        Polynomial{T, N}(.-p1.coeffs, p1.modulus, p1.mul_function)
+    end
 end
-
-@inline Base.:-(p1::Polynomial{T, N}, p2::ZeroPolynomial{T, N}) where {T, N} = p1
-
-@inline Base.:-(p1::ZeroPolynomial{T, N}, p2::Polynomial{T, N}) where {T, N} = -p2
 
 
 """
@@ -181,7 +253,8 @@ Multiply the polynomial by `x^power`.
 If `power` lies outside `[0, 2 * N)` where `N-1` is the maximum degree of the polynomial,
 a modulo `2 * N` will be taken.
 """
-@Base.propagate_inbounds @inline function mul_by_monomial(p::Polynomial, power::Integer)
+@Base.propagate_inbounds @inline function mul_by_monomial(
+        p::Polynomial{T, N}, power::Integer) where {T, N}
 
     @assert isa(p.modulus, AbstractCyclicModulus)
 
@@ -204,7 +277,7 @@ a modulo `2 * N` will be taken.
             new_coeffs[j] = shift_last ? -coeffs[j-power] : coeffs[j-power]
         end
 
-        Polynomial(new_coeffs, p.modulus, p.mul_function)
+        Polynomial{T, N}(new_coeffs, p.modulus, p.mul_function)
     end
 end
 
@@ -334,7 +407,7 @@ Assumes the polynomials have the same length and the same value of the `modulus`
         end
     end
 
-    Polynomial(r0, p1.modulus, p1.mul_function)
+    Polynomial{T, N}(r0, p1.modulus, p1.mul_function)
 end
 
 
@@ -354,7 +427,7 @@ Assumes the polynomials have the same length and the same value of the `modulus`
     ntt!(plan, c2, p2.coeffs)
     c1 .*= c2
     intt!(plan, c2, c1)
-    Polynomial(c2, p1.modulus, p1.mul_function)
+    Polynomial{T, N}(c2, p1.modulus, p1.mul_function)
 end
 
 
@@ -373,7 +446,7 @@ Assumes the polynomials have the same length and the same value of the `modulus`
     else
         res = nussbaumer_mul_cyclic(p1.coeffs, p2.coeffs, true)
     end
-    Polynomial(res, p1.modulus, p1.mul_function)
+    Polynomial{T, N}(res, p1.modulus, p1.mul_function)
 end
 
 

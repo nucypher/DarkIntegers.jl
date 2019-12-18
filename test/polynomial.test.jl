@@ -63,7 +63,7 @@ end
 
 
 function reference_mul(p1::Polynomial{T, N}, p2::Polynomial{T, N}) where {T, N}
-    res = Polynomial(zeros(T, length(p1)), p1.modulus, p1.mul_function)
+    res = zero(Polynomial{T, N})
     for (j, c) in enumerate(p1.coeffs)
         res = res + mul_by_monomial(p2, j - 1) * c
     end
@@ -207,6 +207,14 @@ end
     c2 = _known_isprime_called
     @test c2 - c1 == 1
     @test p.mul_function == DarkIntegers.ntt_mul
+end
+
+
+@testcase "type stability" begin
+    tp = Polynomial{Int, 4}
+    @test Base.promote_op(+, tp, tp) == tp
+    @test Base.promote_op(-, tp, tp) == tp
+    @test Base.promote_op(*, tp, tp) == tp
 end
 
 
