@@ -212,8 +212,10 @@ end
 
 @testcase "type stability" begin
     tp = Polynomial{Int, 4}
+    @test Base.promote_op(zero, tp) == tp
     @test Base.promote_op(+, tp, tp) == tp
     @test Base.promote_op(-, tp, tp) == tp
+    @test Base.promote_op(-, tp) == tp
     @test Base.promote_op(*, tp, tp) == tp
 end
 

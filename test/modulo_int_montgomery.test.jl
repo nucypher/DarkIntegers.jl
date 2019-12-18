@@ -118,4 +118,15 @@ end
 end
 
 
+@testcase "type stability" begin
+    tp = MgModUInt{UInt64, UInt64(5)}
+    @test Base.promote_op(zero, tp) == tp
+    @test Base.promote_op(one, tp) == tp
+    @test Base.promote_op(+, tp, tp) == tp
+    @test Base.promote_op(-, tp, tp) == tp
+    @test Base.promote_op(-, tp) == tp
+    @test Base.promote_op(*, tp, tp) == tp
+end
+
+
 end

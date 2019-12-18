@@ -324,4 +324,15 @@ end
 end
 
 
+@testcase "type stability" begin
+    tp = MLUInt{4, UInt64}
+    @test Base.promote_op(zero, tp) == tp
+    @test Base.promote_op(one, tp) == tp
+    @test Base.promote_op(+, tp, tp) == tp
+    @test Base.promote_op(-, tp, tp) == tp
+    @test Base.promote_op(-, tp) == tp
+    @test Base.promote_op(*, tp, tp) == tp
+end
+
+
 end
