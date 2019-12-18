@@ -211,14 +211,7 @@ Base.string(x::MgModUInt{T, M}) where {T, M} = string(value(x)) * "RRM"
 Base.show(io::IO, x::MgModUInt{T, M}) where {T, M} = print(io, string(x))
 
 
-# Required for broadcasting
-
-
-Base.length(x::MgModUInt{T, M}) where {T, M} = 1
-
-
-Base.iterate(x::MgModUInt{T, M}) where {T, M} = (x, nothing)
-Base.iterate(x::MgModUInt{T, M}, state) where {T, M} = nothing
+Base.Broadcast.broadcastable(x::MgModUInt) = (x,)
 
 
 encompassing_type(tp::Type{MgModUInt{T, M}}) where {T, M} = encompassing_type(T)

@@ -289,3 +289,6 @@ bitsizeof(::Type{MLInt{N, T}}) where {N, T} = bitsizeof(T) * N
 
 
 @inline Base.:&(x::MLInt{N, T}, y::MLInt{N, T}) where {N, T} = unsigned(x) & unsigned(y)
+
+
+Base.Broadcast.broadcastable(x::MLInt) = (x,)

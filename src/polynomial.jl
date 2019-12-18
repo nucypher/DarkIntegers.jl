@@ -514,11 +514,7 @@ _join_modulus(x, y::AbstractPolynomialModulus) = y
 _join_modulus(x, y) = nothing
 
 
-Base.length(x::Polynomial) = 1
-
-
-Base.iterate(x::Polynomial) = (x, nothing)
-Base.iterate(x::Polynomial, state) = nothing
+Base.Broadcast.broadcastable(x::Polynomial) = (x,)
 
 
 Base.eltype(x::Polynomial{T, N}) where {T, N} = T

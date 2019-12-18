@@ -587,14 +587,7 @@ Base.sizeof(::Type{MLUInt{N, T}}) where {N, T} = sizeof(T) * N
 bitsizeof(::Type{MLUInt{N, T}}) where {N, T} = bitsizeof(T) * N
 
 
-# Required for broadcasting
-
-
-Base.length(x::MLUInt{N, T}) where {N, T} = 1
-
-
-Base.iterate(x::MLUInt{N, T}) where {N, T} = (x, nothing)
-Base.iterate(x::MLUInt{N, T}, state) where {N, T} = nothing
+Base.Broadcast.broadcastable(x::MLUInt) = (x,)
 
 
 # The following methods are needed for MLUInt to support mulmod_bitshift()

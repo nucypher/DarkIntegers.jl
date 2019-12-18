@@ -152,14 +152,7 @@ Base.string(x::ModUInt{T, M}) where {T, M} = string(value(x)) * "RR"
 Base.show(io::IO, x::ModUInt{T, M}) where {T, M} = print(io, string(x))
 
 
-# Required for broadcasting
-
-
-Base.length(x::ModUInt{T, M}) where {T, M} = 1
-
-
-Base.iterate(x::ModUInt{T, M}) where {T, M} = (x, nothing)
-Base.iterate(x::ModUInt{T, M}, state) where {T, M} = nothing
+Base.Broadcast.broadcastable(x::ModUInt) = (x,)
 
 
 encompassing_type(tp::Type{ModUInt{T, M}}) where {T, M} = encompassing_type(T)
