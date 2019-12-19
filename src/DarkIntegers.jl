@@ -50,13 +50,12 @@ export known_isprime
 export broadcast_into_polynomial
 export broadcast_into_polynomial!
 export with_modulus
+export resize
 
 include("modulo_int_helpers.jl")
 export value
 export raw_value
 export modulus
-
-export change_length
 
 include("ntt.jl")
 export ntt

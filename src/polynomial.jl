@@ -450,6 +450,24 @@ Assumes the polynomials have the same length and the same value of the `modulus`
 end
 
 
+"""
+    resize(p::Polynomial, new_length::Integer)
+
+Returns a polynomial with changed length.
+If `new_length` is greater than the current length, coefficients for higher powers will be set to 0.
+If `new_length` is smaller, coefficients for higher powers will be discarded.
+"""
+@inline function resize(p::Polynomial{T, N}, new_length::Integer) where {T, N}
+    if new_length > N
+        Polynomial{T, new_length}([p.coeffs; zeros(T, new_length - length(p.coeffs))], p.modulus)
+    elseif new_length < old_length
+        Polynomial{T, new_length}(p.coeffs[1:new_length], p.modulus)
+    else
+        p
+    end
+end
+
+
 #=
 Broadcasting machinery.
 
