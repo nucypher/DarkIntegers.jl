@@ -83,18 +83,18 @@ end
     @test_result "UInt128: " * benchmark_result(trial)
 
     mptp1 = MLUInt{2, UInt64}
-    x_mp = mptp1(x)
-    y_mp = mptp1(y)
-    m_mp = mptp1(modulus)
+    x_mp = convert(mptp1, x)
+    y_mp = convert(mptp1, y)
+    m_mp = convert(mptp1, modulus)
     x_m2 = MgModUInt{mptp1, m_mp}(x_mp)
     y_m2 = MgModUInt{mptp1, m_mp}(y_mp)
     trial = @benchmark $x_m2 * $y_m2
     @test_result "2xUInt64: " * benchmark_result(trial)
 
     mptp2 = MLUInt{3, UInt32}
-    x_mp = mptp2(x)
-    y_mp = mptp2(y)
-    m_mp = mptp2(modulus)
+    x_mp = convert(mptp2, x)
+    y_mp = convert(mptp2, y)
+    m_mp = convert(mptp2, modulus)
     x_m3 = MgModUInt{mptp2, m_mp}(x_mp)
     y_m3 = MgModUInt{mptp2, m_mp}(y_mp)
     trial = @benchmark $x_m3 * $y_m3

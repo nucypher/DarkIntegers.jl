@@ -81,9 +81,9 @@ end
     @test_result "UInt128: " * benchmark_result(trial)
 
     mptp = MLUInt{2, UInt64}
-    x_mp = mptp(x)
-    y_mp = mptp(y)
-    modulus_mp = mptp(modulus)
+    x_mp = convert(mptp, x)
+    y_mp = convert(mptp, y)
+    modulus_mp = convert(mptp, modulus)
 
     trial = @benchmark mulmod_bitshift($x_mp, $y_mp, $modulus_mp)
     @test_result "bitshift: " * benchmark_result(trial)

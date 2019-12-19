@@ -242,9 +242,9 @@ end
     trial = @benchmark mulmod($x, $y, $modulus)
     @test_result "UInt128: " * benchmark_result(trial)
 
-    x_mp = mptp(x)
-    y_mp = mptp(y)
-    m_mp = mptp(modulus)
+    x_mp = convert(mptp, x)
+    y_mp = convert(mptp, y)
+    m_mp = convert(mptp, modulus)
 
     trial = @benchmark mulmod_bitshift($x_mp, $y_mp, $m_mp)
     @test_result "2xUInt64, bitshift: " * benchmark_result(trial)

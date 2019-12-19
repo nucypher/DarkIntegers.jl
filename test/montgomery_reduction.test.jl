@@ -126,9 +126,9 @@ end
     @test_result "UInt128: " * benchmark_result(trial)
 
     mp2tp = MLUInt{2, UInt64}
-    x_mp2 = mp2tp.(x)
-    y_mp2 = mp2tp.(y)
-    m_mp2 = mp2tp(modulus)
+    x_mp2 = convert.(mp2tp, x)
+    y_mp2 = convert.(mp2tp, y)
+    m_mp2 = convert(mp2tp, modulus)
     m_prime_mp2 = get_montgomery_coeff(m_mp2)
     res_mp2 = similar(x_mp2)
 
@@ -136,9 +136,9 @@ end
     @test_result "2xUInt64: " * benchmark_result(trial)
 
     mp3tp = MLUInt{3, UInt32}
-    x_mp3 = mp3tp.(x)
-    y_mp3 = mp3tp.(y)
-    m_mp3 = mp3tp(modulus)
+    x_mp3 = convert.(mp3tp, x)
+    y_mp3 = convert.(mp3tp, y)
+    m_mp3 = convert(mp3tp, modulus)
     m_prime_mp3 = get_montgomery_coeff(m_mp3)
     res_mp3 = similar(x_mp3)
 
@@ -194,8 +194,8 @@ end
     @test_result "UInt128: " * benchmark_result(trial)
 
     mptp1 = MLUInt{2, UInt64}
-    x_mp1 = mptp1(x)
-    m_mp1 = mptp1(modulus)
+    x_mp1 = convert(mptp1, x)
+    m_mp1 = convert(mptp1, modulus)
     mc_mp1 = get_montgomery_coeff(m_mp1)
     c_mp1 = get_to_montgomery_coeff(m_mp1)
 
@@ -203,8 +203,8 @@ end
     @test_result "2xUInt64: " * benchmark_result(trial)
 
     mptp2 = MLUInt{3, UInt32}
-    x_mp2 = mptp2(x)
-    m_mp2 = mptp2(modulus)
+    x_mp2 = convert(mptp2, x)
+    m_mp2 = convert(mptp2, modulus)
     mc_mp2 = get_montgomery_coeff(m_mp2)
     c_mp2 = get_to_montgomery_coeff(m_mp2)
 
@@ -255,16 +255,16 @@ end
     @test_result "UInt128: " * benchmark_result(trial)
 
     mptp1 = MLUInt{2, UInt64}
-    x_mp1 = mptp1(x)
-    m_mp1 = mptp1(modulus)
+    x_mp1 = convert(mptp1, x)
+    m_mp1 = convert(mptp1, modulus)
     c_mp1 = get_montgomery_coeff(m_mp1)
 
     trial = @benchmark from_montgomery($x_mp1, $m_mp1, $c_mp1)
     @test_result "2xUInt64: " * benchmark_result(trial)
 
     mptp2 = MLUInt{3, UInt32}
-    x_mp2 = mptp2(x)
-    m_mp2 = mptp2(modulus)
+    x_mp2 = convert(mptp2, x)
+    m_mp2 = convert(mptp2, modulus)
     c_mp2 = get_montgomery_coeff(m_mp2)
 
     trial = @benchmark from_montgomery($x_mp2, $m_mp2, $c_mp2)

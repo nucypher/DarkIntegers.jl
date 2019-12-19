@@ -51,10 +51,10 @@ end
     p1_ref = BigInt.(rand(UInt128, 64)) .% m
 
     rtp = MLUInt{2, UInt64}
-    mr = rtp(m)
+    mr = convert(rtp, m)
     mtp = MgModUInt{rtp, mr}
 
-    p1 = Polynomial(mtp.(p1_ref), true)
+    p1 = Polynomial(convert.(mtp, p1_ref), negacyclic_modulus)
 
     trial = @benchmark mul_by_monomial($p1, 123)
     @test_result benchmark_result(trial)
@@ -83,8 +83,8 @@ end
     mtp = MgModUInt{rtp, mr}
 
     pm = negacyclic ? negacyclic_modulus : cyclic_modulus
-    p1 = Polynomial(mtp.(p1_ref), pm)
-    p2 = Polynomial(mtp.(p2_ref), pm)
+    p1 = Polynomial(convert.(mtp, p1_ref), pm)
+    p2 = Polynomial(convert.(mtp, p2_ref), pm)
 
     ref = reference_mul(p1, p2)
     test1 = karatsuba_mul(p1, p2)
@@ -119,8 +119,8 @@ choice_types = [
 
     len = 32
     pm = negacyclic ? negacyclic_modulus : cyclic_modulus
-    p1 = Polynomial(tp.(mod.(rand(Int, len), max_val)), pm)
-    p2 = Polynomial(tp.(mod.(rand(Int, len), max_val)), pm)
+    p1 = Polynomial(convert.(tp, mod.(rand(Int, len), max_val)), pm)
+    p2 = Polynomial(convert.(tp, mod.(rand(Int, len), max_val)), pm)
 
     p = p1 * p2
     ref = reference_mul(p1, p2)
@@ -143,8 +143,8 @@ end
     mr = convert(rtp, m)
     mtp = MgModUInt{rtp, mr}
 
-    p1 = Polynomial(mtp.(p1_ref), pm)
-    p2 = Polynomial(mtp.(p2_ref), pm)
+    p1 = Polynomial(convert.(mtp, p1_ref), pm)
+    p2 = Polynomial(convert.(mtp, p2_ref), pm)
 
     trial = @benchmark karatsuba_mul($p1, $p2)
     @test_result "Karatsuba: " * benchmark_result(trial)
