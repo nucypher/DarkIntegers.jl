@@ -68,7 +68,7 @@ Reverses the order of the lowest `l` bits in `x` and fills the rest with 0s.
 """
 function bitreverse(x::T, l::Integer) where T <: Integer
     # Slow, but simple function.
-    # TODO: can be optimized if its performance becomes critical.
+    # TODO: (issue #26) can be optimized if its performance becomes critical.
     if l == 0
         zero(T)
     else

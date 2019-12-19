@@ -138,7 +138,7 @@ end
 
 
 @inline function Base.:-(x::MgModUInt{T, M}) where {T, M}
-    # TODO: can be optimized
+    # TODO: (issue #20) can be optimized
     zero(MgModUInt{T, M}) - x
 end
 
@@ -164,7 +164,7 @@ end
 
 
 function Base.isodd(x::MgModUInt{T, M}) where {T, M}
-    # TODO: optimize? Although currently it is not critical to the performance
+    # TODO: (issue #21) optimize? Although currently it is not critical to the performance
     isodd(from_montgomery(x))
 end
 

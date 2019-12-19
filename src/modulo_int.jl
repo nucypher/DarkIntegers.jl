@@ -86,7 +86,7 @@ end
 
 
 @inline function Base.:-(x::ModUInt{T, M}) where {T, M}
-    # TODO: can be optimized
+    # TODO: (issue #20) can be optimized
     zero(ModUInt{T, M}) - x
 end
 

@@ -146,7 +146,7 @@ calculates `x' * y' * R mod m`, where `R = typemax(MLUInt{N, T}) + 1`.
         end
 
         push!(body, quote
-            # TODO: can `a` be greater than `m` at this point?
+            # TODO: (issue #22) can `a` be greater than `m` at this point?
             a = submod(a, p2, m)
         end)
 
@@ -182,7 +182,7 @@ has only one limb.
     u = t * m_prime
     _, p2 = _mul_by_single(m, u)
 
-    # TODO: can `a` be greater than `m` at this point?
+    # TODO: (issue #22) can `a` be greater than `m` at this point?
     a = submod(a, p2, m)
 
     for i in 2:N
@@ -191,7 +191,7 @@ has only one limb.
         u = a_lo * m_prime
         _, p2 = _mul_by_single(m, u)
 
-        # TODO: can `a` be greater than `m` at this point?
+        # TODO: (issue #22) can `a` be greater than `m` at this point?
         a = submod(a, p2, m)
     end
 

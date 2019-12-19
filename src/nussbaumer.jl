@@ -173,7 +173,7 @@ end
 
 
 @inline function nussbaumer_mul_cyclic(x::Array{T, 1}, y::Array{T, 1}, rescale::Bool) where T
-    # TODO: since cyclic convolution is not of interest at the moment,
+    # TODO: (issue #19) since cyclic convolution is not of interest at the moment,
     # a slower recursive version is implemented.
     # Most probably can be sped up.
     plan = get_nussbaumer_plan(T, length(x))

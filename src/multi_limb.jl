@@ -251,7 +251,7 @@ end
 
 
 @inline function Base.:*(x::MLUInt{N, T}, y::MLUInt{N, T}) where {N, T}
-    # TODO: to protect from timing attacks we can assume n == t == N
+    # TODO: (see issue #14) to protect from timing attacks we can assume n == t == N
     # This will also allow us to use a generated function and may turn out to be faster...
     n = _most_significant_limb(x) - 1
     t = _most_significant_limb(y) - 1
@@ -439,7 +439,8 @@ end
         x = setindex(x, out_hi, last_idx)
     end
 
-    x, c1 || c2 # TODO: it seems that we can have at most 1 carried over to the n+2-th limb
+    # TODO: (issue #23) it seems that we can have at most 1 carried over to the n+2-th limb
+    x, c1 || c2
 end
 
 
@@ -535,7 +536,7 @@ end
         end
 
         if !overflow2
-            # TODO: `q_hat` differs from the target value by at most 2,
+            # TODO: (issue #24) `q_hat` differs from the target value by at most 2,
             # so this loop can theoretically be unrolled.
             while true
                 thi, tlo = mulhilo(q_hat, y_pp)
@@ -567,14 +568,14 @@ end
 
 
 @inline function Base.div(x::MLUInt{N, T}, y::MLUInt{N, T}) where {N, T}
-    # TODO: is there a faster way?
+    # TODO: (issue #25) is there a faster way?
     q, r = divrem(x, y)
     q
 end
 
 
 @inline function Base.rem(x::MLUInt{N, T}, y::MLUInt{N, T}) where {N, T}
-    # TODO: is there a faster way?
+    # TODO: (issue #25) is there a faster way?
     q, r = divrem(x, y)
     r
 end
