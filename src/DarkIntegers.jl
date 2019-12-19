@@ -56,11 +56,7 @@ export value
 export raw_value
 export modulus
 
-export change_modulus
-export change_representation
-export change_base_type
 export change_length
-export rescale
 
 include("ntt.jl")
 export ntt

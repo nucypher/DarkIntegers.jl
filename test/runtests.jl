@@ -11,7 +11,6 @@ include("modulo_int.test.jl")
 include("montgomery_reduction.test.jl")
 include("modulo_int_montgomery.test.jl")
 include("polynomial.test.jl")
-include("modification.test.jl")
 include("ntt.test.jl")
 
 exit(runtests(options=Dict(:exclude_tags => [:performance, :exhaustive])))
