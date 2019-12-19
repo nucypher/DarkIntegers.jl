@@ -459,8 +459,8 @@ If `new_length` is smaller, coefficients for higher powers will be discarded.
 """
 @inline function resize(p::Polynomial{T, N}, new_length::Integer) where {T, N}
     if new_length > N
-        Polynomial{T, new_length}([p.coeffs; zeros(T, new_length - length(p.coeffs))], p.modulus)
-    elseif new_length < old_length
+        Polynomial{T, new_length}([p.coeffs; zeros(T, new_length - N)], p.modulus)
+    elseif new_length < N
         Polynomial{T, new_length}(p.coeffs[1:new_length], p.modulus)
     else
         p
