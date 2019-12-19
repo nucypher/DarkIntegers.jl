@@ -97,4 +97,9 @@ encompassing_type(tp::Type{T}) where T = T
 encompassing_type(::T) where T = encompassing_type(T)
 
 
+"""
+    as_builtin(x)
+
+Returns the integer `x` converted to a builtin type with the minimum suitable size.
+"""
 as_builtin(x) = convert(encompassing_type(x), x)

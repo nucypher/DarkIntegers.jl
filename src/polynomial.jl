@@ -14,6 +14,10 @@ abstract type AbstractCyclicModulus <: AbstractPolynomialModulus end
 struct NegacyclicModulus <: AbstractCyclicModulus end
 
 
+"""
+A constant denoting negacyclic polynomial modulus (`x^N + 1`),
+to be supplied to the [`Polynomial`](@ref) constructor.
+"""
 const negacyclic_modulus = NegacyclicModulus()
 
 
@@ -21,9 +25,20 @@ const negacyclic_modulus = NegacyclicModulus()
 struct CyclicModulus <: AbstractCyclicModulus end
 
 
+"""
+A constant denoting cyclic polynomial modulus (`x^N - 1`),
+to be supplied to the [`Polynomial`](@ref) constructor.
+"""
 const cyclic_modulus = CyclicModulus()
 
 
+"""
+    known_isprime(::Val{X})
+
+A method of this function can be defined by the user for a certain `X` to avoid
+`isprime()` being called on it when determining the multiplication function for a polynomial
+(which can reduce start-up time if `X` is very large).
+"""
 @generated function known_isprime(::Val{X}) where X
     res = isprime(as_builtin(X))
     :( $res )
@@ -133,6 +148,11 @@ Base.promote_type(::Type{Polynomial{T, N}}, ::Type{Polynomial{V, M}}) where {T, 
 Base.zero(::Polynomial{T, N}) where {T, N} = zero(Polynomial{T, N})
 
 
+"""
+    with_modulus(p::Polynomial{T, N}, new_modulus::AbstractPolynomialModulus)
+
+Returns a new polynomial object with a changed modulus.
+"""
 function with_modulus(p::Polynomial{T, N}, m::Union{CyclicModulus, NegacyclicModulus}) where {T, N}
     if p.is_zero
         coeffs = zeros(T, N)
@@ -485,6 +505,14 @@ that can be used for the latter.
 =#
 
 
+"""
+    broadcast_into_polynomial(func, args...)
+
+Treat any polynomials in `args` as 1-dimensional arrays and apply `func.(args...)`,
+saving the result into a new polynomial.
+
+The moduli of the polynomials in `args` must be the same.
+"""
 function broadcast_into_polynomial(func, args...)
     processed_args = _extract_coeffs.(args)
     new_modulus = _process_polynomials(args)
@@ -495,6 +523,13 @@ function broadcast_into_polynomial(func, args...)
 end
 
 
+"""
+    broadcast_into_polynomial!(func, p::Polynomial, args...)
+
+Treat `p` and any polynomials in `args` as 1-dimensional arrays and apply `p .= func.(args...)`.
+
+The moduli of the polynomials in `args` and the modulus of `p` must be the same.
+"""
 function broadcast_into_polynomial!(func, p::Polynomial, args...)
     processed_args = _extract_coeffs.(args)
     new_modulus = _process_polynomials(args)

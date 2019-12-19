@@ -15,10 +15,10 @@ Supports `+`, `-`, `*`, `divrem`, `div`, `rem`, `mod`, `^`,
 
 Also supports `num_bits`, `halve`, `double`, `encompassing_type`.
 
-    MLUInt{N, T}(x::Integer) where {N, T <: Unsigned}
+The objects can be created either with `convert()`, or as
 
-Creates an `MLUInt` object. If `x` does not fit into `N` limbs of type `T`,
-the excess bits will be ignored.
+    MLUInt(x::NTuple{N, T})
+    MLUInt{N, T}(x::NTuple{N, V})
 """
 struct MLUInt{N, T <: Unsigned} <: Unsigned
     limbs :: NTuple{N, T}

@@ -1,3 +1,12 @@
+"""
+    known_generator(::Val{X})
+
+A method of this function can be defined by the user for a certain `X` to provide a known generator
+to use in NTT for this modulus.
+
+A generator is a number `g` between `0` and `X-1` such that `g^1 mod X`, ..., `g^(X-1) mod X`
+are all numbers from `1` to `X-1` (in any order).
+"""
 @generated function known_generator(::Val{X}) where X
     res = find_generator(X)
     :( $res )

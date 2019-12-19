@@ -2,6 +2,24 @@
 Multi-limb signed integers.
 =#
 
+
+"""
+Multi-precision unsigned integer type, with `N` limbs of type `T`
+(which must be an unsigned integer type).
+
+Supports `+`, `-`, `*`, `divrem`, `div`, `rem`, `mod`, `^`,
+`==`, `!=`, `<`, `<=`, `>`, `>=`,
+`zero`, `one`, `oneunit`, `iseven`, `isodd`, `typemin`, `typemax`, `iszero`,
+`sizeof` (can be off if limbs have the type `UInt4`),
+`bitsizeof`, `leading_zeros`, `trailing_zeros`, `eltype`, `abs`.
+
+Also supports `num_bits`, `halve`, `double`, `encompassing_type`.
+
+The objects can be created either with `convert()`, or as
+
+    MLInt(x::NTuple{N, T})
+    MLInt{N, T}(x::NTuple{N, V})
+"""
 struct MLInt{N, T <: Unsigned} <: Signed
     limbs :: NTuple{N, T}
 

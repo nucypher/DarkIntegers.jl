@@ -11,6 +11,7 @@ bitsizeof
 log_bitsizeof
 num_bits
 encompassing_type
+as_builtin
 ```
 
 
@@ -31,43 +32,58 @@ remhilo
 addmod
 submod
 mulmod
+powmod
 ```
 
 
 ## Multi-precision numbers
 
 ```@docs
-MLUint
+MLUInt
+MLInt
 ```
 
 
-## Residue ring elements
+## Modulo integers
 
 ```@docs
 ModUInt
 ```
 
 
-## Residue ring elements (Montgomery representation)
+## Modulo integers (Montgomery representation)
 
 ```@docs
 MgModUInt
 ```
 
 
-## Cyclic polynomials
+## Modulo integers helper functions
+
+```@docs
+value
+raw_value
+modulus
+```
+
+
+## (Nega)cyclic polynomials
 
 ```@docs
 Polynomial
 mul_by_monomial
+cyclic_modulus
+negacyclic_modulus
+known_isprime
+broadcast_into_polynomial
+broadcast_into_polynomial!
+with_modulus
+resize
 ```
 
-## Partial modification of residue ring elements and polynomials
+## NTT
 
 ```@docs
-change_representation
-change_base_type
-change_modulus
-change_length
-rescale
+ntt
+known_generator
 ```

@@ -41,6 +41,11 @@ include("montgomery_reduction.jl")
 include("modulo_int_montgomery.jl")
 export MgModUInt
 
+include("modulo_int_helpers.jl")
+export value
+export raw_value
+export modulus
+
 include("polynomial.jl")
 export Polynomial
 export mul_by_monomial
@@ -51,11 +56,6 @@ export broadcast_into_polynomial
 export broadcast_into_polynomial!
 export with_modulus
 export resize
-
-include("modulo_int_helpers.jl")
-export value
-export raw_value
-export modulus
 
 include("ntt.jl")
 export ntt

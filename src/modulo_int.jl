@@ -8,7 +8,7 @@ const _verbatim = _Verbatim()
 
 
 """
-Residue ring element, an unsigned integer with all operations performed modulo `M`.
+An unsigned integer with all operations performed modulo `M`.
 
 Supports `+`, `-`, `*`, `divrem`, `div`, `rem`, `^`, `<`, `<=`, `>`, `>=`,
 `zero`, `one` and `isodd`.

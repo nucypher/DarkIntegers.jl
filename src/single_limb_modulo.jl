@@ -123,6 +123,11 @@ Returns `mod(x * y, modulus)` (even if `x * y` overflows `T`).
     mulmod_bitshift(x, y, modulus)
 
 
+"""
+    powmod(x::T, y::V, modulus::T) where {T <: Unsigned, V}
+
+Returns `mod(x * y, modulus)` (even if `x * y` overflows `T`).
+"""
 function powmod(x::T, y::V, modulus::T) where {T, V}
     if signbit(y)
         throw(DomainError(y, "Cannot raise to a negative power"))
