@@ -1,13 +1,13 @@
 # Version history
 
 
-## Current development version
+## v0.1.1 (20 December 2019)
 
 * FIXED: a bug in conversion between polynomials of different lengths
 * FIXED: added a trivial `promote()` method to fix some promotion errors
 
 
-## v0.1.0
+## v0.1.0 (19 December 2019)
 
 The first semi-stable release.
 
