@@ -138,6 +138,8 @@ function Base.convert(::Type{Polynomial{T, N}}, x::Polynomial{V, M}) where {T, N
 end
 
 
+Base.promote_type(::Type{Polynomial{T, N}}, ::Type{Polynomial{T, N}}) where {T, N} =
+    Polynomial{T, N}
 Base.promote_type(::Type{Polynomial{T, N}}, ::Type{Polynomial{V, M}}) where {T, N, V, M} =
     Polynomial{promote_type(T, V), max(N, M)}
 
