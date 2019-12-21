@@ -133,7 +133,7 @@ function Base.convert(::Type{Polynomial{T, N}}, x::Polynomial{V, M}) where {T, N
         zero(Polynomial{T, N})
     else
         @assert N >= M
-        Polynomial{T, N}(convert.(T, x.coeffs), x.modulus)
+        Polynomial{T, N}(vcat(convert.(T, x.coeffs), zeros(T, N - M)), x.modulus)
     end
 end
 
