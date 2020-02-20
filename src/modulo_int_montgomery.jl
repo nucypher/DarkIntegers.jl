@@ -85,7 +85,7 @@ end
 end
 
 @inline function Base.convert(::Type{MgModUInt{T, M}}, x::ModUInt{T, M}) where {T, M}
-    MgModUInt{T, M}(x.value, M, _no_modulo)
+    MgModUInt{T, M}(x.value, _no_modulo)
 end
 
 @inline Base.convert(::Type{MgModUInt{T, M}}, x::Bool) where {T, M} =

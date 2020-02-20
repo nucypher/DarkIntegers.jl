@@ -1,6 +1,11 @@
 # Version history
 
 
+## Current development version
+
+* FIXED: a typo in `convert(::Type{MgModUInt{T, M}}, ::ModUInt{T, M})`
+
+
 ## v0.1.1 (20 December 2019)
 
 * FIXED: a bug in conversion between polynomials of different lengths
