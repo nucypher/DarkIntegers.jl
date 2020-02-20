@@ -46,6 +46,22 @@ end
 
 
 """
+    known_polynomial_mul_function(::Type{T}, ::Val{N}, polynomial_modulus::AbstractPolynomialModulus)
+
+A method of this function can be defined by the user to specify the multiplication function
+for a certain polynomial coefficient type, length and modulus.
+Has to return a function with the signature
+`(p1::Polynomial{T, N}, p2::Polynomial{T, N}) :: Polynomial{T, N}`,
+for example one of `DarkIntegers.karatsuba_mul`, `DarkIntegers.nussbaumer_mul`,
+`DarkIntegers.ntt_mul`.
+"""
+@generated function known_polynomial_mul_function(
+        ::Type{T}, ::Val{N}, polynomial_modulus::AbstractPolynomialModulus) where {T, N}
+    nothing
+end
+
+
+"""
 Select the best available polynomial multiplication function
 based on the element type an polynomial length.
 """
@@ -62,7 +78,13 @@ end
 # Ideally it should have been a @generated function,
 # but in this case it does not pick up user-defined `known_isprime()` methods.
 @inline function _get_polynomial_mul_function(
-        ::Type{T}, ::Val{N}, pm::AbstractCyclicModulus) where {T <: AbstractModUInt, N}
+        ::Type{T}, v::Val{N}, pm::AbstractCyclicModulus) where {T <: AbstractModUInt, N}
+
+    known_func = Base.invokelatest(known_polynomial_mul_function, T, v, pm)
+    if !(known_func === nothing)
+        return known_func
+    end
+
     m = modulus(T)
     tp = eltype(T)
     # Regular NTT needs (m - 1) to be a multiple of N,

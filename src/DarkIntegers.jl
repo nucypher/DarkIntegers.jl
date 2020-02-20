@@ -51,7 +51,6 @@ export Polynomial
 export mul_by_monomial
 export cyclic_modulus
 export negacyclic_modulus
-export known_isprime
 export broadcast_into_polynomial
 export broadcast_into_polynomial!
 export with_modulus

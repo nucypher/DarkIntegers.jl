@@ -74,7 +74,8 @@ Polynomial
 mul_by_monomial
 cyclic_modulus
 negacyclic_modulus
-known_isprime
+DarkIntegers.known_isprime
+DarkIntegers.known_polynomial_mul_function
 broadcast_into_polynomial
 broadcast_into_polynomial!
 with_modulus
