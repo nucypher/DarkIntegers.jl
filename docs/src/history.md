@@ -4,6 +4,7 @@
 ## Current development version
 
 * FIXED: a typo in `convert(::Type{MgModUInt{T, M}}, ::ModUInt{T, M})`
+* FIXED: `known_isprime()` is now called even if it is defined in the user program.
 
 
 ## v0.1.1 (20 December 2019)

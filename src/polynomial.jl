@@ -78,7 +78,7 @@ end
         no_rem = iszero(rem(m_minus_one, factor))
     end
 
-    if no_rem && known_isprime(Val(m))
+    if no_rem && Base.invokelatest(known_isprime, Val(m))
         ntt_mul
     else
         karatsuba_mul
