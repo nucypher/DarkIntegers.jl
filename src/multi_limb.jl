@@ -690,3 +690,12 @@ end
     end
     res
 end
+
+
+@inline function Base.xor(x::MLUInt{N, T}, y::MLUInt{N, T}) where {N, T}
+    res = zero(MLUInt{N, T})
+    for i in 1:N
+        res = setindex(res, xor(x[i], y[i]), i)
+    end
+    res
+end
