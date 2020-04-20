@@ -1,6 +1,11 @@
 # Version history
 
 
+## Current development version
+
+* ADDED: `>>` and `<<` methods for `ModUInt`.
+
+
 ## v0.1.2 (19 February 2020)
 
 * FIXED: a typo in `convert(::Type{MgModUInt{T, M}}, ::ModUInt{T, M})`

@@ -99,6 +99,24 @@ end
 end
 
 
+@inline function Base.:>>(x::ModUInt{T, M}, shift::Int) where {T, M}
+    if shift >= 0
+        ModUInt(x.value >> shift, M, _verbatim)
+    else
+        ModUInt{T, M}(x.value >> shift)
+    end
+end
+
+
+@inline function Base.:<<(x::ModUInt{T, M}, shift::Int) where {T, M}
+    if shift >= 0
+        ModUInt{T, M}(x.value << shift)
+    else
+        ModUInt(x.value << shift, M, _verbatim)
+    end
+end
+
+
 @inline function Base.isodd(x::ModUInt{T, M}) where {T, M}
     isodd(x.value)
 end
