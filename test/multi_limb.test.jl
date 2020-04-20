@@ -335,4 +335,17 @@ end
 end
 
 
+@testcase "fast truncation" begin
+
+    x = MLUInt{4, UInt16}((1111, 2222, 3333, 4444))
+
+    @test typeof(x % UInt8) == UInt8
+    @test x % UInt8 == 1111 % 256
+
+    @test typeof(x % UInt32) == UInt32
+    @test x % UInt32 == 1111 + 2222 * 65536
+
+end
+
+
 end

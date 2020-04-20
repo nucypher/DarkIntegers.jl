@@ -149,6 +149,11 @@ end
 end
 
 
+@inline Base.rem(x::ModUInt{T, M}, ::Type{ModUInt{T, M}}) where {T, M} = x
+
+@inline Base.rem(x::ModUInt{T, M}, tp::Type{V}) where {T, M, V <: Integer} = rem(x.value, tp)
+
+
 @inline function Base.inv(x::ModUInt{T, M}) where {T, M}
     ModUInt{T, M}(invmod_(x.value, M), _verbatim)
 end

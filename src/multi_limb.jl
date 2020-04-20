@@ -581,6 +581,24 @@ end
 end
 
 
+@inline Base.rem(x::MLUInt{N, T}, ::Type{MLUInt{N, T}}) where {N, T} = x
+
+@inline @generated function Base.rem(x::MLUInt{N, T}, ::Type{V}) where {N, T, V <: Integer}
+    if bitsizeof(V) <= bitsizeof(T)
+        :( x[1] % $V )
+    elseif bitsizeof(V) % bitsizeof(T) == 0
+        t = bitsizeof(V) ÷ bitsizeof(T)
+        expr = :(x[1] % $V)
+        for i in 2:t
+            expr = :( $expr | ((x[$i] % V) << $((i-1) * bitsizeof(T))) )
+        end
+        expr
+    else
+        error("Truncating $(MLUInt{N, T}) to $V is not supported")
+    end
+end
+
+
 Base.sizeof(::Type{MLUInt{N, T}}) where {N, T} = sizeof(T) * N
 
 
