@@ -221,7 +221,7 @@ end
     # Works for the types for which `widemul()` is defined in the base library
     # (that is, for which a type with double the bitsize exists)
     r = widemul(x, y)
-    convert(T, r >> bitsizeof(T)), convert(T, r & typemax(T))
+    (r >> bitsizeof(T)) % T, r % T
 end
 
 
@@ -241,16 +241,16 @@ Returns the result as a pair `(hi::T, lo::T)`.
 
 @inline function divremhilo_widen(x_hi::T, x_lo::T, y::T) where T <: Unsigned
     T2 = widen(T)
-    x_hi_w = convert(T2, x_hi)
-    x_lo_w = convert(T2, x_lo)
+    x_hi_w = x_hi % T2
+    x_lo_w = x_lo % T2
 
     x_w = (x_hi_w << bitsizeof(T)) | x_lo_w
-    y_w = convert(T2, y)
+    y_w = y % T2
 
     q_w, r_w = divrem(x_w, y_w)
-    q_lo = q_w & convert(T2, typemax(T))
+    q_lo = q_w & (typemax(T) % T2)
     overflow = q_lo != q_w
-    convert(T, q_lo), convert(T, r_w), overflow
+    q_lo % T, r_w % T, overflow
 end
 
 
