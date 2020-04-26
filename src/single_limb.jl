@@ -3,6 +3,142 @@ Arithmetic on opaque unsigned types.
 """
 
 
+"""
+Returns the pair `(hi, lo)` of `x + y + z`.
+That is, `hi * R + lo = x + y + z`,
+where `0 <= x, y, z, lo < R`, `hi <= 2`, and `R = typemax(T) + 1`.
+
+If `z <= 1`, `hi <= 1` (so it can be used as `new_carry, res = addcarry(x, y, carry)`).
+"""
+function addcarry(x::T, y::T, z::T) where T <: Unsigned
+    T2 = widen(T)
+    res = (x % T2) + (y % T2) + (z % T2)
+    (res >> bitsizeof(T)) % T, res % T
+end
+
+
+"""
+A specialized version for `z == 0`.
+"""
+function addcarry(x::T, y::T) where T <: Unsigned
+    T2 = widen(T)
+    ret = (x % T2) + (y % T2)
+    (ret >> bitsizeof(T)) % T, ret % T
+end
+
+
+"""
+Since `widen(UInt128) == BigInt`, we need a specialized version to avoid allocations.
+"""
+function addcarry(x::UInt128, y::UInt128, z::UInt128)
+    x_lo = x % UInt64
+    x_hi = (x >> 64) % UInt64
+    y_lo = y % UInt64
+    y_hi = (y >> 64) % UInt64
+    z_lo = z % UInt64
+    z_hi = (z >> 64) % UInt64
+
+    t1, r1 = addcarry(x_lo, y_lo, z_lo) # t1 <= 1
+    t2, r2 = addcarry(x_hi, y_hi, t1) # t2 <= 1
+    t3, r2 = addcarry(r2, z_hi) # t3 <= 1
+
+    lo = (r1 % UInt128) | ((r2 % UInt128) << 64)
+    hi = (t2 + t3) % UInt128 # t2, t3 <=1 -> no overflow here
+
+    hi, lo
+end
+
+
+function addcarry(x::UInt128, y::UInt128)
+    x_lo = x % UInt64
+    x_hi = (x >> 64) % UInt64
+    y_lo = y % UInt64
+    y_hi = (y >> 64) % UInt64
+
+    t1, r1 = addcarry(x_lo, y_lo)
+    t2, r2 = addcarry(x_hi, y_hi, t1)
+
+    lo = (r1 % UInt128) | ((r2 % UInt128) << 64)
+    hi = t2 % UInt128
+
+    hi, lo
+end
+
+
+"""
+Returns the pair `(new_borrow, res)` of `x - (y + borrow >> (sizeof(T) - 1))`.
+`borrow` and `new_borrow` can be either `0` or `typemax(T)`,
+the latter meaning that the borrow occurred during subtraction.
+
+Note that it is not an analogue of `addhilo` for subtraction.
+"""
+function subborrow(x::T, y::T, borrow::T) where T <: Unsigned
+    T2 = widen(T)
+    ret = (x % T2) - ((y % T2) + ((borrow >> (bitsizeof(T) - 1)) % T2))
+    (ret >> bitsizeof(T)) % T, ret % T
+end
+
+
+function subborrow(x::UInt128, y::UInt128, borrow::UInt128)
+    x_lo = x % UInt64
+    x_hi = (x >> 64) % UInt64
+    y_lo = y % UInt64
+    y_hi = (y >> 64) % UInt64
+    b_lo = borrow % UInt64 # borrow is always 0 or typemax()
+
+    nb1, r1 = subborrow(x_lo, y_lo, b_lo)
+    nb2, r2 = subborrow(x_hi, y_hi, nb1)
+
+    res = (r1 % UInt128) | ((r2 % UInt128) << 64)
+    new_borrow = (nb2 % UInt128) | ((nb2 % UInt128) << 64)
+
+    new_borrow, res
+end
+
+
+function subborrow(x::T, y::T) where T <: Unsigned
+    T2 = widen(T)
+    ret = (x % T2) - (y % T2)
+    (ret >> bitsizeof(T)) % T, ret % T
+end
+
+
+function subborrow(x::UInt128, y::UInt128)
+    x_lo = x % UInt64
+    x_hi = (x >> 64) % UInt64
+    y_lo = y % UInt64
+    y_hi = (y >> 64) % UInt64
+
+    nb1, r1 = subborrow(x_lo, y_lo)
+    nb2, r2 = subborrow(x_hi, y_hi, nb1)
+
+    res = (r1 % UInt128) | ((r2 % UInt128) << 64)
+    new_borrow = (nb2 % UInt128) | ((nb2 % UInt128) << 64)
+
+    new_borrow, res
+end
+
+
+"""
+Returns the pair `(hi, lo)` of `x + y * z + w`.
+That is, `hi * R + lo = x + y * z + w`,
+where `0 <= x, y, z, w, hi, lo < R`, and `R = typemax(T) + 1`.
+"""
+function muladdcarry(x::T, y::T, z::T, w::T) where T
+    hi, lo = mulhilo(y, z)
+    t, r1 = addcarry(x, lo, w)
+    _, r2 = addcarry(hi, t)
+    r2, r1
+end
+
+
+#function mac(x::T, y::T, z::T, carry::T) where T
+#    T2 = widen(T)
+#    ret = (x % T2) + ((y % T2) * (z % T2)) + (carry % T2)
+#    (ret >> bitsizeof(T)) % T, ret % T
+#end
+
+
 # Addition of unsigned numbers with carry
 @inline function _addc(x::T, y::T) where T <: Unsigned
     # Base.Checked.add_with_overflow is slower
