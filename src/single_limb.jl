@@ -132,11 +132,12 @@ function muladdcarry(x::T, y::T, z::T, w::T) where T
 end
 
 
-#function mac(x::T, y::T, z::T, carry::T) where T
-#    T2 = widen(T)
-#    ret = (x % T2) + ((y % T2) * (z % T2)) + (carry % T2)
-#    (ret >> bitsizeof(T)) % T, ret % T
-#end
+function muladdcarry(x::T, y::T, z::T) where T
+    hi, lo = mulhilo(y, z)
+    t, r1 = addcarry(x, lo)
+    _, r2 = addcarry(hi, t)
+    r2, r1
+end
 
 
 # Addition of unsigned numbers with carry

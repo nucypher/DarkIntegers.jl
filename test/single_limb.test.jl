@@ -66,14 +66,14 @@ end
 end
 
 
-function muladdcarry_ref(x::T, y::T, z::T, w::T) where T
+function muladdcarry_ref(x::T, y::T, z::T, w::T=zero(T)) where T
     b = big(x) + big(y) * big(z) + big(w)
     (b >> bitsizeof(T)) % T, b % T
 end
 
 
-@testcase "muladdcarry" for tp in (UInt64, UInt128)
-    check_function_random(tp, muladdcarry, muladdcarry_ref, 4)
+@testcase "muladdcarry" for tp in (UInt64, UInt128), arity in (3, 4)
+    check_function_random(tp, muladdcarry, muladdcarry_ref, arity)
 end
 
 
