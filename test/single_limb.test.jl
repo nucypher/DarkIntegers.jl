@@ -28,7 +28,7 @@ end
 end
 
 
-function subborrow_ref(x::T, y::T, borrow::T) where T
+function subborrow_ref(x::T, y::T, borrow::T=zero(T)) where T
     b = big(x) - big(y) - (big(borrow >> (bitsizeof(T) - 1)))
     if b >= 0
         zero(T), b % T
@@ -43,16 +43,16 @@ end
     # Two checks to test both possible values of `borrow`
     check_function_random(
         tp,
-        (x, y) -> subborrow(x, y, zero(UInt64)),
-        (x, y) -> subborrow_ref(x, y, zero(UInt64)),
+        (x, y) -> subborrow(x, y, zero(tp)),
+        (x, y) -> subborrow_ref(x, y, zero(tp)),
         2)
     check_function_random(
         tp,
-        (x, y) -> subborrow(x, y, typemax(UInt64)),
-        (x, y) -> subborrow_ref(x, y, typemax(UInt64)),
+        (x, y) -> subborrow(x, y, typemax(tp)),
+        (x, y) -> subborrow_ref(x, y, typemax(tp)),
         2)
 
-    check_function_random(tp, subborrow(x, y), subborrow_ref(x, y), 2)
+    check_function_random(tp, subborrow, subborrow_ref, 2)
 end
 
 
