@@ -37,6 +37,7 @@ export ModUInt
 export AbstractModUInt
 
 include("montgomery_reduction.jl")
+include("montgomery_reduction_ct.jl")
 
 include("modulo_int_montgomery.jl")
 export MgModUInt

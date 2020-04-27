@@ -1,13 +1,20 @@
 using DarkIntegers
 using DarkIntegers:
     UInt4, get_montgomery_coeff, mulmod_montgomery, to_montgomery, from_montgomery,
-    get_to_montgomery_coeff
+    get_to_montgomery_coeff, mulmod_montgomery_ct, get_montgomery_coeff_ct
 
 
 # Can't have it inside @testgroup, because then @benchmark does not see it.
 function batched_mulmod(res, x, y, modulus, m_prime)
     @inbounds @simd for i in 1:length(x)
         res[i] = mulmod_montgomery(x[i], y[i], modulus, m_prime)
+    end
+end
+
+
+function batched_mulmod_ct(res, x, y, modulus, m_prime)
+    @inbounds @simd for i in 1:length(x)
+        res[i] = mulmod_montgomery_ct(x[i], y[i], modulus, m_prime)
     end
 end
 
@@ -34,6 +41,7 @@ end
         b = convert(UInt128, typemax(eltype(tp))) + 1
 
         if (m_prime * m) % b != 1
+            println(((m_prime * m) % b, m))
             @test_fail "Incorrect Montgomery coefficient for $m: $m_prime"
         end
     end
@@ -43,12 +51,12 @@ end
 function mulmod_montgomery_ref(T_bitsize, x::T, y::T, modulus::T) where T
     T2 = widen(T)
 
-    x2 = T2(x)
-    y2 = T2(y)
-    m2 = T2(modulus)
+    x2 = x % T2
+    y2 = y % T2
+    m2 = modulus % T2
 
     R = one(T2) << T_bitsize
-    inv_R = invmod(R, T2(modulus))
+    inv_R = invmod(R, m2)
 
     # applying moduli separately so that intermediate results fit in T2
     (((x2 * y2) % m2) * inv_R) % m2
@@ -60,6 +68,11 @@ function mulmod_montgomery_test(x::T, y::T, modulus::T) where T
 end
 
 
+function mulmod_montgomery_ct_test(x::T, y::T, modulus::T) where T
+    mulmod_montgomery_ct(x, y, modulus, get_montgomery_coeff_ct(modulus))
+end
+
+
 function mulmod_montgomery_predicate(x, y, modulus)
     isodd(modulus) && x < modulus && y < modulus
 end
@@ -68,6 +81,14 @@ end
 @testcase "mulmod_montgomery()" for tp in (UInt32, MLUInt{4, UInt8})
     check_function_random(
         tp, mulmod_montgomery_test, mulmod_montgomery_ref, 3;
+        args_filter_predicate=mulmod_montgomery_predicate,
+        ref_needs_bitsize=true)
+end
+
+
+@testcase "mulmod_montgomery_ct()" for tp in (UInt32, MLUInt{4, UInt8})
+    check_function_random(
+        tp, mulmod_montgomery_ct_test, mulmod_montgomery_ref, 3;
         args_filter_predicate=mulmod_montgomery_predicate,
         ref_needs_bitsize=true)
 end
@@ -110,42 +131,61 @@ end
 end
 
 
-@testcase tags=[:performance] "mulmod_montgomery(), performance" for rng in fixed_rng
+(@testcase tags=[:performance] "mulmod_montgomery(), performance" for
+        rng in fixed_rng,
+        ct in ((false, true) => ("vartime", "ctime"))
 
     # Test batched performance to check how well the operations will be vectorized
 
     batch = 1000
 
+    get_coeff = ct ? get_montgomery_coeff_ct : get_montgomery_coeff
+    test_func = ct ? batched_mulmod_ct : batched_mulmod
+
     modulus = UInt128(2)^80 + 1
     x = rand(rng, UInt128(1):modulus-1, batch)
     y = rand(rng, UInt128(1):modulus-1, batch)
-    m_prime = get_montgomery_coeff(modulus)
+    m_prime = get_coeff(modulus)
     res = similar(x)
 
-    trial = @benchmark batched_mulmod($res, $x, $y, $modulus, $m_prime)
+    trial = @benchmark $test_func($res, $x, $y, $modulus, $m_prime)
     @test_result "UInt128: " * benchmark_result(trial)
 
     mp2tp = MLUInt{2, UInt64}
     x_mp2 = convert.(mp2tp, x)
     y_mp2 = convert.(mp2tp, y)
     m_mp2 = convert(mp2tp, modulus)
-    m_prime_mp2 = get_montgomery_coeff(m_mp2)
+    m_prime_mp2 = get_coeff(m_mp2)
     res_mp2 = similar(x_mp2)
 
-    trial = @benchmark batched_mulmod($res_mp2, $x_mp2, $y_mp2, $m_mp2, $m_prime_mp2)
+    trial = @benchmark $test_func($res_mp2, $x_mp2, $y_mp2, $m_mp2, $m_prime_mp2)
     @test_result "2xUInt64: " * benchmark_result(trial)
 
     mp3tp = MLUInt{3, UInt32}
     x_mp3 = convert.(mp3tp, x)
     y_mp3 = convert.(mp3tp, y)
     m_mp3 = convert(mp3tp, modulus)
-    m_prime_mp3 = get_montgomery_coeff(m_mp3)
+    m_prime_mp3 = get_coeff(m_mp3)
     res_mp3 = similar(x_mp3)
 
-    trial = @benchmark batched_mulmod($res_mp3, $x_mp3, $y_mp3, $m_mp3, $m_prime_mp3)
+    trial = @benchmark $test_func($res_mp3, $x_mp3, $y_mp3, $m_mp3, $m_prime_mp3)
     @test_result "3xUInt32: " * benchmark_result(trial)
 
-end
+    modulus = big(2)^255 - 19
+    mp4tp = MLUInt{4, UInt64}
+    x = rand(rng, big(1):modulus-1, batch)
+    y = rand(rng, big(1):modulus-1, batch)
+
+    x_mp4 = convert.(mp4tp, x)
+    y_mp4 = convert.(mp4tp, y)
+    m_mp4 = convert.(mp4tp, modulus)
+    m_prime_mp4 = get_coeff(m_mp4)
+    res_mp4 = similar(x_mp4)
+
+    trial = @benchmark $test_func($res_mp4, $x_mp4, $y_mp4, $m_mp4, $m_prime_mp4)
+    @test_result "4xUInt64: " * benchmark_result(trial)
+
+end)
 
 
 function to_montgomery_ref(bitsize, x::T, modulus::T) where T

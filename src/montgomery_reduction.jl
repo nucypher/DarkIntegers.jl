@@ -24,7 +24,7 @@ Namely, `m' = m^(-1) mod b`, where `b = typemax(T)+1`.
 function get_montgomery_coeff(modulus::T) where T <: Unsigned
     # have to widen the type, since we need to use `typemax(T)+1`.
     T2 = widen(T)
-    convert(T, invmod(convert(T2, modulus), convert(T2, typemax(T)) + 1))
+    invmod(modulus % T2, typemax(T) % T2 + 1) % T
 end
 
 
