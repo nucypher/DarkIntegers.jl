@@ -10,7 +10,7 @@ where `0 <= x, y, z, lo < R`, `hi <= 2`, and `R = typemax(T) + 1`.
 
 If `z <= 1`, `hi <= 1` (so it can be used as `new_carry, res = addcarry(x, y, carry)`).
 """
-function addcarry(x::T, y::T, z::T) where T <: Unsigned
+@inline function addcarry(x::T, y::T, z::T) where T <: Unsigned
     T2 = widen(T)
     res = (x % T2) + (y % T2) + (z % T2)
     (res >> bitsizeof(T)) % T, res % T
@@ -20,7 +20,7 @@ end
 """
 A specialized version for `z == 0`.
 """
-function addcarry(x::T, y::T) where T <: Unsigned
+@inline function addcarry(x::T, y::T) where T <: Unsigned
     T2 = widen(T)
     ret = (x % T2) + (y % T2)
     (ret >> bitsizeof(T)) % T, ret % T
@@ -30,7 +30,7 @@ end
 """
 Since `widen(UInt128) == BigInt`, we need a specialized version to avoid allocations.
 """
-function addcarry(x::UInt128, y::UInt128, z::UInt128)
+@inline function addcarry(x::UInt128, y::UInt128, z::UInt128)
     x_lo = x % UInt64
     x_hi = (x >> 64) % UInt64
     y_lo = y % UInt64
@@ -49,7 +49,7 @@ function addcarry(x::UInt128, y::UInt128, z::UInt128)
 end
 
 
-function addcarry(x::UInt128, y::UInt128)
+@inline function addcarry(x::UInt128, y::UInt128)
     x_lo = x % UInt64
     x_hi = (x >> 64) % UInt64
     y_lo = y % UInt64
@@ -72,14 +72,14 @@ the latter meaning that the borrow occurred during subtraction.
 
 Note that it is not an analogue of `addhilo` for subtraction.
 """
-function subborrow(x::T, y::T, borrow::T) where T <: Unsigned
+@inline function subborrow(x::T, y::T, borrow::T) where T <: Unsigned
     T2 = widen(T)
     ret = (x % T2) - ((y % T2) + ((borrow >> (bitsizeof(T) - 1)) % T2))
     (ret >> bitsizeof(T)) % T, ret % T
 end
 
 
-function subborrow(x::UInt128, y::UInt128, borrow::UInt128)
+@inline function subborrow(x::UInt128, y::UInt128, borrow::UInt128)
     x_lo = x % UInt64
     x_hi = (x >> 64) % UInt64
     y_lo = y % UInt64
@@ -96,14 +96,14 @@ function subborrow(x::UInt128, y::UInt128, borrow::UInt128)
 end
 
 
-function subborrow(x::T, y::T) where T <: Unsigned
+@inline function subborrow(x::T, y::T) where T <: Unsigned
     T2 = widen(T)
     ret = (x % T2) - (y % T2)
     (ret >> bitsizeof(T)) % T, ret % T
 end
 
 
-function subborrow(x::UInt128, y::UInt128)
+@inline function subborrow(x::UInt128, y::UInt128)
     x_lo = x % UInt64
     x_hi = (x >> 64) % UInt64
     y_lo = y % UInt64
@@ -124,7 +124,7 @@ Returns the pair `(hi, lo)` of `x + y * z + w`.
 That is, `hi * R + lo = x + y * z + w`,
 where `0 <= x, y, z, w, hi, lo < R`, and `R = typemax(T) + 1`.
 """
-function muladdcarry(x::T, y::T, z::T, w::T) where T
+@inline function muladdcarry(x::T, y::T, z::T, w::T) where T
     hi, lo = mulhilo(y, z)
     t, r1 = addcarry(x, lo, w)
     _, r2 = addcarry(hi, t)
@@ -132,7 +132,7 @@ function muladdcarry(x::T, y::T, z::T, w::T) where T
 end
 
 
-function muladdcarry(x::T, y::T, z::T) where T
+@inline function muladdcarry(x::T, y::T, z::T) where T
     hi, lo = mulhilo(y, z)
     t, r1 = addcarry(x, lo)
     _, r2 = addcarry(hi, t)
