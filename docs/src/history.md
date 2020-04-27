@@ -5,6 +5,7 @@
 
 * ADDED: `>>` and `<<` methods for `ModUInt`.
 * ADDED: `% type` for truncating `MLUInt` to built-in types.
+* ADDED: `mulmod_montgomery_ct()` for constant-time Montgomery multiplication.
 
 
 ## v0.1.2 (19 February 2020)
