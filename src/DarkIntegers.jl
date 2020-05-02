@@ -2,6 +2,7 @@ module DarkIntegers
 
 using Base: setindex
 using Primes: factor, isprime
+using Random
 
 
 include("utils.jl")

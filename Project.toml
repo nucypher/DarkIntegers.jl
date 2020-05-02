@@ -5,15 +5,15 @@ version = "0.1.2"
 
 [deps]
 Primes = "27ebfcd6-29c5-5fa9-bf4b-fb8fc14df3ae"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 
 [extras]
-Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
 Jute = "82bedeac-9837-5b62-883a-b5b3b7c811c5"
 
 [targets]
-test = ["Random", "Statistics", "BenchmarkTools", "Jute"]
+test = ["Statistics", "BenchmarkTools", "Jute"]
 
 [compat]
 julia = "^1.0"

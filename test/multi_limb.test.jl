@@ -348,4 +348,47 @@ end
 end
 
 
+@testcase "rand(type)" for rng in fixed_rng
+    res = rand(rng, MLUInt{3, UInt8}, 10000)
+    @test eltype(res) == MLUInt{3, UInt8}
+    vals = convert.(Int, res)
+    @test minimum(vals) <= 10000
+    @test maximum(vals) >= 256 * 256 * 256 - 10000
+end
+
+
+@testcase "rand(range)" for rng in fixed_rng
+    start = 10
+    for len in [
+            256 * 256, # no mask needed (range is exactly 2 limbs long)
+            256,
+            256 * 64, # mask needed, rejectio not needed (range is a power of 2)
+            64,
+            264 - 123, # mask needed, rejection needed
+            51,
+            ]
+
+        a = convert(MLUInt{3, UInt8}, start)
+        b = convert(MLUInt{3, UInt8}, start + len - 1)
+
+        res = rand(rng, a:b, 10000)
+        @test all(res .>= a)
+        @test all(res .<= b)
+    end
+end
+
+
+@testcase tags=[:performance] "rand() performance" for rng in fixed_rng
+    trial = @benchmark rand($rng, MLUInt{4, UInt64})
+    @test_result "type: " * benchmark_result(trial)
+
+    a = rand(rng, MLUInt{4, UInt64})
+    b = rand(rng, MLUInt{4, UInt64})
+    r = min(a, b):max(a, b)
+    trial = @benchmark rand($rng, $r)
+    @test_result "range: " * benchmark_result(trial)
+end
+
+
+
 end

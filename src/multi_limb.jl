@@ -717,3 +717,77 @@ end
     end
     res
 end
+
+
+# Random number generation
+
+
+# Simple implementation for the full range sampling
+function Base.rand(rng::AbstractRNG, ::Random.SamplerType{MLUInt{N, T}}) where {N, T}
+    t = zero(MLUInt{N, T})
+    for i in 1:N
+        t = setindex(t, rand(rng, T), i)
+    end
+    t
+end
+
+
+struct MLUIntSampler{N, T} <: Random.Sampler{MLUInt{N, T}}
+    start :: MLUInt{N, T}
+    len :: MLUInt{N, T}
+    range_limbs :: Int
+    needs_mask :: Bool
+    mask :: T
+    needs_rejection :: Bool
+
+    function MLUIntSampler{N, T}(r::UnitRange{MLUInt{N, T}}) where {N, T}
+        @assert r.start <= r.stop
+
+        # The length of the requested range of numbers
+        # (that is, the range is `[start, start + len)`)
+        len = r.stop - r.start + one(MLUInt{N, T})
+
+        bits = num_bits(r.stop - r.start) # the number of bits covering the requested range
+        range_limbs = cld(bits, bitsizeof(T)) # the number of limbs covering the requested range
+
+        # whether or not we need all the bits in the highmost limb before rejection sampling
+        needs_mask = range_limbs * bitsizeof(T) != bits
+        # mask to be applied to drop the unneeded bits
+        mask = ((one(T) << (bits - (range_limbs - 1) * bitsizeof(T))) - one(T))
+
+        # Whether we need rejection sampling (that is, len is not a power of 2)
+        needs_rejection = (1 << bits) != len
+
+        new{N, T}(r.start, len, range_limbs, needs_mask, mask, needs_rejection)
+    end
+end
+
+
+function Random.Sampler(
+        RNG::Type{<:AbstractRNG}, r::UnitRange{MLUInt{N, T}}, n::Union{Val{1}, Val{Inf}}) where {N, T}
+    MLUIntSampler{N, T}(r)
+end
+
+
+function Base.rand(rng::AbstractRNG, s::MLUIntSampler{N, T}) where {N, T}
+    # Simple rejection sampling.
+    # In the worst case scenario, it drops about 1/2 of all sampled randoms,
+    # and `bitsizeof(T)-1` bits of entropy for each loop.
+
+    # We only need `s.range_limbs` limbs, but creating an `N`-limb buffer
+    # helps avoiding unnecessary allocations and increases performance greatly.
+    t = zero(MLUInt{N, T})
+    while true
+        for i in 1:s.range_limbs
+            t = setindex(t, rand(rng, T), i)
+        end
+        if s.needs_mask
+            t = setindex(t, t[s.range_limbs] & s.mask, s.range_limbs)
+        end
+        if !s.needs_rejection || t < s.len
+            break
+        end
+    end
+
+    t + s.start
+end
