@@ -1,7 +1,7 @@
 # Version history
 
 
-## Current development version
+## v0.1.3 (2 May 2020)
 
 * ADDED: `>>` and `<<` methods for `ModUInt`.
 * ADDED: `% type` for truncating `MLUInt` to built-in types.
