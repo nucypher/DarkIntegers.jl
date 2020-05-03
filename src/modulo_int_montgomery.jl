@@ -208,6 +208,18 @@ end
 end
 
 
+@inline Base.:<(x::MgModUInt{T, M}, y::MgModUInt{T, M}) where {T, M} = value(x) < value(y)
+
+
+@inline Base.:>(x::MgModUInt{T, M}, y::MgModUInt{T, M}) where {T, M} = value(x) > value(y)
+
+
+@inline Base.:<=(x::MgModUInt{T, M}, y::MgModUInt{T, M}) where {T, M} = value(x) <= value(y)
+
+
+@inline Base.:>=(x::MgModUInt{T, M}, y::MgModUInt{T, M}) where {T, M} = value(x) >= value(y)
+
+
 Base.string(x::MgModUInt{T, M}) where {T, M} = string(value(x)) * "RRM"
 
 
