@@ -129,4 +129,52 @@ end
 end
 
 
+@testcase "rand(type)" for rng in fixed_rng
+    m = convert(MLUInt{3, UInt8}, 2^22 - 27)
+    tp = MgModUInt{MLUInt{3, UInt8}, m}
+    res = rand(rng, tp, 10000)
+    @test eltype(res) == tp
+    vals = convert.(Int, value.(res))
+    @test minimum(vals) <= 10000
+    @test maximum(vals) >= 2^22 - 27 - 10000
+    @test maximum(vals) < 2^22 - 27
+end
+
+
+@testcase "rand(range)" for rng in fixed_rng
+
+    m = convert(MLUInt{3, UInt8}, 2^22 - 27)
+    tp = MgModUInt{MLUInt{3, UInt8}, m}
+
+    start = 10
+    len = 256 * 8 - 123
+
+    a = convert(tp, start)
+    b = convert(tp, start + len - 1)
+
+    res = rand(rng, a:b, 10000)
+    @test eltype(res) == tp
+
+    res_int = convert.(Int, value.(res))
+    @test all(res_int .>= start)
+    @test all(res_int .<= start + len - 1)
+end
+
+
+@testcase tags=[:performance] "rand() performance" for rng in fixed_rng
+
+    m = convert(MLUInt{4, UInt64}, big(2)^255-19)
+    tp = MgModUInt{MLUInt{4, UInt64}, m}
+
+    trial = @benchmark rand($rng, $tp)
+    @test_result "type: " * benchmark_result(trial)
+
+    a = rand(rng, tp)
+    b = rand(rng, tp)
+    r = min(a, b):max(a, b)
+    trial = @benchmark rand($rng, $r)
+    @test_result "range: " * benchmark_result(trial)
+end
+
+
 end

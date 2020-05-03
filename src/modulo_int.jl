@@ -181,3 +181,32 @@ Base.Broadcast.broadcastable(x::ModUInt) = (x,)
 
 
 encompassing_type(tp::Type{ModUInt{T, M}}) where {T, M} = encompassing_type(T)
+
+
+# Random number generation
+
+
+function Base.rand(rng::AbstractRNG, ::Random.SamplerType{ModUInt{T, M}}) where {T, M}
+    ModUInt{T, M}(rand(rng, zero(T):M-one(T)), _verbatim)
+end
+
+
+struct ModUIntSampler{Z, S} <: Random.Sampler{Z}
+    sampler :: S
+
+    function ModUIntSampler(RNG::Type{<:AbstractRNG}, r::UnitRange{ModUInt{T, M}}, n) where {T, M}
+        sampler = Random.Sampler(RNG, value(r.start):value(r.stop), n)
+        new{ModUInt{T, M}, typeof(sampler)}(sampler)
+    end
+end
+
+
+function Random.Sampler(
+        RNG::Type{<:AbstractRNG}, r::UnitRange{ModUInt{T, M}}, n::Union{Val{1}, Val{Inf}}) where {T, M}
+    ModUIntSampler(RNG, r, n)
+end
+
+
+function Base.rand(rng::AbstractRNG, s::ModUIntSampler{Z, S}) where {Z, S}
+    Z(rand(rng, s.sampler), _verbatim)
+end

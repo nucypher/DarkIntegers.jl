@@ -230,3 +230,36 @@ Base.Broadcast.broadcastable(x::MgModUInt) = (x,)
 
 
 encompassing_type(tp::Type{MgModUInt{T, M}}) where {T, M} = encompassing_type(T)
+
+
+# Random number generation
+
+
+function Base.rand(rng::AbstractRNG, ::Random.SamplerType{MgModUInt{T, M}}) where {T, M}
+    # Since we use the full range and the distribution is uniform,
+    # there is no need to transform to Montgomery representation.
+    MgModUInt{T, M}(rand(rng, zero(T):M-one(T)), _verbatim)
+end
+
+
+struct MgModUIntSampler{Z, S} <: Random.Sampler{Z}
+    sampler :: S
+
+    function MgModUIntSampler(RNG::Type{<:AbstractRNG}, r::UnitRange{MgModUInt{T, M}}, n) where {T, M}
+        sampler = Random.Sampler(RNG, value(r.start):value(r.stop), n)
+        new{MgModUInt{T, M}, typeof(sampler)}(sampler)
+    end
+end
+
+
+function Random.Sampler(
+        RNG::Type{<:AbstractRNG}, r::UnitRange{MgModUInt{T, M}}, n::Union{Val{1}, Val{Inf}}) where {T, M}
+    MgModUIntSampler(RNG, r, n)
+end
+
+
+function Base.rand(rng::AbstractRNG, s::MgModUIntSampler{Z, S}) where {Z, S}
+    # The sampling is done from the range of non-transformed numbers,
+    # so we need to transform it back.
+    Z(rand(rng, s.sampler), _no_modulo)
+end

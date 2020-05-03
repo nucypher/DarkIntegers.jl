@@ -6,7 +6,7 @@
 * ADDED: `>>` and `<<` methods for `ModUInt`.
 * ADDED: `% type` for truncating `MLUInt` to built-in types.
 * ADDED: `mulmod_montgomery_ct()` for constant-time Montgomery multiplication.
-* ADDED: `rand()` for `MLUInt` and its ranges.
+* ADDED: `rand()` for `MLUInt`, `ModUInt` and `MgModUInt`, and corresponding ranges.
 * ADDED: comparison operators for `MgModUInt` (slow, since they have to convert the operands out of the Montgomery representation).
 
 
