@@ -364,7 +364,7 @@ end
             256,
             256 * 64, # mask needed, rejectio not needed (range is a power of 2)
             64,
-            264 - 123, # mask needed, rejection needed
+            256 * 64 - 123, # mask needed, rejection needed
             51,
             ]
 
