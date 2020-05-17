@@ -5,6 +5,7 @@
 
 * ADDED: `num_bits()` implementation for `ModUInt`.
 * ADDED: `trailing_zeros()` implementation for `ModUInt`.
+* ADDED: `|` for `MLUInt`
 
 
 ## v0.1.3 (2 May 2020)
