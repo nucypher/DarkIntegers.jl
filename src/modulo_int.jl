@@ -139,7 +139,7 @@ end
 # Apparently we cannot just define a method for `y::Integer`, since there is a
 # `div(Unsigned, Union{...})` in Base, resulting in ambiguity.
 @inline function Base.div(x::ModUInt{T, M}, y::Union{Int128, Int16, Int32, Int64, Int8}) where {T, M}
-    y < 0 ? div(-x, unsigned(-y)) : div(x, unsigned(y))
+    signbit(y) ? div(-x, unsigned(-y)) : div(x, unsigned(y))
 end
 
 
