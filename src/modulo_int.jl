@@ -215,3 +215,8 @@ end
 function num_bits(x::ModUInt{T, M}) where {T, M}
     num_bits(value(x))
 end
+
+
+function Base.trailing_zeros(x::ModUInt{T, M}) where {T, M}
+    trailing_zeros(value(x))
+end
