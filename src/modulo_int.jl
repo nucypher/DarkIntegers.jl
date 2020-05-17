@@ -210,3 +210,8 @@ end
 function Base.rand(rng::AbstractRNG, s::ModUIntSampler{Z, S}) where {Z, S}
     Z(rand(rng, s.sampler), _verbatim)
 end
+
+
+function num_bits(x::ModUInt{T, M}) where {T, M}
+    num_bits(value(x))
+end

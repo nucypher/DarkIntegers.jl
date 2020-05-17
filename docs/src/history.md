@@ -1,6 +1,11 @@
 # Version history
 
 
+## Current development version
+
+* ADDED: `num_bits()` implementation for `ModUInt`.
+
+
 ## v0.1.3 (2 May 2020)
 
 * ADDED: `>>` and `<<` methods for `ModUInt`.
