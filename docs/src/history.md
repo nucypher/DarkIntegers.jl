@@ -1,7 +1,7 @@
 # Version history
 
 
-## Current development version
+## v0.1.4 (17 May 2020)
 
 * ADDED: `num_bits()` implementation for `ModUInt`.
 * ADDED: `trailing_zeros()` implementation for `ModUInt`.
