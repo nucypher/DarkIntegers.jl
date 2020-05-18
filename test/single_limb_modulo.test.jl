@@ -89,7 +89,7 @@ end
 end
 
 
-@testcase tags=[:performance] "mulmod, performance" for rng in fixed_rng, tp in builtin_uint_types
+@testcase tags=[:performance] "mulmod, performance" for rng in fixed_rng(123), tp in builtin_uint_types
 
     modulus = rand(rng, tp(2):typemax(tp))
     x = rand(rng, tp) % modulus

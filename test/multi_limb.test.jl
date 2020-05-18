@@ -232,7 +232,7 @@ modulo_args_filter(x, y, modulus) = modulus >= 2 && x < modulus && y < modulus
 end
 
 
-@testcase tags=[:performance] "mulmod performance" for rng in fixed_rng
+@testcase tags=[:performance] "mulmod performance" for rng in fixed_rng(123)
     mptp = MLUInt{2, UInt64}
 
     modulus = UInt128(2)^80 + 1
@@ -254,7 +254,7 @@ end
 end
 
 
-@testcase tags=[:performance] "divrem performance, single limb divisor" for rng in fixed_rng
+@testcase tags=[:performance] "divrem performance, single limb divisor" for rng in fixed_rng(123)
     mptp = MLUInt{2, UInt64}
 
     x = rand(rng, UInt128(1):typemax(UInt128))
@@ -271,7 +271,7 @@ end
 end
 
 
-@testcase tags=[:performance] "divrem performance, multiple limb divisor" for rng in fixed_rng
+@testcase tags=[:performance] "divrem performance, multiple limb divisor" for rng in fixed_rng(123)
     mptp = MLUInt{8, UInt16}
 
     function make_args(rng)
@@ -285,7 +285,7 @@ end
 end
 
 
-@testcase "shift" for rng in fixed_rng, shift_dir in ["left", "right"]
+@testcase "shift" for rng in fixed_rng(123), shift_dir in ["left", "right"]
     op = shift_dir == "left" ? (<<) : (>>)
     for limbs in 1:8
         for msl in 1:limbs
@@ -306,7 +306,7 @@ end
 end
 
 
-@testcase tags=[:performance] "lshift performance" for rng in fixed_rng
+@testcase tags=[:performance] "lshift performance" for rng in fixed_rng(123)
     x = MLUInt{8, UInt32}(reverse((
         0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFE,
         0xBAAEDCE6, 0xAF48A03B, 0xBFD25E8C, 0xD0364141)))
@@ -348,7 +348,7 @@ end
 end
 
 
-@testcase "rand(type)" for rng in fixed_rng
+@testcase "rand(type)" for rng in fixed_rng(123)
     res = rand(rng, MLUInt{3, UInt8}, 10000)
     @test eltype(res) == MLUInt{3, UInt8}
     vals = convert.(Int, res)
@@ -357,7 +357,7 @@ end
 end
 
 
-@testcase "rand(range)" for rng in fixed_rng
+@testcase "rand(range)" for rng in fixed_rng(123)
     start = 10
     for len in [
             256 * 256, # no mask needed (range is exactly 2 limbs long)
@@ -378,7 +378,7 @@ end
 end
 
 
-@testcase tags=[:performance] "rand() performance" for rng in fixed_rng
+@testcase tags=[:performance] "rand() performance" for rng in fixed_rng(123)
     trial = @benchmark rand($rng, MLUInt{4, UInt64})
     @test_result "type: " * benchmark_result(trial)
 

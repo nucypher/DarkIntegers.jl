@@ -102,7 +102,7 @@ end
 end
 
 
-@testcase "mulmod_montgomery(), single limb" for rng in fixed_rng
+@testcase "mulmod_montgomery(), single limb" for rng in fixed_rng(123)
     # Not using check_function_random() here because it assumes the same types for all arguments
     tp = MLUInt{4, UInt32}
     for i in 1:100
@@ -132,7 +132,7 @@ end
 
 
 (@testcase tags=[:performance] "mulmod_montgomery(), performance" for
-        rng in fixed_rng,
+        rng in fixed_rng(123),
         ct in ((false, true) => ("vartime", "ctime"))
 
     # Test batched performance to check how well the operations will be vectorized
@@ -223,7 +223,7 @@ end
 end
 
 
-@testcase tags=[:performance] "to_montgomery(), performance" for rng in fixed_rng
+@testcase tags=[:performance] "to_montgomery(), performance" for rng in fixed_rng(123)
 
     modulus = UInt128(2)^80 + 1
     x = rand(rng, UInt128(1):modulus-1)
@@ -285,7 +285,7 @@ end
 end
 
 
-@testcase tags=[:performance] "from_montgomery(), performance" for rng in fixed_rng
+@testcase tags=[:performance] "from_montgomery(), performance" for rng in fixed_rng(123)
 
     modulus = UInt128(2)^80 + 1
     x = rand(rng, UInt128(1):modulus-1)

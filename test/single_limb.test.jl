@@ -18,7 +18,7 @@ end
 end
 
 
-@testcase tags=[:performance] "addcarry, performance" for rng in fixed_rng, tp in builtin_uint_types
+@testcase tags=[:performance] "addcarry, performance" for rng in fixed_rng(123), tp in builtin_uint_types
     trial = @benchmark addcarry(x, y, z) setup=begin
         x = rand($rng, $tp)
         y = rand($rng, $tp)
@@ -56,7 +56,7 @@ end
 end
 
 
-@testcase tags=[:performance] "subborrow, performance" for rng in fixed_rng, tp in builtin_uint_types
+@testcase tags=[:performance] "subborrow, performance" for rng in fixed_rng(123), tp in builtin_uint_types
     trial = @benchmark subborrow(x, y, borrow) setup=begin
         x = rand($rng, $tp)
         y = rand($rng, $tp)
@@ -77,7 +77,7 @@ end
 end
 
 
-@testcase tags=[:performance] "muladdcarry, performance" for rng in fixed_rng, tp in builtin_uint_types
+@testcase tags=[:performance] "muladdcarry, performance" for rng in fixed_rng(123), tp in builtin_uint_types
     trial = @benchmark muladdcarry(x, y, z, w) setup=begin
         x = rand($rng, $tp)
         y = rand($rng, $tp)
@@ -126,7 +126,7 @@ end
 end
 
 
-@testcase tags=[:performance] "mulhilo, performance" for rng in fixed_rng, tp in builtin_uint_types
+@testcase tags=[:performance] "mulhilo, performance" for rng in fixed_rng(123), tp in builtin_uint_types
     x = rand(rng, tp)
     y = rand(rng, tp)
 
@@ -207,7 +207,7 @@ end
 end
 
 
-@testcase tags=[:performance] "divremhilo, performance" for rng in fixed_rng, tp in builtin_uint_types
+@testcase tags=[:performance] "divremhilo, performance" for rng in fixed_rng(123), tp in builtin_uint_types
     x_hi = rand(rng, zero(tp):typemax(tp))
     x_lo = rand(rng, zero(tp):typemax(tp))
     y = rand(rng, one(tp):typemax(tp))

@@ -17,5 +17,5 @@ test = ["Statistics", "BenchmarkTools", "Jute"]
 
 [compat]
 julia = "^1.0"
-Jute = "~0.2.3"
+Jute = "~0.2.5"
 Primes = "^0.4.0"

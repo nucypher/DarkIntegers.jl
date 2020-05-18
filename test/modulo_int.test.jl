@@ -71,7 +71,7 @@ end
 end
 
 
-@testcase tags=[:performance] "*, performance" for rng in fixed_rng
+@testcase tags=[:performance] "*, performance" for rng in fixed_rng(123)
 
     modulus = UInt128(2)^80 + 1
     x = rand(rng, UInt128) % modulus
@@ -93,7 +93,7 @@ end
 end
 
 
-@testcase "inv" for rng in fixed_rng
+@testcase "inv" for rng in fixed_rng(123)
     modulus = UInt64(251)
     tp = ModUInt{UInt64, modulus}
 
@@ -119,7 +119,7 @@ end
 end
 
 
-@testcase "rand(type)" for rng in fixed_rng
+@testcase "rand(type)" for rng in fixed_rng(123)
     m = convert(MLUInt{3, UInt8}, 2^22 - 27)
     tp = ModUInt{MLUInt{3, UInt8}, m}
     res = rand(rng, tp, 10000)
@@ -131,7 +131,7 @@ end
 end
 
 
-@testcase "rand(range)" for rng in fixed_rng
+@testcase "rand(range)" for rng in fixed_rng(123)
 
     m = convert(MLUInt{3, UInt8}, 2^22 - 27)
     tp = ModUInt{MLUInt{3, UInt8}, m}
@@ -151,7 +151,7 @@ end
 end
 
 
-@testcase tags=[:performance] "rand() performance" for rng in fixed_rng
+@testcase tags=[:performance] "rand() performance" for rng in fixed_rng(123)
 
     m = convert(MLUInt{4, UInt64}, big(2)^255-19)
     tp = ModUInt{MLUInt{4, UInt64}, m}

@@ -1,23 +1,9 @@
 using Base.Iterators: product
 using Random
-using BenchmarkTools: prettytime, prettymemory, @benchmark
+using BenchmarkTools: prettytime, @benchmark
 
 using DarkIntegers
 using DarkIntegers: UInt4, bitsizeof, encompassing_type
-
-
-function benchmark_result(trial)
-    time_str = prettytime(minimum(trial.times))
-
-    if trial.allocs > 0
-        mem_str = prettymemory(trial.memory)
-        alloc_str = ", $mem_str ($(trial.allocs) allocs)"
-    else
-        alloc_str = ""
-    end
-
-    time_str * alloc_str
-end
 
 
 struct DistributionTrial
@@ -76,13 +62,6 @@ end
 
 
 const builtin_uint_types = (UInt8, UInt16, UInt32, UInt64, UInt128)
-
-
-const fixed_rng = @local_fixture begin
-    seed = 123
-    rng = MersenneTwister(seed)
-    @produce rng "seed=$seed"
-end
 
 
 function truncate_result(::Type{T}, x::V) where {T <: Unsigned, V <: Union{BigInt, Unsigned}}
