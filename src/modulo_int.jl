@@ -117,6 +117,13 @@ end
 end
 
 
+@inline function Base.:&(x::ModUInt{T, M}, y::ModUInt{T, M}) where {T, M}
+    # `&` of two numbers in [0, M) is guaranteed to produce the result in the same range,
+    # so no need for reduction.
+    ModUInt(x.value & y.value, M, _verbatim)
+end
+
+
 @inline function Base.isodd(x::ModUInt{T, M}) where {T, M}
     isodd(x.value)
 end
